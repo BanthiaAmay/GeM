@@ -1,0 +1,102 @@
+flowchart TB
+    subgraph Clients["Client Applications"]
+        WEB["Mobile-First GeM Saathi Web App<br/>English and Hindi"]
+        ADMIN["Research and Content Admin Portal"]
+    end
+
+    subgraph WebLayers["Web Application"]
+        ROUTING["Routing, Language and Accessible UI"]
+        MODULE["GeM 101 Module"]
+        TOOLS["Five Decision Tools"]
+        REPORT["Personalized Report"]
+        TRACKER["Onboarding Readiness Tracker"]
+        ACTION["GeM Registration Action Hub"]
+        STATE["Shared Session and Tool State"]
+        LOCAL["Browser Persistence and Pending Event Queue"]
+    end
+
+    subgraph Backend["Application Backend"]
+        API["Authenticated and Anonymous APIs"]
+        SESSION["Session and Resume Service"]
+        CALC["Versioned Rules and Calculation Engine"]
+        REPORTING["Report Composition and Delivery Service"]
+        REFERRAL["Referral Attribution Service"]
+        FUNNEL["Consent-Aware Funnel Event Service"]
+        VERIFY["Registration and First-Order Verification Workflow"]
+        CONTENT["Content and Benchmark Publishing Service"]
+    end
+
+    subgraph Data["Data Stores"]
+        DB[("Application Database")]
+        ANALYTICS[("Pseudonymous Research Event Store")]
+        CACHE[("Published Content and Benchmark Cache")]
+        FILES[("Generated Report Store")]
+    end
+
+    subgraph External["External Sources and Destinations"]
+        GEM["Official GeM Portal and Statistics"]
+        PUBLIC["Public Bid and Tender Samples"]
+        CURATED["Researcher-Curated Category Benchmarks"]
+        DELIVERY["Consented Email or WhatsApp Provider"]
+        PARTNERS["CA Partners, E-Cells and Business Associations"]
+    end
+
+    subgraph Operations["Research, Trust and Operations"]
+        SOURCES["Source, Vintage and Assumption Registry"]
+        DASHBOARD["Funnel and Workshop Dashboard"]
+        EXPORT["De-identified Research Export"]
+        AUDIT["Admin and Calculation Audit Log"]
+        MONITOR["Error, Performance and Data-Freshness Monitoring"]
+    end
+
+    WEB --> ROUTING
+    ROUTING --> MODULE
+    ROUTING --> TOOLS
+    ROUTING --> REPORT
+    ROUTING --> TRACKER
+    ROUTING --> ACTION
+    MODULE --> STATE
+    TOOLS --> STATE
+    REPORT --> STATE
+    TRACKER --> STATE
+    ACTION --> STATE
+    STATE <--> LOCAL
+
+    STATE --> API
+    API --> SESSION
+    API --> CALC
+    API --> REPORTING
+    API --> REFERRAL
+    API --> FUNNEL
+    API --> VERIFY
+    API --> CONTENT
+
+    SESSION --> DB
+    CALC --> DB
+    REPORTING --> DB
+    REPORTING --> FILES
+    REFERRAL --> DB
+    FUNNEL --> ANALYTICS
+    VERIFY --> DB
+    CONTENT --> CACHE
+    CONTENT --> DB
+
+    PARTNERS -->|"unique referral links"| WEB
+    ACTION -->|"official deep links"| GEM
+    GEM -->|"published aggregate metrics"| CURATED
+    PUBLIC -->|"defined manual sample"| CURATED
+    CURATED --> CONTENT
+    REPORTING -->|"only with user consent"| DELIVERY
+
+    ADMIN --> API
+    ADMIN --> DASHBOARD
+    ADMIN --> EXPORT
+    CONTENT --> SOURCES
+    CALC --> SOURCES
+    SOURCES --> DB
+    ANALYTICS --> DASHBOARD
+    ANALYTICS --> EXPORT
+    API -. "administrative changes" .-> AUDIT
+    API -. "errors and latency" .-> MONITOR
+    CONTENT -. "stale data checks" .-> MONITOR
+    AUDIT --> DB

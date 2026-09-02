@@ -1,0 +1,83 @@
+sequenceDiagram
+    autonumber
+
+    actor Owner as SME Owner
+    participant Web as GeM Saathi Web App
+    participant Session as Session and Resume Service
+    participant Calc as Rules and Calculation Engine
+    participant Data as Benchmark and Content Store
+    participant Events as Funnel Event Service
+    participant GeM as Official GeM Portal
+
+    rect rgb(18, 19, 18)
+        Note over Owner,Events: Awareness and referral attribution
+        Owner->>Web: Open partner or direct link
+        Web->>Session: Start session with referral code and language
+        Session-->>Web: Anonymous session ID and saved state
+        Web->>Events: Record awareness_started
+        Owner->>Web: Complete the short GeM 101 module
+        Web->>Events: Record awareness_completed
+        Web-->>Owner: Offer Eligibility Checker or direct tool access
+    end
+
+    rect rgb(60, 56, 47)
+        Note over Owner,Events: Eligibility and classification
+        Owner->>Web: Enter business, GST, Udyam and offering details
+        Owner->>Web: Enter turnover, investment and prior experience
+        Web->>Calc: Evaluate inputs with active rule version
+        Calc->>Data: Load classification and eligibility rules
+        Data-->>Calc: Versioned rules and guidance
+        Calc-->>Web: Classification, verdict, reasons and missing items
+        Web->>Session: Save answers and eligibility result
+        Web->>Events: Record tool_completed for eligibility
+
+        alt Eligible
+            Web-->>Owner: Show Yes and recommend Revenue Estimator
+        else Partially eligible
+            Web-->>Owner: Show gaps, fix times and potential after fixing
+        else Not currently eligible
+            Web-->>Owner: Show reason, resource and save-and-return option
+        else Not interested in government sales
+            Web->>Events: Record disqualified_by_choice
+            Web-->>Owner: Exit gracefully with awareness resources
+        end
+    end
+
+    rect rgb(29, 24, 45)
+        Note over Owner,Events: Financial tools and combined report
+        Owner->>Web: Select category, city and optional turnover
+        Web->>Calc: Estimate category revenue
+        Calc->>Data: Read dated category and buyer benchmarks
+        Data-->>Calc: Values, sources, ranges and caveats
+        Calc-->>Web: Annual range, order value and procurement frequency
+
+        opt Owner checks pricing
+            Owner->>Web: Enter input costs, overheads and desired margin
+            Web->>Calc: Calculate viable price and competitive margin
+            Calc-->>Web: Price range, margin and L1 explanation
+        end
+
+        Owner->>Web: Open ROI and Effort Calculator
+        Web->>Session: Load existing answers and completed results
+        Session-->>Web: Reusable financial context
+        Web->>Calc: Calculate costs, payback and 1-year and 3-year ranges
+        Calc-->>Web: ROI result with assumptions and rule version
+        Web->>Session: Save combined personalized report
+        Web->>Events: Record report_viewed and registration_intent
+        Web-->>Owner: Show report, sources and recommended next step
+    end
+
+    rect rgb(23, 42, 38)
+        Note over Owner,GeM: Readiness and action
+        Owner->>Web: Open Onboarding Readiness Tracker
+        Web->>Session: Pre-fill checklist from eligibility answers
+        Session-->>Web: Completed documents and saved progress
+        Web-->>Owner: Show current step, time and common mistakes
+        Owner->>Web: Mark a step complete
+        Web->>Session: Persist checklist progress
+        Owner->>Web: Choose Register on GeM
+        Web->>Events: Record registration_cta_clicked
+        Web-->>GeM: Open official registration deep link
+        Owner->>Web: Return and confirm registration
+        Web->>Events: Record registration_claimed for verification
+    end

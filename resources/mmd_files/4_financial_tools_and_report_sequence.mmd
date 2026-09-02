@@ -1,0 +1,66 @@
+sequenceDiagram
+    autonumber
+
+    actor Owner as SME Owner
+    participant Web as GeM Saathi Web App
+    participant Session as Saved Session
+    participant Calc as Calculation Engine
+    participant Bench as Benchmark Registry
+    participant Report as Report Service
+    participant Delivery as Email or WhatsApp Provider
+
+    Owner->>Web: Open a financial tool directly or after Eligibility
+    Web->>Session: Request reusable answers and prior results
+    Session-->>Web: Category, city, turnover and eligibility context
+
+    alt Revenue inputs are incomplete
+        Web-->>Owner: Ask for category, city and optional turnover
+        Owner->>Web: Submit revenue inputs
+    else Revenue inputs already exist
+        Web-->>Owner: Confirm pre-filled inputs
+    end
+
+    Web->>Calc: Request revenue estimate with session context
+    Calc->>Bench: Load active category and regional benchmark version
+    Bench-->>Calc: Order values, buyers, frequency, sources and vintage
+    Calc->>Calc: Produce conservative annual revenue range
+    Calc-->>Web: Estimate, caveat and source references
+    Web->>Session: Save versioned revenue result
+    Web-->>Owner: Show range rather than a single promise
+
+    opt Owner uses Pricing and Margin Calculator
+        Owner->>Web: Enter input costs, overheads and desired margin
+        Web->>Calc: Request viable and benchmarked pricing
+        Calc->>Bench: Load comparable public rate data and survey margin benchmark
+        Bench-->>Calc: Dated rates, quality notes and 17.5 percent median benchmark
+        Calc->>Calc: Calculate cost floor, target price and achievable margin
+        Calc-->>Web: Pricing range and plain-language L1 explanation
+        Web->>Session: Save versioned pricing result
+        Web-->>Owner: Show margin sensitivity and assumptions
+    end
+
+    Owner->>Web: Calculate ROI and effort
+    Web->>Session: Load eligibility, revenue and pricing outputs
+    Session-->>Web: Combined calculation inputs
+    Web->>Calc: Request payback and projections
+    Calc->>Bench: Load registration cost, time-to-order and fee assumptions
+    Bench-->>Calc: Validated ranges with sources and dates
+    Calc->>Calc: Apply active fee and calculate net 1-year and 3-year ranges
+    Calc->>Calc: Calculate payback period with uncertainty range
+    Calc-->>Web: ROI result, assumptions, sources and calculation version
+    Web->>Session: Save combined tool result
+
+    Web->>Report: Compose personalized report from completed tools
+    Report->>Session: Read saved inputs and versioned outputs
+    Session-->>Report: Eligibility, revenue, pricing, ROI and next actions
+    Report-->>Web: Single-page personalized report
+    Web-->>Owner: Display report and onboarding recommendation
+
+    opt Owner consents to receive a copy
+        Owner->>Web: Provide phone or email and delivery consent
+        Web->>Report: Request delivery using consent record
+        Report->>Delivery: Send secure report link or summary
+        Delivery-->>Report: Delivery status
+        Report-->>Web: Sent or retry guidance
+        Web-->>Owner: Confirm delivery without exposing contact details
+    end

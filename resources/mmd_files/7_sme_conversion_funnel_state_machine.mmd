@@ -1,0 +1,52 @@
+stateDiagram-v2
+    [*] --> Awareness
+
+    Awareness --> ExploringGeM101: Starts the basics module
+    Awareness --> ToolEngaged: Opens a tool directly
+    ExploringGeM101 --> ToolEngaged: Continues to Eligibility or another tool
+    ExploringGeM101 --> SavedForLater: Saves a next action
+
+    ToolEngaged --> EligibilityKnown: Completes Eligibility Checker
+    ToolEngaged --> FinancialClarity: Completes a financial tool directly
+    ToolEngaged --> SavedForLater: Leaves with saved progress
+
+    EligibilityKnown --> FinancialClarity: Continues to Revenue or ROI
+    EligibilityKnown --> GapResolution: Result is Partial
+    EligibilityKnown --> ResourceReferral: Result is No
+    EligibilityKnown --> DisqualifiedByChoice: Declines government sales
+
+    GapResolution --> EligibilityKnown: Missing requirement completed
+    GapResolution --> SavedForLater: Saves fix path or reminder
+    ResourceReferral --> GapResolution: Begins a relevant formalization step
+    ResourceReferral --> SavedForLater: Accepts workshop or CA referral
+
+    FinancialClarity --> ReportReady: Personalized report composed
+    ReportReady --> RegistrationIntent: Opens readiness tracker or action hub
+    ReportReady --> SavedForLater: Sends or saves report
+
+    RegistrationIntent --> RegistrationClaimed: User marks registration complete
+    RegistrationIntent --> GapResolution: Checklist exposes a missing step
+    RegistrationIntent --> SavedForLater: Checklist progress saved
+
+    RegistrationClaimed --> RegistrationVerified: Evidence or partner follow-up verifies it
+    RegistrationClaimed --> RegistrationIntent: Verification is incomplete
+    RegistrationVerified --> FirstOrderClaimed: User reports first order
+    FirstOrderClaimed --> FirstOrderVerified: Evidence or follow-up verifies first order
+    FirstOrderClaimed --> RegistrationVerified: First order not yet verifiable
+
+    SavedForLater --> ToolEngaged: Returns to a saved tool
+    SavedForLater --> ReportReady: Returns to saved report
+    SavedForLater --> RegistrationIntent: Returns to checklist
+
+    DisqualifiedByChoice --> [*]
+    FirstOrderVerified --> [*]
+
+    note right of RegistrationClaimed
+        A claim and a verified outcome are distinct
+        research funnel states
+    end note
+
+    note right of SavedForLater
+        Leaving with a specific saved next action
+        is a valid session outcome, not a dead end
+    end note

@@ -1,0 +1,61 @@
+sequenceDiagram
+    autonumber
+
+    actor Owner as SME Owner
+    participant Web as GeM Saathi Web App
+    participant Local as Browser Store and Event Queue
+    participant API as Session and Funnel API
+    participant AppDB as Application Database
+    participant Research as Pseudonymous Research Event Store
+
+    Owner->>Web: Open a referral link
+    Web->>Local: Read saved session and pending events
+    Web->>API: Resolve referral code and session ID
+    API->>AppDB: Validate active partner referral code
+    AppDB-->>API: Referral source and campaign
+    API-->>Web: Session token and attribution
+
+    loop Each meaningful page or tool action
+        Owner->>Web: View content, submit input or click CTA
+        Web->>Local: Save current answers and progress immediately
+        Web->>Local: Queue event with event ID, time and referral context
+        Web->>API: Send consent-safe event idempotently
+        API->>Research: Insert event unless event ID already exists
+        Research-->>API: Accepted or existing receipt
+        API-->>Web: Event receipt
+        Web->>Local: Remove acknowledged event from queue
+    end
+
+    alt Connection becomes unavailable
+        Web-->>Owner: Continue with cached content where possible
+        Owner->>Web: Complete an available step
+        Web->>Local: Persist answers and append ordered events
+        Web-->>Owner: Show saved-on-device status
+
+        Note over Web,API: Connection is restored
+        Web->>Local: Read oldest unacknowledged event
+        loop Until pending queue is empty
+            Local->>API: Retry with original event ID and session version
+            API->>Research: Deduplicate and store event
+            Research-->>API: Authoritative receipt
+            API-->>Local: Acknowledge event
+        end
+        Web-->>Owner: Show synchronized status
+    else Session exists on another device
+        Owner->>Web: Enter consented phone or email resume link
+        Web->>API: Request saved session
+        API->>AppDB: Resolve contact token and latest progress
+        AppDB-->>API: Session snapshot without research identifiers
+        API-->>Web: Saved answers, report and checklist position
+        Web->>Local: Cache restored state
+        Web-->>Owner: Resume at the last useful next action
+    end
+
+    opt Owner withdraws consent or requests deletion
+        Owner->>Web: Submit privacy request
+        Web->>API: Revoke delivery consent and request scoped deletion
+        API->>AppDB: Delete or anonymize contact-linked session data
+        API->>Research: Remove linkability while preserving allowed aggregates
+        API-->>Web: Confirm completion and retained aggregate scope
+        Web->>Local: Clear local contact and session data
+    end

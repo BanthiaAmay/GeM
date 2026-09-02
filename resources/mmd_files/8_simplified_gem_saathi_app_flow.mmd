@@ -1,0 +1,60 @@
+flowchart TD
+    A["Open GeM Saathi"] --> B["Choose English or Hindi"]
+    B --> C{"Saved session available?"}
+
+    C -- Yes --> D["Resume Personalized Report or Current Checklist Step"]
+    C -- No --> E["See the two-minute value statement"]
+    E --> F{"How do you want to begin?"}
+
+    F -- "Start with basics" --> G["Complete What is GeM Module"]
+    F -- "I know GeM" --> H["Choose a Tool"]
+    G --> I["Eligibility and Classification Checker"]
+    G --> H
+
+    H --> I
+    H --> J["Revenue Potential Estimator"]
+    H --> K["Pricing and Margin Calculator"]
+    H --> L["ROI and Effort Calculator"]
+    H --> M["Onboarding Readiness Tracker"]
+
+    I --> N{"Eligibility result?"}
+    N -- Yes --> J
+    N -- Partial --> O["Show Missing Items, Fix Steps and Time"]
+    O --> J
+    N -- No --> P["Show Reason and Relevant Resource"]
+    P --> Q["Save Next Action or Join Workshop"]
+    N -- "Not interested" --> R["Record Disqualified by Choice"]
+
+    J --> S["Show Sourced Category Revenue Range"]
+    S --> T{"Check profitable pricing?"}
+    T -- Yes --> K
+    T -- No --> L
+    K --> U["Show Viable Price, Margin and L1 Explanation"]
+    U --> L
+
+    L --> V["Reuse Prior Answers and Calculate Payback"]
+    V --> W["Show 1-Year and 3-Year Net Revenue Ranges"]
+    W --> X["Generate Personalized Report"]
+
+    I --> X
+    J --> X
+    K --> X
+    X --> Y{"What next?"}
+    Y -- "Continue recommended path" --> M
+    Y -- "Send or save report" --> Z["Optional Email or WhatsApp Delivery"]
+    Z --> M
+
+    M --> AA["Pre-fill Eight-Step Registration Checklist"]
+    AA --> AB["Show Current Step, Time and Common Mistakes"]
+    AB --> AC{"Ready to register?"}
+    AC -- No --> AD["Save Progress or Request CA or Workshop Support"]
+    AD --> D
+    AC -- Yes --> AE["Open Official GeM Registration Portal"]
+    AE --> AF["Return and Mark Registration Complete"]
+    AF --> AG["Verify Registration Outcome"]
+    AG --> AH["Track First Order Follow-Up"]
+    AH --> AI["Verify First Order Outcome"]
+
+    Q --> D
+    R --> AJ["Exit with Awareness Resources"]
+    AI --> AK["Show Success and Workshop Follow-Up"]

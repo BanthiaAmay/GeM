@@ -1,0 +1,75 @@
+flowchart TB
+    ROOT[("GeM Saathi Data Platform")]
+
+    subgraph SessionData["User Session and Tool Data"]
+        SESSION["sessions/{sessionId}<br/>language, referralId, status,<br/>currentStep, createdAt, lastSeenAt"]
+        CONTACT["sessionContacts/{contactId}<br/>sessionId, encryptedContact,<br/>deliveryConsent, consentedAt"]
+        BUSINESS["sessions/{sessionId}/businessProfile/current<br/>businessType, GST, Udyam, turnover,<br/>investment, offering, city"]
+        RESULTS["sessions/{sessionId}/toolResults/{resultId}<br/>toolType, inputSnapshot, output,<br/>ruleVersion, completedAt"]
+        REPORTS["sessions/{sessionId}/reports/{reportId}<br/>includedResultIds, status,<br/>generatedAt, expiresAt"]
+        CHECKLIST["sessions/{sessionId}/readiness/{stepId}<br/>stepType, status, estimatedTime,<br/>completedAt, notes"]
+        CONSENTS["sessions/{sessionId}/consents/{consentId}<br/>purpose, policyVersion, grantedAt,<br/>withdrawnAt"]
+    end
+
+    subgraph ResearchData["Pseudonymous Impact Data"]
+        EVENTS["funnelEvents/{eventId}<br/>researchSessionId, eventType, toolType,<br/>referralId, occurredAt, metadata"]
+        OUTCOMES["outcomes/{outcomeId}<br/>researchSessionId, stage, evidenceStatus,<br/>claimedAt, verifiedAt"]
+        INTERVIEWS["interviews/{interviewId}<br/>pseudonymousParticipantId, category,<br/>codedBarriers, consentVersion"]
+        WORKSHOPS["workshops/{workshopId}<br/>partnerId, date, attendeeCount,<br/>followUpWindow"]
+    end
+
+    subgraph Published["Published Content and Financial Models"]
+        ARTICLES["contentVersions/{versionId}<br/>contentKey, language, body,<br/>status, publishedAt"]
+        CATEGORIES["categories/{categoryId}<br/>name, offeringType, active"]
+        BENCHMARKS["benchmarkVersions/{benchmarkId}<br/>categoryId, geography, metric,<br/>range, sourceId, asOfDate"]
+        RULES["ruleVersions/{ruleId}<br/>ruleType, effectiveFrom, parameters,<br/>sourceIds, status"]
+        GUIDANCE["guidanceSteps/{stepId}<br/>stepType, language, instructions,<br/>timeRange, commonMistakes"]
+        SOURCES["sources/{sourceId}<br/>title, publisher, URL,<br/>sourceType, accessedAt, qualityNote"]
+    end
+
+    subgraph PartnersAndOps["Partners and Operations"]
+        PARTNERS["partners/{partnerId}<br/>name, type, status, contactOwner"]
+        REFERRALS["referrals/{referralId}<br/>partnerId, campaign, code,<br/>startsAt, endsAt"]
+        DELIVERIES["deliveries/{deliveryId}<br/>reportId, channel, consentId,<br/>status, requestedAt"]
+        ADMINS["adminUsers/{adminId}<br/>role, status, lastActiveAt"]
+        AUDIT["auditLogs/{logId}<br/>adminId, action, entityType,<br/>entityId, occurredAt"]
+    end
+
+    ROOT --> SESSION
+    SESSION --> CONTACT
+    SESSION --> BUSINESS
+    SESSION --> RESULTS
+    SESSION --> REPORTS
+    SESSION --> CHECKLIST
+    SESSION --> CONSENTS
+
+    ROOT --> EVENTS
+    ROOT --> OUTCOMES
+    ROOT --> INTERVIEWS
+    ROOT --> WORKSHOPS
+
+    ROOT --> ARTICLES
+    ROOT --> CATEGORIES
+    ROOT --> BENCHMARKS
+    ROOT --> RULES
+    ROOT --> GUIDANCE
+    ROOT --> SOURCES
+
+    ROOT --> PARTNERS
+    PARTNERS --> REFERRALS
+    ROOT --> DELIVERIES
+    ROOT --> ADMINS
+    ADMINS --> AUDIT
+
+    SESSION -. "pseudonymous mapping" .-> EVENTS
+    SESSION -. "pseudonymous mapping" .-> OUTCOMES
+    SESSION -. "attributed by" .-> REFERRALS
+    RESULTS -. "calculated with" .-> RULES
+    RESULTS -. "uses" .-> BENCHMARKS
+    REPORTS -. "combines" .-> RESULTS
+    CHECKLIST -. "renders" .-> GUIDANCE
+    BENCHMARKS -. "cites" .-> SOURCES
+    RULES -. "cites" .-> SOURCES
+    DELIVERIES -. "sends" .-> REPORTS
+    DELIVERIES -. "authorized by" .-> CONSENTS
+    WORKSHOPS -. "organized by" .-> PARTNERS
