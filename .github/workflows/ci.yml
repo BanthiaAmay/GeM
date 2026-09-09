@@ -1,0 +1,49 @@
+name: Flutter checks
+on: [push, pull_request]
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          channel: stable
+          cache: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - run: python3 -m unittest discover -s research -p 'test_*.py'
+      - run: flutter build web --release
+      - run: flutter build apk --debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gem-saathi-web-and-android
+          path: |
+            build/web
+            build/app/outputs/flutter-apk/app-debug.apk
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bootstrap.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202609090001_initial.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/rls.sql
