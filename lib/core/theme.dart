@@ -8,6 +8,7 @@ const line = Color(0xFFDFE5DD);
 const lime = Color(0xFFE4EDB1);
 ThemeData saathiTheme() => ThemeData(
   useMaterial3: true,
+  fontFamilyFallback: const ['NotoSansDevanagari'],
   scaffoldBackgroundColor: canvas,
   colorScheme: ColorScheme.fromSeed(
     seedColor: green,

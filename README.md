@@ -58,3 +58,6 @@ Guest research events are not uploaded until the user signs in and opts in. Cent
 
 ## Remaining configuration
 Supabase credentials/migration/SMTP, verified category samples, confirmed workshop and CA operators, live cloud smoke testing, Android distribution signing and public web hosting. These depend on external accounts/data and are not faked in the app.
+
+## Validation and previews
+[Validation record](docs/validation.md) · [Desktop preview](docs/screenshots/desktop.png) · [Mobile Hindi preview](docs/screenshots/mobile-hindi.png)

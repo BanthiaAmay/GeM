@@ -20,7 +20,7 @@ Calm, practical and independent. The home page introduces a new buyer for an exi
 ## Responsive layout
 Below 900 px, the header uses a drawer and persistent language toggle. Desktop shows the main links and save action. Tool cards use 1/2/3 columns based on available width; forms/results stack below 700 px. The hero splits at 780 px. Content scrolls vertically, text is selectable and numeric fields use number keyboards. Form errors appear inline; transient actions use snackbars. Result values are accompanied by labels and source notes, not colour alone.
 
-English and Hindi copy is kept adjacent through `AppStore.t` / `tr`. Domain categories retain stable English IDs while display labels change. Currency uses Indian grouping and `₹`. This version relies on platform font fallback for Devanagari; validate rendering on target Android devices. Technical operator data (metric IDs, exported JSON input keys and audit references) is not fully localised. A future content-management release can extract string pairs to ARB without changing the financial model.
+English and Hindi copy is kept adjacent through `AppStore.t` / `tr`. Domain categories retain stable English IDs while display labels change. Currency uses Indian grouping and `₹`. Noto Sans Devanagari is bundled (SIL Open Font License) so Hindi does not require a runtime font download; validate rendering on target Android devices. Technical operator data (metric IDs, exported JSON input keys and audit references) is not fully localised. A future content-management release can extract string pairs to ARB without changing the financial model.
 
 ## User flow
 ```mermaid

@@ -18,6 +18,12 @@ void main() {
           Future.value(ByteData.sublistView(File(fontPath).readAsBytesSync())),
         );
       await font.load();
+      final hindi = FontLoader('NotoSansDevanagari')
+        ..addFont(rootBundle.load('assets/fonts/NotoSansDevanagari.ttf'));
+      await hindi.load();
+      final icons = FontLoader('MaterialIcons')
+        ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
+      await icons.load();
     });
     SharedPreferences.setMockInitialValues({});
     final s = AppStore(await SharedPreferences.getInstance());
@@ -25,7 +31,9 @@ void main() {
     for (final spec in [
       ('desktop', const Size(1440, 1100)),
       ('mobile', const Size(390, 1000)),
+      ('mobile-hindi', const Size(390, 1000)),
     ]) {
+      if (spec.$1 == 'mobile-hindi') s.changeLanguage();
       tester.view.physicalSize = spec.$2;
       tester.view.devicePixelRatio = 1;
       await tester.pumpWidget(
