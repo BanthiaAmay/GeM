@@ -33,7 +33,7 @@ void main() {
       ('mobile', const Size(390, 1000)),
       ('mobile-hindi', const Size(390, 1000)),
     ]) {
-      if (spec.$1 == 'mobile-hindi') s.changeLanguage();
+      if (spec.$1 == 'mobile-hindi') s.setLanguage('hi');
       tester.view.physicalSize = spec.$2;
       tester.view.devicePixelRatio = 1;
       await tester.pumpWidget(

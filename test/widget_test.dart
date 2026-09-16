@@ -5,13 +5,133 @@ import 'package:gem/main.dart';
 import 'package:gem/data/app_store.dart';
 
 void main() {
+  /// Walks the 11 steps shared by both "already on GeM" and "not yet"
+  /// answers: name, phone, OTP, location, business name, business
+  /// form, sector, role, authorised person, privacy, and business
+  /// documentation. Leaves the caller wherever that last step's
+  /// Continue button goes (Home for "yes", PAN check for "no").
+  Future<void> fillFirstElevenSteps(WidgetTester tester) async {
+    // 1. Full name
+    expect(find.text('What is your full name?'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, 'Vijay Kumar');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    // 2. Mobile number
+    expect(find.text('Your mobile number'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, '9876543210');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Send demo code'));
+    await tester.pumpAndSettle();
+
+    // 3. OTP
+    expect(find.text('Enter your code'), findsOneWidget);
+    await tester.tap(find.text('Use demo code'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    // 4. Location
+    expect(find.text('Where is your business based?'), findsOneWidget);
+    await tester.tap(find.text('Choose state'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Andhra Pradesh').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Pune');
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    // 5. Business name
+    expect(find.text('What is your business called?'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, 'Asha Textiles');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    // 6. Business form
+    expect(find.text('How is your business formed?'), findsOneWidget);
+    await tester.tap(find.text('Proprietorship'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    // 7. Sector
+    expect(find.text('Which sector best fits your business?'), findsOneWidget);
+    await tester.tap(find.text('Manufacturing'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    // 8. Role
+    expect(find.text('What is your role in the business?'), findsOneWidget);
+    await tester.tap(find.text('Owner / Proprietor'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    // 9. Authorised person readiness
+    expect(find.text('Is the authorised person ready?'), findsOneWidget);
+    await tester.tap(find.text('Yes'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    // 10. Privacy notice
+    expect(find.text('Your information stays yours'), findsOneWidget);
+    await tester.ensureVisible(
+      find.text('I understand this is a preparation guide.'),
+    );
+    await tester.tap(find.text('I understand this is a preparation guide.'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    // 11. Business documentation
+    expect(
+      find.text('Which business records do you have ready?'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Business PAN details'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+  }
+
   Future<AppStore> setup(WidgetTester tester, Size size) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     SharedPreferences.setMockInitialValues({});
     final s = AppStore(await SharedPreferences.getInstance());
     await tester.pumpWidget(SaathiApp(store: s));
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
+    expect(find.text('Get started'), findsOneWidget);
+    await tester.tap(find.text('Get started'));
+    await tester.pumpAndSettle();
+    expect(find.text('Choose your language'), findsOneWidget);
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    expect(find.text('Is your business already on GeM?'), findsOneWidget);
+    // Answer "Yes": already-on-GeM users still walk the shared first
+    // 11 steps (name through business documentation) before landing
+    // on Home; the full "No" readiness flow has its own dedicated test.
+    await tester.ensureVisible(find.text('Yes'));
+    await tester.tap(find.text('Yes'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    await fillFirstElevenSteps(tester);
     expect(tester.takeException(), isNull);
     return s;
   }
@@ -24,7 +144,9 @@ void main() {
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
-    await tester.tap(find.text('हिंदी'));
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('हिन्दी'));
     await tester.pumpAndSettle();
     expect(find.text('आपका व्यवसाय।\nनया खरीदार:\nसरकार।'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -53,7 +175,7 @@ void main() {
       final s = await setup(tester, const Size(360, 800));
       final nav = tester.state<NavigatorState>(find.byType(Navigator));
       for (final hi in [false, true]) {
-        if (s.hi != hi) s.changeLanguage();
+        if (s.hi != hi) s.setLanguage(hi ? 'hi' : 'en');
         for (final page in [
           'learn',
           'tools',
@@ -66,7 +188,6 @@ void main() {
           'register',
           'account',
           'support',
-          'about',
         ]) {
           nav.pushNamed('/$page');
           await tester.pumpAndSettle();
@@ -126,6 +247,82 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('1 of 9 steps resolved'), findsOneWidget);
       expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    },
+  );
+  testWidgets(
+    'answering "No" on the GeM check walks through all 15 readiness screens',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      SharedPreferences.setMockInitialValues({});
+      final s = AppStore(await SharedPreferences.getInstance());
+      await tester.pumpWidget(SaathiApp(store: s));
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Get started'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Continue'));
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(find.text('Is your business already on GeM?'), findsOneWidget);
+      // Default selection is "No" — go straight to Continue.
+      await tester.ensureVisible(find.text('Continue'));
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      // 1-11. Steps shared with the "already on GeM" flow.
+      await fillFirstElevenSteps(tester);
+
+      // 12. PAN readiness
+      expect(find.text('Do you have business PAN details?'), findsOneWidget);
+      await tester.tap(find.text('Yes'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Continue'));
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+
+      // 13. Readiness checklist
+      expect(find.text('Your GeM-ready checklist'), findsOneWidget);
+      expect(tester.takeException(), isNull, reason: 'checklist');
+      await tester.ensureVisible(find.text('Continue'));
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+
+      // 14. Video guide placeholder
+      expect(
+        find.text('How to register your business on GeM'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull, reason: 'video');
+      await tester.ensureVisible(find.text('Continue without video'));
+      await tester.tap(find.text('Continue without video'));
+      await tester.pumpAndSettle();
+
+      // 15. Redirect to official GeM registration
+      expect(find.text('You’re ready to register on GeM'), findsOneWidget);
+      expect(tester.takeException(), isNull, reason: 'redirect');
+      await tester.ensureVisible(find.text('Not now'));
+      await tester.tap(find.text('Not now'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull, reason: 'after not now');
+      expect(s.hasOnboarded, isTrue);
+      expect(s.profile['fullName'], 'Vijay Kumar');
+      expect(s.profile['mobile'], '9876543210');
+      expect(s.profile['state'], 'Andhra Pradesh');
+      expect(s.profile['district'], 'Pune');
+      expect(s.profile['businessName'], 'Asha Textiles');
+      expect(s.profile['businessForm'], 'proprietorship');
+      expect(s.profile['sector'], 'manufacturing');
+      expect(s.profile['role'], 'owner');
+      expect(s.profile['authorisedReady'], 'yes');
+      expect(s.profile['records'], contains('pan'));
+      expect(s.profile['panReady'], 'yes');
+
       await tester.pumpWidget(const SizedBox());
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();

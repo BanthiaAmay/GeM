@@ -1,5 +1,5 @@
 name: gem
-description: "GeM Saathi — financial clarity for small businesses."
+description: "GeM BizReady — financial clarity for small businesses."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -38,10 +38,11 @@ dependencies:
   cupertino_icons: ^1.0.8
   supabase_flutter: ^2.17.2
   shared_preferences: ^2.5.5
-  intl: 0.20.2
+  intl: ^0.20.3
   url_launcher: ^6.3.2
   uuid: ^4.6.0
   share_plus: ^13.3.0
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -66,6 +67,10 @@ flutter:
   uses-material-design: true
   assets:
     - assets/fonts/OFL.txt
+    - assets/brand_logo.png
+    - assets/brand_logo_notag.png
+    - assets/splash_screen.png
+    - assets/welcome_illustration.png
   fonts:
     - family: NotoSansDevanagari
       fonts:

@@ -6,8 +6,19 @@ const canvas = Color(0xFFF6F7F2);
 const muted = Color(0xFF62716B);
 const line = Color(0xFFDFE5DD);
 const lime = Color(0xFFE4EDB1);
+
+// Apple's own San Francisco typeface, referenced by the private family
+// names iOS already exposes for its system font — never bundled as
+// asset files, since SF Pro's license restricts redistribution. This
+// mirrors how apple.com itself styles text (`-apple-system`): Display
+// for headlines set at 20pt and above, Text below that, exactly where
+// Apple's own type ramp switches between the two optical sizes.
+const sfProText = '.SF Pro Text';
+const sfProDisplay = '.SF Pro Display';
+
 ThemeData saathiTheme() => ThemeData(
   useMaterial3: true,
+  fontFamily: sfProText,
   fontFamilyFallback: const ['NotoSansDevanagari'],
   scaffoldBackgroundColor: canvas,
   colorScheme: ColorScheme.fromSeed(
@@ -18,6 +29,7 @@ ThemeData saathiTheme() => ThemeData(
   ),
   textTheme: const TextTheme(
     headlineLarge: TextStyle(
+      fontFamily: sfProDisplay,
       fontSize: 42,
       fontWeight: FontWeight.w700,
       height: 1.15,
@@ -25,12 +37,14 @@ ThemeData saathiTheme() => ThemeData(
       color: ink,
     ),
     headlineMedium: TextStyle(
+      fontFamily: sfProDisplay,
       fontSize: 30,
       fontWeight: FontWeight.w700,
       letterSpacing: -.8,
       color: ink,
     ),
     titleLarge: TextStyle(
+      fontFamily: sfProDisplay,
       fontSize: 22,
       fontWeight: FontWeight.w600,
       color: ink,

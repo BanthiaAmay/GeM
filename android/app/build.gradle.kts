@@ -12,7 +12,7 @@ val signingFile = rootProject.file("key.properties")
 if (signingFile.exists()) { FileInputStream(signingFile).use { signingProperties.load(it) } }
 
 android {
-    namespace = "com.example.gem"
+    namespace = "com.gembizready"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -23,7 +23,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.gem"
+        applicationId = "com.gembizready"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

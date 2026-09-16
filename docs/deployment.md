@@ -4,7 +4,7 @@
 Apply the migration once. Configure email signups and a Magic Link email template that includes the numeric token:
 
 ```html
-<h2>Your GeM Saathi sign-in code</h2>
+<h2>Your GeM BizReady sign-in code</h2>
 <p>{{ .Token }}</p>
 <p>Enter this code in the app. If you did not request it, ignore this email.</p>
 ```

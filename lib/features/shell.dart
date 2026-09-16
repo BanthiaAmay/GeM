@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../core/models.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
 import 'widgets.dart';
@@ -136,9 +137,34 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 ),
               ),
             ),
-          TextButton(
-            onPressed: s.changeLanguage,
-            child: Text(s.hi ? 'English' : 'हिंदी'),
+          PopupMenuButton<String>(
+            initialValue: s.language,
+            onSelected: s.setLanguage,
+            itemBuilder: (context) => [
+              for (final lang in supportedLanguages)
+                PopupMenuItem(
+                  value: lang[0],
+                  child: Text(
+                    lang[1],
+                    style: TextStyle(
+                      fontWeight: lang[0] == s.language
+                          ? FontWeight.w700
+                          : FontWeight.w400,
+                    ),
+                  ),
+                ),
+            ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Text(
+                supportedLanguages
+                    .firstWhere(
+                      (lang) => lang[0] == s.language,
+                      orElse: () => supportedLanguages[0],
+                    )[1],
+                style: const TextStyle(color: muted),
+              ),
+            ),
           ),
           if (wide)
             Padding(
@@ -175,7 +201,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 ['register', 'Register on GeM', 'GeM पर पंजीकरण'],
                 ['support', 'Get support', 'सहायता लें'],
                 ['account', 'Save & privacy', 'सहेजें और गोपनीयता'],
-                ['about', 'About the project', 'परियोजना के बारे में'],
               ])
                 ListTile(
                   title: Text(s.t(n[1], n[2])),
@@ -225,7 +250,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                       'register' => RegisterPage(s),
                       'account' => AccountPage(s),
                       'support' => SupportPage(s),
-                      'about' => AboutPage(s),
                       _ => Column(
                         children: [
                           Text(s.t('Page not found', 'पेज नहीं मिला')),
@@ -242,8 +266,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                       children: [
                         Text(
                           s.t(
-                            'GeM Saathi  •  Small business. Bigger possibilities.',
-                            'GeM साथी  •  छोटा व्यवसाय। बड़ी संभावनाएँ।',
+                            'GeM BizReady  •  Small business. Bigger possibilities.',
+                            'GeM BizReady  •  छोटा व्यवसाय। बड़ी संभावनाएँ।',
                           ),
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
@@ -262,10 +286,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                     Wrap(
                       spacing: 16,
                       children: [
-                        TextButton(
-                          onPressed: () => go(context, s, 'about'),
-                          child: Text(s.t('About & sources', 'परिचय और स्रोत')),
-                        ),
                         TextButton(
                           onPressed: () => go(context, s, 'account'),
                           child: Text(

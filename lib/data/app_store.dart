@@ -27,7 +27,12 @@ class AppStore extends ChangeNotifier {
   String get storageKey =>
       'saathi.v1.${client?.auth.currentUser?.id ?? 'guest'}';
   bool get hi => data['language'] == 'hi';
+  String get language => data['language'] as String? ?? 'en';
   bool get consent => data['researchConsent'] == true;
+  /// Whether this device has ever completed the welcome/language
+  /// onboarding flow. Device-scoped (not per-account) so a returning
+  /// user never sees the "Get started" welcome screen again.
+  bool get hasOnboarded => prefs.getBool('saathi.v1.onboarded') ?? false;
   bool get signedIn => client?.auth.currentUser != null;
   bool get configured => client != null;
   Map<String, dynamic> section(String key) =>
@@ -35,7 +40,15 @@ class AppStore extends ChangeNotifier {
   List<String> get completed => List<String>.from(data['completed'] ?? []);
   List<bool> get checklist =>
       List<bool>.from(data['checklist'] ?? List.filled(steps.length, false));
-  String t(String en, String hindi) => tr(hi, en, hindi);
+  String t(String en, String hindi, {Map<String, String>? vars}) {
+    var out = tr(language, en, hindi);
+    if (vars != null) {
+      for (final entry in vars.entries) {
+        out = out.replaceAll('{${entry.key}}', entry.value);
+      }
+    }
+    return out;
+  }
   void _read() {
     try {
       data = Map<String, dynamic>.from(
@@ -80,9 +93,46 @@ class AppStore extends ChangeNotifier {
     await prefs.setString('$storageKey.events', jsonEncode(queue));
   }
 
-  void changeLanguage() {
-    data['language'] = hi ? 'en' : 'hi';
+  void setLanguage(String value) {
+    data['language'] = value;
     unawaited(persist());
+    notifyListeners();
+  }
+
+  /// Whether the seller says their business is already listed on GeM —
+  /// asked once during onboarding, right after language. Informational
+  /// only for now; nothing downstream branches on it yet.
+  bool get alreadyOnGem => data['alreadyOnGem'] == true;
+
+  void setAlreadyOnGem(bool value) {
+    data['alreadyOnGem'] = value;
+    unawaited(persist());
+    notifyListeners();
+  }
+
+  /// Free-form answers collected across the "not yet on GeM" onboarding
+  /// walkthrough (name, business details, readiness checks). One bag
+  /// rather than a field per screen — this is preparation input, not
+  /// verified identity data (no PAN/Aadhaar numbers are ever asked for).
+  Map<String, dynamic> get profile =>
+      Map<String, dynamic>.from(data['profile'] as Map? ?? {});
+
+  void setProfile(String key, dynamic value) {
+    data['profile'] = {...profile, key: value};
+    unawaited(persist());
+    notifyListeners();
+  }
+
+  Future<void> completeOnboarding() async {
+    await prefs.setBool('saathi.v1.onboarded', true);
+    notifyListeners();
+  }
+
+  /// Lets a returning user step back through the welcome/language
+  /// screens again (e.g. to review them, or switch language from
+  /// scratch) without reinstalling the app.
+  Future<void> resetOnboarding() async {
+    await prefs.setBool('saathi.v1.onboarded', false);
     notifyListeners();
   }
 
@@ -324,7 +374,7 @@ class AppStore extends ChangeNotifier {
 
   String report() {
     final b = StringBuffer(
-      t('GeM Saathi • My business plan', 'GeM साथी • मेरी व्यवसाय योजना'),
+      t('GeM BizReady • My business plan', 'GeM BizReady • मेरी व्यवसाय योजना'),
     );
     b.writeln(
       '\n${DateFormat('dd MMM yyyy').format(DateTime.now())} | $ruleVersion',
@@ -340,7 +390,7 @@ class AppStore extends ChangeNotifier {
       b.writeln('\n${toolName(key)}');
       if (key == 'eligibility') {
         final r = Eligibility.evaluate(s);
-        b.writeln('${classificationName(r.enterprise, hi)} • ${r.verdict}');
+        b.writeln('${classificationName(r.enterprise, language)} • ${r.verdict}');
       }
       if (key == 'revenue') {
         b.writeln(
@@ -369,7 +419,10 @@ class AppStore extends ChangeNotifier {
     }
     final c = checklist;
     b.writeln(
-      '\n${t('Your next action', 'आपका अगला कदम')}: ${steps[!c.contains(false) ? steps.length - 1 : c.indexOf(false)][hi ? 1 : 0]}',
+      '\n${t('Your next action', 'आपका अगला कदम')}: ${(() {
+        final row = steps[!c.contains(false) ? steps.length - 1 : c.indexOf(false)];
+        return tr(language, row[0], row[1]);
+      })()}',
     );
     b.writeln(
       '\n${t('Sources', 'स्रोत')}:\n$udyamSource\n$feeSource\n$gemSource',

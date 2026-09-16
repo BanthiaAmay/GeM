@@ -1,4 +1,4 @@
-# GeM Saathi
+# GeM BizReady
 
 Flutter application for **Android and web**: GeM education, eligibility/classification, revenue scenarios, pricing, ROI, onboarding tracker, combined reports and Supabase-backed follow-up.
 

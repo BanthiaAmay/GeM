@@ -1,4 +1,4 @@
-# GeM Saathi — Design and Architecture
+# GeM BizReady — Design and Architecture
 
 Version 1.0 · 9 September 2026
 

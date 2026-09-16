@@ -15,7 +15,7 @@ void main() {
     'tool results and language survive a restart; upstream changes invalidate ROI',
     () async {
       s.complete('roi', {'firstYear': 1000});
-      s.changeLanguage();
+      s.setLanguage('hi');
       s.complete('eligibility', {
         'pan': true,
         'bank': true,

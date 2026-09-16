@@ -83,8 +83,8 @@ class HomePage extends StatelessWidget {
                 const SizedBox(height: 22),
                 Text(
                   s.t(
-                    'Free to use  ·  No login needed  ·  English / हिंदी',
-                    'मुफ़्त उपयोग  ·  लॉगिन ज़रूरी नहीं  ·  English / हिंदी',
+                    'Free to use  ·  No login needed',
+                    'मुफ़्त उपयोग  ·  लॉगिन ज़रूरी नहीं',
                   ),
                   style: const TextStyle(fontSize: 12, color: green),
                 ),
@@ -226,8 +226,9 @@ class HomePage extends StatelessWidget {
                       ),
                       Text(
                         s.t(
-                          '${s.completed.length} of 4 calculators completed',
-                          '4 में से ${s.completed.length} गणनाएँ पूरी',
+                          '{n} of 4 calculators completed',
+                          '4 में से {n} गणनाएँ पूरी',
+                          vars: {'n': '${s.completed.length}'},
                         ),
                       ),
                     ],
@@ -564,8 +565,9 @@ class TrackerPage extends StatelessWidget {
             children: [
               Text(
                 s.t(
-                  '$done of ${steps.length} steps resolved',
-                  '$done / ${steps.length} कदम पूरे',
+                  '{done} of {total} steps resolved',
+                  '{done} / {total} कदम पूरे',
+                  vars: {'done': '$done', 'total': '${steps.length}'},
                 ),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
@@ -602,7 +604,7 @@ class TrackerPage extends StatelessWidget {
                   onChanged: (v) => s.check(i, v ?? false),
                 ),
                 title: Text(
-                  steps[i][s.hi ? 1 : 0],
+                  tr(s.language, steps[i][0], steps[i][1]),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 subtitle: Text(
@@ -621,7 +623,7 @@ class TrackerPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(steps[i][s.hi ? 3 : 2]),
+                        Text(tr(s.language, steps[i][2], steps[i][3])),
                         const SizedBox(height: 8),
                         Text(
                           s.t(
@@ -718,7 +720,7 @@ class ReportPage extends StatelessWidget {
                         ),
                       ],
                       fileNameOverrides: ['gem-saathi-report.txt'],
-                      subject: 'GeM Saathi report',
+                      subject: 'GeM BizReady report',
                     ),
                   );
                   s.event('report_exported', page: 'report');
@@ -809,9 +811,12 @@ class ReportPage extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                steps[!s.checklist.contains(false)
-                    ? steps.length - 1
-                    : s.checklist.indexOf(false)][s.hi ? 1 : 0],
+                (() {
+                  final row = steps[!s.checklist.contains(false)
+                      ? steps.length - 1
+                      : s.checklist.indexOf(false)];
+                  return tr(s.language, row[0], row[1]);
+                })(),
               ),
               NextActions(s, s.nextTool),
             ],
@@ -840,7 +845,7 @@ class ReportPage extends StatelessWidget {
     final r = s.section(k);
     return switch (k) {
       'eligibility' =>
-        '${classificationName(Eligibility.evaluate(r).enterprise, s.hi)} · ${switch (Eligibility.evaluate(r).verdict) {
+        '${classificationName(Eligibility.evaluate(r).enterprise, s.language)} · ${switch (Eligibility.evaluate(r).verdict) {
           'yes' => s.t('Ready to explore', 'आगे बढ़ने के लिए तैयार'),
           'choice' => s.t('Not pursuing now', 'अभी आगे नहीं बढ़ना'),
           _ => s.t('Some details to resolve', 'कुछ जानकारी पूरी करनी है'),
@@ -907,7 +912,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             : Icons.radio_button_unchecked,
                         color: green,
                       ),
-                      title: Text(steps[i][s.hi ? 1 : 0]),
+                      title: Text(tr(s.language, steps[i][0], steps[i][1])),
                     ),
                   Text(
                     s.t(
@@ -1388,6 +1393,43 @@ class _AccountPageState extends State<AccountPage> {
             ),
           ],
         ),
+        const SizedBox(height: 24),
+        Panel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.replay_outlined, color: green, size: 32),
+              const SizedBox(height: 16),
+              Text(
+                s.t('Revisit the welcome screens', 'वेलकम स्क्रीन फिर देखें'),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                s.t(
+                  'Go back through the "Get started" and language screens again. Your saved tools and progress are not affected.',
+                  '"शुरू करें" और भाषा वाली स्क्रीन फिर से देखें। आपके सेव किए टूल और प्रगति पर कोई असर नहीं होगा।',
+                ),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  await s.resetOnboarding();
+                  if (context.mounted) {
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      '/welcome',
+                      (route) => false,
+                    );
+                  }
+                },
+                icon: const Icon(Icons.arrow_back, size: 18),
+                label: Text(
+                  s.t('Go to welcome screen', 'वेलकम स्क्रीन पर जाएँ'),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -1611,99 +1653,4 @@ class _SupportPageState extends State<SupportPage> {
       ],
     );
   }
-}
-
-class AboutPage extends StatelessWidget {
-  final AppStore s;
-  const AboutPage(this.s, {super.key});
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Heading(
-        s.t('ABOUT GeM SAATHI', 'GeM साथी के बारे में'),
-        s.t('Clarity before commitment.', 'प्रतिबद्धता से पहले स्पष्टता।'),
-        s.t(
-          'An independent entrepreneurship and financial empowerment project led by Amay, focused on Pune and Maharashtra SMEs.',
-          'अमय के नेतृत्व में पुणे और महाराष्ट्र के SME पर केंद्रित स्वतंत्र उद्यमिता और वित्तीय सशक्तिकरण परियोजना।',
-        ),
-      ),
-      Panel(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              s.t('Research informs the tools', 'शोध से टूल का विकास'),
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              s.t(
-                'The supplied project brief describes a 20-owner diagnostic survey. Eligibility uncertainty and low confidence about revenue and effort inform this journey. Raw survey data, dates and interview timing evidence have not yet been supplied; survey figures are provisional project inputs.',
-                'दिए गए परियोजना विवरण में 20 मालिकों के सर्वेक्षण का उल्लेख है। पात्रता की अनिश्चितता और आय व प्रयास पर कम भरोसा इस यात्रा का आधार हैं। मूल सर्वेक्षण डेटा, तिथियाँ और समय संबंधी प्रमाण अभी नहीं मिले हैं; सर्वेक्षण आँकड़े प्रारंभिक इनपुट हैं।',
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              s.t('What the tools can tell you', 'टूल क्या बता सकते हैं'),
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              s.t(
-                'The calculators provide transparent scenarios. GeM determines seller acceptance, buyers award contracts, and only independently reviewed evidence counts as a verified outcome. GeM Saathi is not a government service or an authorised registration agent.',
-                'कैलकुलेटर स्पष्ट परिदृश्य देते हैं। विक्रेता स्वीकृति GeM तय करता है, अनुबंध खरीदार देते हैं और स्वतंत्र प्रमाण जाँच ही सत्यापित परिणाम है। GeM साथी सरकारी सेवा या अधिकृत पंजीकरण एजेंट नहीं है।',
-              ),
-            ),
-            SourceNote(
-              s,
-              s.t(
-                'MSME thresholds · Udyam · effective 1 Apr 2025',
-                'MSME सीमाएँ · उद्यम · लागू 1 अप्रैल 2025',
-              ),
-              udyamSource,
-            ),
-            SourceNote(
-              s,
-              s.t(
-                'GeM fees · PIB · 21 Sep 2024',
-                'GeM शुल्क · PIB · 21 सितम्बर 2024',
-              ),
-              feeSource,
-            ),
-            SourceNote(
-              s,
-              s.t(
-                'MSE purchase preference · MSME CHAMPIONS',
-                'MSE खरीद वरीयता · MSME CHAMPIONS',
-              ),
-              policySource,
-            ),
-            SourceNote(
-              s,
-              s.t(
-                'Live procurement statistics · GeM',
-                'लाइव खरीद आँकड़े · GeM',
-              ),
-              'https://gem.gov.in/statistics',
-            ),
-            const SizedBox(height: 12),
-            Text(
-              s.t(
-                'Policy sources reviewed 9 September 2026. Category benchmark data is published only with a source, sample size, date and methodology.',
-                'नीति स्रोतों की जाँच 9 सितम्बर 2026। श्रेणी आँकड़े केवल स्रोत, नमूना आकार, तिथि और विधि के साथ प्रकाशित किए जाते हैं।',
-              ),
-            ),
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: () => go(context, s, 'support'),
-              child: Text(
-                s.t('Contact the project', 'परियोजना से संपर्क करें'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
 }

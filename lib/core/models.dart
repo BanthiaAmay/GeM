@@ -1,5 +1,20 @@
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
+import 'translations.dart';
+
+/// Every language this app can display, in the order shown on the
+/// language picker: [code, native name, English name].
+const supportedLanguages = <List<String>>[
+  ['en', 'English', 'English'],
+  ['hi', 'हिन्दी', 'Hindi'],
+  ['mr', 'मराठी', 'Marathi'],
+  ['bn', 'বাংলা', 'Bengali'],
+  ['gu', 'ગુજરાતી', 'Gujarati'],
+  ['pa', 'ਪੰਜਾਬੀ', 'Punjabi'],
+  ['ta', 'தமிழ்', 'Tamil'],
+  ['te', 'తెలుగు', 'Telugu'],
+  ['kn', 'ಕನ್ನಡ', 'Kannada'],
+];
 
 const ruleVersion = '2026-09-09.v1';
 const udyamSource = 'https://udyamregistration.gov.in/Important.aspx';
@@ -12,7 +27,17 @@ String money(num value) => NumberFormat.currency(
   symbol: '₹',
   decimalDigits: 0,
 ).format(value);
-String tr(bool hi, String en, String hindi) => hi ? hindi : en;
+/// Resolves an (English, Hindi) pair authored at the call site to the
+/// current language. English and Hindi are exactly what was authored
+/// there; every other language is looked up in the central
+/// [kTranslations] table by the English text, falling back to English
+/// itself if that specific string hasn't been translated for `lang` yet
+/// — so an unsupported combination never shows blank text or crashes.
+String tr(String lang, String en, String hindi) => switch (lang) {
+  'hi' => hindi,
+  'en' => en,
+  _ => kTranslations[en]?[lang] ?? en,
+};
 
 enum Enterprise { micro, small, medium, other }
 
@@ -33,11 +58,11 @@ void checkNumber(double n) {
   }
 }
 
-String classificationName(Enterprise e, bool hi) => switch (e) {
-  Enterprise.micro => tr(hi, 'Micro enterprise', 'सूक्ष्म उद्यम'),
-  Enterprise.small => tr(hi, 'Small enterprise', 'लघु उद्यम'),
-  Enterprise.medium => tr(hi, 'Medium enterprise', 'मध्यम उद्यम'),
-  Enterprise.other => tr(hi, 'Outside MSME thresholds', 'MSME सीमा से बाहर'),
+String classificationName(Enterprise e, String lang) => switch (e) {
+  Enterprise.micro => tr(lang, 'Micro enterprise', 'सूक्ष्म उद्यम'),
+  Enterprise.small => tr(lang, 'Small enterprise', 'लघु उद्यम'),
+  Enterprise.medium => tr(lang, 'Medium enterprise', 'मध्यम उद्यम'),
+  Enterprise.other => tr(lang, 'Outside MSME thresholds', 'MSME सीमा से बाहर'),
 };
 
 class Eligibility {

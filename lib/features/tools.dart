@@ -19,7 +19,8 @@ class _ToolPageState extends State<ToolPage> {
   Map<String, dynamic>? result;
   AppStore get s => widget.store;
   String get k => widget.kind;
-  String t(String en, String hi) => s.t(en, hi);
+  String t(String en, String hi, {Map<String, String>? vars}) =>
+      s.t(en, hi, vars: vars);
   @override
   void initState() {
     super.initState();
@@ -101,7 +102,11 @@ class _ToolPageState extends State<ToolPage> {
           );
         }
         if (max != null && x > max) {
-          return t('Maximum is $max', 'अधिकतम $max है');
+          return t(
+            'Maximum is {max}',
+            'अधिकतम {max} है',
+            vars: {'max': '$max'},
+          );
         }
         if (integer && x != x.roundToDouble()) {
           return t('Use whole orders', 'पूरे ऑर्डर की संख्या दें');
@@ -832,7 +837,7 @@ class _ToolPageState extends State<ToolPage> {
       Text(verdict, style: Theme.of(context).textTheme.headlineMedium),
       const SizedBox(height: 12),
       Text(
-        classificationName(e.enterprise, s.hi),
+        classificationName(e.enterprise, s.language),
         style: Theme.of(context).textTheme.titleLarge,
       ),
       if (r['selfClass'] != 'unsure' && r['selfClass'] != e.enterprise.name)

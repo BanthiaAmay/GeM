@@ -1,4 +1,4 @@
-# GeM Saathi — Product Requirements
+# GeM BizReady — Product Requirements
 
 Version 1.0 · 9 September 2026 · Product owner: Amay
 
