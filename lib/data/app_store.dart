@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import '../gst/invoice.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -29,6 +30,7 @@ class AppStore extends ChangeNotifier {
   bool get hi => data['language'] == 'hi';
   String get language => data['language'] as String? ?? 'en';
   bool get consent => data['researchConsent'] == true;
+
   /// Whether this device has ever completed the welcome/language
   /// onboarding flow. Device-scoped (not per-account) so a returning
   /// user never sees the "Get started" welcome screen again.
@@ -38,6 +40,63 @@ class AppStore extends ChangeNotifier {
   Map<String, dynamic> section(String key) =>
       Map<String, dynamic>.from(data[key] as Map? ?? {});
   List<String> get completed => List<String>.from(data['completed'] ?? []);
+  List<GstInvoice> get gstInvoices => (data['gstInvoices'] as List? ?? [])
+      .map((e) => GstInvoice.fromJson(Map<String, dynamic>.from(e as Map)))
+      .toList();
+  List<Gst2bEntry> get gst2b => (data['gst2b'] as List? ?? [])
+      .map((e) => Gst2bEntry.fromJson(Map<String, dynamic>.from(e as Map)))
+      .toList();
+  String get gst2bPeriod => data['gst2bPeriod'] as String? ?? '';
+  void saveGstInvoice(GstInvoice invoice) {
+    final rows = gstInvoices.where((e) => e.id != invoice.id).toList()
+      ..add(invoice);
+    data['gstInvoices'] = rows.map((e) => e.toJson()).toList();
+    save();
+  }
+
+  Future<void> removeGstInvoice(GstInvoice invoice) async {
+    if (signedIn) {
+      await client!.from('gst_invoice_records').delete().eq('id', invoice.id);
+      if (invoice.documentPath != null) {
+        await client!.storage.from('gst-invoices').remove([
+          invoice.documentPath!,
+        ]);
+      }
+    }
+    data['gstInvoices'] = gstInvoices
+        .where((e) => e.id != invoice.id)
+        .map((e) => e.toJson())
+        .toList();
+    save();
+  }
+
+  void saveGst2b(List<Gst2bEntry> rows, String period) {
+    data['gst2b'] = rows.map((e) => e.toJson()).toList();
+    data['gst2bPeriod'] = period;
+    save();
+  }
+
+  Future<String> uploadInvoicePdf(String id, Uint8List bytes) async {
+    if (!signedIn) throw StateError('Sign in to store a PDF online');
+    final path = '${client!.auth.currentUser!.id}/$id.pdf';
+    await client!.storage
+        .from('gst-invoices')
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(
+            contentType: 'application/pdf',
+            upsert: true,
+          ),
+        );
+    return path;
+  }
+
+  Future<String> signedInvoiceUrl(String path) async {
+    if (!signedIn) throw StateError('Sign in to open a saved PDF');
+    return client!.storage.from('gst-invoices').createSignedUrl(path, 60);
+  }
+
   List<bool> get checklist =>
       List<bool>.from(data['checklist'] ?? List.filled(steps.length, false));
   String t(String en, String hindi, {Map<String, String>? vars}) {
@@ -49,6 +108,7 @@ class AppStore extends ChangeNotifier {
     }
     return out;
   }
+
   void _read() {
     try {
       data = Map<String, dynamic>.from(
@@ -251,6 +311,7 @@ class AppStore extends ChangeNotifier {
           .select('state')
           .eq('id', client!.auth.currentUser!.id)
           .maybeSingle();
+      final existingInvoices = gstInvoices;
       final remote = Map<String, dynamic>.from(row?['state'] ?? {});
       if (remote.isNotEmpty &&
           (remote['updatedAt'] as String? ?? '').compareTo(
@@ -259,6 +320,20 @@ class AppStore extends ChangeNotifier {
               0) {
         data = remote;
       }
+      final cloudRows = List<Map<String, dynamic>>.from(
+        await client!
+            .from('gst_invoice_records')
+            .select('payload')
+            .eq('user_id', client!.auth.currentUser!.id),
+      );
+      final merged = {for (final e in existingInvoices) e.id: e};
+      for (final row in cloudRows) {
+        final invoice = GstInvoice.fromJson(
+          Map<String, dynamic>.from(row['payload']),
+        );
+        merged[invoice.id] = invoice;
+      }
+      data['gstInvoices'] = merged.values.map((e) => e.toJson()).toList();
       _loadedCloud = true;
       outcomes = List<Map<String, dynamic>>.from(
         await client!.from('outcomes').select(),
@@ -287,12 +362,20 @@ class AppStore extends ChangeNotifier {
       do {
         _syncAgain = false;
         final id = client!.auth.currentUser!.id;
-        final snapshot = jsonDecode(jsonEncode(data));
+        final snapshot = jsonDecode(jsonEncode(data)) as Map<String, dynamic>;
+        snapshot.remove('gstInvoices');
         await client!.from('profiles').upsert({
           'id': id,
           'state': snapshot,
           'research_consent': consent,
         });
+        for (final invoice in gstInvoices) {
+          await client!.from('gst_invoice_records').upsert({
+            'id': invoice.id,
+            'user_id': id,
+            'payload': invoice.toJson(),
+          });
+        }
         if (consent && queue.isNotEmpty) {
           final batch = queue.take(100).toList();
           await client!
@@ -360,6 +443,8 @@ class AppStore extends ChangeNotifier {
     try {
       if (syncing) await _syncDone!.future;
       if (signedIn) {
+        final paths=gstInvoices.map((e)=>e.documentPath).whereType<String>().toList();
+        if(paths.isNotEmpty) await client!.storage.from('gst-invoices').remove(paths);
         await client!.rpc('delete_my_data');
       }
       data = {};
@@ -390,7 +475,9 @@ class AppStore extends ChangeNotifier {
       b.writeln('\n${toolName(key)}');
       if (key == 'eligibility') {
         final r = Eligibility.evaluate(s);
-        b.writeln('${classificationName(r.enterprise, language)} • ${r.verdict}');
+        b.writeln(
+          '${classificationName(r.enterprise, language)} • ${r.verdict}',
+        );
       }
       if (key == 'revenue') {
         b.writeln(

@@ -11,12 +11,14 @@ class FlowAuthorisedPage extends StatefulWidget {
 }
 
 class _FlowAuthorisedPageState extends State<FlowAuthorisedPage> {
-  late String selected = widget.store.profile['authorisedReady'] as String? ?? '';
+  late String selected =
+      widget.store.profile['authorisedReady'] as String? ?? '';
 
   @override
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 3 / 5,
       sectionLabel: s.t('Get ready', 'तैयार हो जाएँ'),
@@ -75,11 +77,15 @@ class _FlowPrivacyPageState extends State<FlowPrivacyPage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 1,
       sectionLabel: s.t('Getting started', 'शुरुआत'),
       stepLabel: s.t('GETTING STARTED · 3 OF 3', 'शुरुआत · 3 में से 3'),
-      headline: s.t('Your information stays yours', 'आपकी जानकारी आपकी ही रहती है'),
+      headline: s.t(
+        'Your information stays yours',
+        'आपकी जानकारी आपकी ही रहती है',
+      ),
       subtitle: s.t(
         'We’ll use your answers to tailor a readiness guide.',
         'हम आपके उत्तरों से एक तैयारी गाइड बनाएँगे।',
@@ -161,6 +167,7 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 1,
       sectionLabel: s.t('Get ready', 'तैयार हो जाएँ'),
@@ -180,10 +187,9 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
           // Already on GeM: these 11 steps are all we ask for — no
           // PAN check, readiness checklist, video, or redirect.
           s.completeOnboarding();
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/home',
-            (route) => false,
-          );
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/home', (route) => false);
           return;
         }
         Navigator.of(context).pushNamed('/flow-pan');
@@ -213,10 +219,7 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
         ),
         OnboardingCheckOption(
           icon: Icons.apartment_outlined,
-          label: s.t(
-            'Business registration details',
-            'व्यवसाय पंजीकरण विवरण',
-          ),
+          label: s.t('Business registration details', 'व्यवसाय पंजीकरण विवरण'),
           sublabel: s.t(
             'CIN, LLPIN, deed or equivalent',
             'CIN, LLPIN, डीड या समान',
@@ -275,6 +278,7 @@ class _FlowPanPageState extends State<FlowPanPage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 4 / 5,
       sectionLabel: s.t('Get ready', 'तैयार हो जाएँ'),

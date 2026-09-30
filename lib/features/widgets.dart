@@ -97,7 +97,7 @@ class Tag extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
     decoration: BoxDecoration(
-      color: color ?? const Color(0xFFEDF3E9),
+      color: color ?? lime,
       borderRadius: BorderRadius.circular(6),
     ),
     child: Text(

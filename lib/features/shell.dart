@@ -6,6 +6,7 @@ import '../data/app_store.dart';
 import 'widgets.dart';
 import 'pages.dart';
 import 'tools.dart';
+import 'gst_pages.dart';
 
 class AppShell extends StatefulWidget {
   final AppStore store;
@@ -59,11 +60,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width >= 900;
+    final wide = MediaQuery.sizeOf(context).width >= 1180;
     final nav = [
       ['', 'Home', 'होम'],
       ['learn', 'What is GeM?', 'GeM क्या है?'],
       ['tools', 'Explore tools', 'सभी टूल'],
+      ['gst', 'GST workspace', 'GST कार्यक्षेत्र'],
       ['report', 'My report', 'मेरी रिपोर्ट'],
     ];
     Widget brand() => InkWell(
@@ -78,7 +80,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: green,
+                color: ink,
                 borderRadius: BorderRadius.circular(11),
               ),
               child: const Icon(
@@ -97,11 +99,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               ),
             ),
             const Text(
-              'Saathi',
+              'BizReady',
               style: TextStyle(
                 fontWeight: FontWeight.w400,
                 fontSize: 22,
-                color: green,
+                color: ink,
               ),
             ),
           ],
@@ -157,11 +159,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               child: Text(
-                supportedLanguages
-                    .firstWhere(
-                      (lang) => lang[0] == s.language,
-                      orElse: () => supportedLanguages[0],
-                    )[1],
+                supportedLanguages.firstWhere(
+                  (lang) => lang[0] == s.language,
+                  orElse: () => supportedLanguages[0],
+                )[1],
                 style: const TextStyle(color: muted),
               ),
             ),
@@ -190,6 +191,53 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             ),
         ],
       ),
+      bottomNavigationBar: wide
+          ? null
+          : SafeArea(
+              top: false,
+              child: NavigationBar(
+                selectedIndex: widget.page.startsWith('gst')
+                    ? 2
+                    : widget.page == 'report'
+                    ? 3
+                    : [
+                        'tools',
+                        'eligibility',
+                        'revenue',
+                        'pricing',
+                        'roi',
+                        'tracker',
+                      ].contains(widget.page)
+                    ? 1
+                    : 0,
+                onDestinationSelected: (index) {
+                  final destination = ['', 'tools', 'gst', 'report'][index];
+                  if (widget.page != destination) go(context, s, destination);
+                },
+                destinations: [
+                  NavigationDestination(
+                    icon: const Icon(Icons.home_outlined),
+                    selectedIcon: const Icon(Icons.home),
+                    label: s.t('Home', 'होम'),
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.grid_view_outlined),
+                    selectedIcon: const Icon(Icons.grid_view),
+                    label: s.t('Tools', 'टूल'),
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.receipt_long_outlined),
+                    selectedIcon: const Icon(Icons.receipt_long),
+                    label: 'GST',
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.description_outlined),
+                    selectedIcon: const Icon(Icons.description),
+                    label: s.t('Report', 'रिपोर्ट'),
+                  ),
+                ],
+              ),
+            ),
       endDrawer: Drawer(
         child: SafeArea(
           child: ListView(
@@ -200,6 +248,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 ['tracker', 'Readiness tracker', 'तैयारी ट्रैकर'],
                 ['register', 'Register on GeM', 'GeM पर पंजीकरण'],
                 ['support', 'Get support', 'सहायता लें'],
+                ['gst-invoices', 'Invoices', 'इनवॉइस'],
+                ['gst-returns', 'Return review', 'रिटर्न समीक्षा'],
+                ['gst-reconcile', 'Reconcile', 'मिलान करें'],
+                ['gst-documents', 'Documents', 'दस्तावेज़'],
+                ['about', 'About', 'परिचय'],
                 ['account', 'Save & privacy', 'सहेजें और गोपनीयता'],
               ])
                 ListTile(
@@ -250,6 +303,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                       'register' => RegisterPage(s),
                       'account' => AccountPage(s),
                       'support' => SupportPage(s),
+                      'gst' => GstHubPage(s),
+                      'gst-invoices' => GstInvoicesPage(s),
+                      'gst-upload' => GstUploadPage(s),
+                      'gst-returns' => GstReturnsPage(s),
+                      'gst-reconcile' => GstReconcilePage(s),
+                      'gst-documents' => GstDocumentsPage(s),
+                      'about' => AboutPage(s),
                       _ => Column(
                         children: [
                           Text(s.t('Page not found', 'पेज नहीं मिला')),

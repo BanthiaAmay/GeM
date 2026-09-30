@@ -1,6 +1,6 @@
 # GeM BizReady — Product Requirements
 
-Version 1.0 · 9 September 2026 · Product owner: Amay
+Version 1.1 · 22 September 2026 · Product owner: Amay
 
 ## Purpose
 Help Pune and Maharashtra small business owners decide whether to pursue Government e-Marketplace selling, understand their business classification and financial assumptions, and leave with a saved next action. Deliver one Flutter application for Android and the web, backed by Supabase when configured.
@@ -20,6 +20,8 @@ Users may move through several states. Tools are independently accessible; no ac
 
 The user owns the registration process on the official GeM website. This application does not register sellers, submit bids or promise orders.
 
+The GST workspace helps an owner organise invoice data for review. It does not submit a return, create an official challan, pay tax or automate a taxpayer's GST or GeM portal login.
+
 ## Delivered product scope
 1. Responsive home, tool directory and GeM 101.
 2. Eligibility/classification checker with document gaps and conditional guidance.
@@ -33,6 +35,8 @@ The user owns the registration process on the official GeM website. This applica
 10. Workshop-interest, CA-referral and guidance requests, with explicit follow-up consent.
 11. Optional research telemetry, referral attribution, evidence review and operator research export.
 12. English/Hindi interface and local guest persistence.
+13. Optional guided onboarding with a visible skip action; the black-and-white visual language continues across tools and workspace screens.
+14. GST workspace with local PDF text extraction, editable sales/purchase invoice drafts, explicit review state, deterministic checks, private optional PDF storage, period summary, GSTR-2B comparison template, working paper and document list.
 
 ## Information architecture
 - `/` Home
@@ -44,6 +48,7 @@ The user owns the registration process on the official GeM website. This applica
 - `/account` Email sign-in, sync, research consent and data deletion
 - `/support` Workshop and partner requests
 - `/about` Project, limitations and source register
+- `/gst`, `/gst-invoices`, `/gst-upload`, `/gst-returns`, `/gst-reconcile`, `/gst-documents` GST preparation workspace
 
 Web uses Flutter's hash routes, e.g. `/#/revenue`; distribution URLs use `/?ref=ca_pune_01#/eligibility`. Android uses the same Navigator routes within the app. Android campaign/install attribution is not implemented; web query attribution is supported.
 
@@ -99,6 +104,14 @@ Nine steps include identity/bank, GST applicability, Udyam benefits, account, ca
 - Research withdrawal stops new telemetry and clears unsent events. Project-data deletion removes uploaded project data. Authentication identity remains and may be deleted separately by an operator if requested.
 - Cloud errors preserve local work and show a pending-sync state. Support/milestone submissions require connectivity and do not pretend to succeed offline.
 - Workshop interest is not a scheduled booking. CA availability and follow-up remain human operations; no outgoing email or WhatsApp is sent automatically.
+
+### GST preparation and user review
+- Import a text PDF locally on Android/web and propose invoice number, date, GSTIN and amount fields. Extraction is a draft, never an automatic declaration. Image-only PDFs remain editable blank drafts until OCR is intentionally added.
+- Flag missing values, format/checksum issues, duplicate invoice keys, tax-arithmetic differences and incompatible IGST versus CGST/SGST components. A checksum is not live GSTIN registration status; tax rate and place-of-supply treatment require independent review.
+- Require an explicit review tick before marking a draft reviewed. Edited fields reset that state. Show unreviewed and problematic records in the workspace.
+- Keep guest invoice metadata on the current device. Signed-in users may sync invoice records under per-user RLS and separately choose whether to save PDF bytes in private Storage; use short-lived signed URLs to open their documents.
+- Accept the documented comparison CSV schema for purchase-versus-GSTR-2B review. Do not claim arbitrary official export compatibility or ITC eligibility. Label period totals and differences as working figures, not a return, payable liability or official reconciliation.
+- Provide a user-generated working paper and an official-portal handoff. Filing, declaration, challan, payment, deadline accuracy and live GSTIN checks require official/supported integrations and final authorised user review.
 
 ## Trust and content governance
 Do not publish the supplied FY26 GMV, MSE denominator or Maharashtra figures without dated, comparable official evidence. Live official statistics are linked instead. A 20-person convenience survey cannot support national population claims. Do not label revenue scenarios “benchmarked” unless the data actually supports that use.

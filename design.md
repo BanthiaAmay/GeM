@@ -1,24 +1,23 @@
 # GeM BizReady — Design and Architecture
 
-Version 1.0 · 9 September 2026
+Version 1.1 · 22 September 2026
 
 ## Experience direction
-Calm, practical and independent. The home page introduces a new buyer for an existing business, then offers eligibility or the basics. It avoids giant, unsourced procurement numbers. Cream backgrounds, dark forest text and restrained green/lime accents make a text-first financial tool approachable. The UI uses Flutter Material components; no stock photography or heavy animation.
+Calm, practical and independent. The new onboarding's black-and-white direction is the visual foundation for the entire product. The home page introduces a new buyer for an existing business, then offers eligibility or the basics. It avoids giant, unsourced procurement numbers. White surfaces, warm near-white canvas, charcoal type and restrained gray states keep financial tasks readable. The UI uses Flutter Material components with system-like typography, no stock photography and no heavy animation.
 
 | Token | Value | Role |
 |---|---|---|
-| Canvas | `#F6F7F2` | Page background |
-| Ink | `#163E36` | Headings and dark support panel |
-| Primary | `#22654C` | Actions, links and meaningful icons |
-| Muted | `#62716B` | Supporting copy |
-| Border | `#DFE5DD` | Quiet panel/input boundaries |
-| Accent | `#E4EDB1` | Progress, next action and numbered markers |
+| Canvas | `#FAFAF9` | Page background |
+| Ink/primary | `#17191C` | Headings, actions and dark support panel |
+| Muted | `#525963` | Supporting copy |
+| Border | `#DDE0E3` | Quiet panel/input boundaries |
+| Accent | `#F0F1F2` | Progress, next action and numbered markers |
 | Cards | 20 px radius / 24 px padding | Reusable panels |
 | Inputs/buttons | 10–12 px radius / ≥48 px action height | Touch interaction |
 | Content | 1200 px outer max | Desktop readability |
 
 ## Responsive layout
-Below 900 px, the header uses a drawer and persistent language toggle. Desktop shows the main links and save action. Tool cards use 1/2/3 columns based on available width; forms/results stack below 700 px. The hero splits at 780 px. Content scrolls vertically, text is selectable and numeric fields use number keyboards. Form errors appear inline; transient actions use snackbars. Result values are accompanied by labels and source notes, not colour alone.
+Below 1180 px, the header uses a drawer and persistent language toggle; phones also show a four-destination bottom bar (Home, Tools, GST, Report). Desktop shows the main links and save action. Tool cards use 1/2/3 columns based on available width; forms/results stack below 700 px. The hero splits at 780 px. Content scrolls vertically, text is selectable and numeric fields use number keyboards. Form errors appear inline; transient actions use snackbars. Result values are accompanied by labels and source notes, not colour alone. Primary touch controls meet the 44 px minimum target; onboarding can be skipped without losing access to tools.
 
 English and Hindi copy is kept adjacent through `AppStore.t` / `tr`. Domain categories retain stable English IDs while display labels change. Currency uses Indian grouping and `₹`. Noto Sans Devanagari is bundled (SIL Open Font License) so Hindi does not require a runtime font download; validate rendering on target Android devices. Technical operator data (metric IDs, exported JSON input keys and audit references) is not fully localised. A future content-management release can extract string pairs to ARB without changing the financial model.
 
@@ -56,6 +55,9 @@ flowchart TD
 | `lib/features/widgets.dart` | Panels, headings, stats, source links and next actions |
 | `lib/features/tools.dart` | Validated input forms, calculations and result views |
 | `lib/features/pages.dart` | Home, education, tracker, report, account, support and trust pages |
+| `lib/features/onboarding_flow_*.dart` | Optional guided readiness journey with a persistent skip action |
+| `lib/gst/invoice.dart` | Invoice extraction, validation, summaries and comparison parsing without Flutter |
+| `lib/features/gst_pages.dart` | GST hub, invoice editor, return working paper, reconciliation and documents |
 
 State uses `ChangeNotifier` and shared preferences. Business calculations do not import Flutter, making boundary tests straightforward. Navigator routes are consistent across platforms. Features do not require Supabase credentials to launch.
 
@@ -86,8 +88,11 @@ flowchart LR
 - `research_assignments`: operator-only participant allocation and observation window.
 - `verification_audit`: operator-only review history.
 - `research_export`: operator-only view; no email/contact or raw business inputs. Includes only consented assigned participants.
+- `gst_invoice_records`: per-user invoice JSON under RLS; no public reads. PDF files live in a separate private `gst-invoices` bucket under an authenticated user-ID prefix.
 
 The service-role key is never an app setting. `review_outcome` is executable only by the service role. `delete_my_data` derives the caller from `auth.uid()` and cannot take another user's ID.
+
+Invoice extraction executes in the client. Users inspect and correct draft fields before marking them reviewed. Saving a PDF online is a separate choice. The signed-in owner receives a time-limited URL when opening their saved PDF. Return totals are derived only from entered invoices and remain working figures; the official portal and authorised signatory control filing and payment. See [GST architecture](docs/gst-architecture.md) for the professional-reviewed integration sequence.
 
 ### Persistence and restoration
 Guest and authenticated profiles use distinct local keys. On verified sign-in, a newer cloud snapshot is restored; local guest work seeds an empty account. Cloud restoration must succeed before writes can overwrite an existing profile. Writes are serialised, batched events are idempotent, and edits during a sync request trigger another pass. A failed network request leaves local data available. Deletion waits for an in-flight sync before clearing cloud/local data.
@@ -113,9 +118,9 @@ Static release output is `build/web`; serve over HTTPS on a Flutter-compatible s
 - Pure model tests: threshold edges, invalid numbers, fee exemption/cap, margin versus markup, revenue ordering and loss/no-payback cases.
 - Store tests: restart persistence, consent withdrawal, dependency invalidation, deletion and malformed-storage recovery.
 - Widget tests: mobile Hindi/English, desktop navigation, empty-input errors, all pages at narrow width.
-- SQL smoke tests: schema application, cross-user isolation, consent gate, privileged-column rejection and published-only reads.
+- SQL smoke tests: schema application, cross-user isolation, GST invoice/PDF isolation, consent gate, privileged-column rejection and published-only reads.
 - Release builds: web plus Android APK compilation.
 - Manual live checklist after credentials: OTP delivery, separate-account isolation, restore on another device, request delivery into database, review RPC, deletion and report share targets.
 
 ## Known delivery boundaries
-No live tender scraper, automatic earnings forecast, official seller verification API, direct GeM registration automation, outbound email delivery service, confirmed workshop inventory or operator dashboard is claimed. Operators use Supabase and the supplied SQL/research scripts. The first-load Flutter web runtime is larger than a plain HTML site; the product avoids additional heavy assets but cannot promise a tiny initial download. Offline local calculations work after launch; a complete offline-installable web cache is not configured.
+No live tender scraper, automatic earnings forecast, official seller verification API, direct GeM registration automation, outbound email delivery service, confirmed workshop inventory or operator dashboard is claimed. GST OCR for scanned PDFs, arbitrary official GSTR-2B export support, live GSTIN status, official return filing, challan generation and payment are not implemented. Operators use Supabase and the supplied SQL/research scripts. The first-load Flutter web runtime is larger than a plain HTML site; PDF text extraction adds a lazy PDF engine and the product cannot promise a tiny initial download. Offline local calculations work after launch; a complete offline-installable web cache is not configured.

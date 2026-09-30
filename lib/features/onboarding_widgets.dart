@@ -7,6 +7,7 @@ import '../data/app_store.dart';
 /// headline, optional subtitle, the screen's own content, and a
 /// Continue button (disabled when [onContinue] is null).
 class OnboardingStepScaffold extends StatelessWidget {
+  final AppStore store;
   final VoidCallback onBack;
   final double progress;
   final String sectionLabel;
@@ -19,6 +20,7 @@ class OnboardingStepScaffold extends StatelessWidget {
 
   const OnboardingStepScaffold({
     super.key,
+    required this.store,
     required this.onBack,
     required this.progress,
     required this.sectionLabel,
@@ -33,7 +35,7 @@ class OnboardingStepScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final pct = progress.clamp(0.02, 0.98);
+    final pct = progress.clamp(0.0, 1.0);
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -58,7 +60,20 @@ class OnboardingStepScaffold extends StatelessWidget {
                         fit: BoxFit.contain,
                       ),
                     ),
-                    const SizedBox(width: 48),
+                    TextButton(
+                      onPressed: () async {
+                        await store.completeOnboarding();
+                        if (context.mounted) {
+                          Navigator.of(
+                            context,
+                          ).pushNamedAndRemoveUntil('/home', (route) => false);
+                        }
+                      },
+                      child: Text(
+                        store.t('Skip', 'छोड़ें'),
+                        style: const TextStyle(color: Color(0xFF444A50)),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -83,7 +98,10 @@ class OnboardingStepScaffold extends StatelessWidget {
                 const SizedBox(height: 24),
                 Text(
                   sectionLabel,
-                  style: const TextStyle(fontSize: 15, color: Color(0xFF737B84)),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF737B84),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -110,7 +128,10 @@ class OnboardingStepScaffold extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     subtitle!,
-                    style: const TextStyle(fontSize: 16, color: Color(0xFF737B84)),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF737B84),
+                    ),
                   ),
                 ],
                 const SizedBox(height: 28),
@@ -168,7 +189,10 @@ class OnboardingTextField extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(label, style: const TextStyle(fontSize: 15, color: Color(0xFF737B84))),
+      Text(
+        label,
+        style: const TextStyle(fontSize: 15, color: Color(0xFF737B84)),
+      ),
       const SizedBox(height: 8),
       TextField(
         controller: controller,

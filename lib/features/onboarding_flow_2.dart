@@ -25,11 +25,15 @@ class _FlowBusinessNamePageState extends State<FlowBusinessNamePage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 3 / 6,
       sectionLabel: s.t('Your business', 'आपका व्यवसाय'),
       stepLabel: s.t('YOUR BUSINESS · 3 OF 6', 'आपका व्यवसाय · 3 में से 6'),
-      headline: s.t('What is your business called?', 'आपके व्यवसाय का नाम क्या है?'),
+      headline: s.t(
+        'What is your business called?',
+        'आपके व्यवसाय का नाम क्या है?',
+      ),
       subtitle: s.t(
         'Use the name you know it by. You can update this later.',
         'जिस नाम से आप इसे जानते हैं वह दें। बाद में बदल सकते हैं।',
@@ -77,11 +81,15 @@ class _FlowBusinessFormPageState extends State<FlowBusinessFormPage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 4 / 6,
       sectionLabel: s.t('Your business', 'आपका व्यवसाय'),
       stepLabel: s.t('YOUR BUSINESS · 4 OF 6', 'आपका व्यवसाय · 4 में से 6'),
-      headline: s.t('How is your business formed?', 'आपका व्यवसाय किस रूप में है?'),
+      headline: s.t(
+        'How is your business formed?',
+        'आपका व्यवसाय किस रूप में है?',
+      ),
       subtitle: s.t(
         'Choose the closest fit. GeM will confirm the official classification.',
         'सबसे उपयुक्त विकल्प चुनें। आधिकारिक वर्गीकरण GeM पुष्टि करेगा।',
@@ -154,6 +162,7 @@ class _FlowSectorPageState extends State<FlowSectorPage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 5 / 6,
       sectionLabel: s.t('Your business', 'आपका व्यवसाय'),
@@ -255,6 +264,7 @@ class _FlowRolePageState extends State<FlowRolePage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 6 / 6,
       sectionLabel: s.t('Your business', 'आपका व्यवसाय'),

@@ -25,15 +25,17 @@ void main() {
         ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
       await icons.load();
     });
-    SharedPreferences.setMockInitialValues({});
-    final s = AppStore(await SharedPreferences.getInstance());
     final boundary = GlobalKey();
     for (final spec in [
-      ('desktop', const Size(1440, 1100)),
-      ('mobile', const Size(390, 1000)),
-      ('mobile-hindi', const Size(390, 1000)),
+      ('desktop', const Size(1440, 1100), '', 'en'),
+      ('mobile', const Size(390, 1000), '', 'en'),
+      ('mobile-hindi', const Size(390, 1000), '', 'hi'),
+      ('gst-desktop', const Size(1440, 1100), 'gst', 'en'),
+      ('gst-mobile', const Size(390, 1000), 'gst', 'en'),
     ]) {
-      if (spec.$1 == 'mobile-hindi') s.setLanguage('hi');
+      SharedPreferences.setMockInitialValues({'saathi.v1.onboarded': true});
+      final s = AppStore(await SharedPreferences.getInstance());
+      s.setLanguage(spec.$4);
       tester.view.physicalSize = spec.$2;
       tester.view.devicePixelRatio = 1;
       await tester.pumpWidget(
@@ -43,6 +45,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      if (spec.$3.isNotEmpty) {
+        tester.state<NavigatorState>(find.byType(Navigator)).pushNamed('/${spec.$3}');
+        await tester.pumpAndSettle();
+      }
       expect(tester.takeException(), isNull);
       final render =
           boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;

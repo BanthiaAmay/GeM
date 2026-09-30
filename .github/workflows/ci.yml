@@ -47,3 +47,5 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bootstrap.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202609090001_initial.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/rls.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202609220001_gst_workspace.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/gst_rls.sql

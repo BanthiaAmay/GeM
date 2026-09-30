@@ -64,6 +64,7 @@ class _FlowFullNamePageState extends State<FlowFullNamePage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 1 / 6,
       sectionLabel: s.t('Your business', 'आपका व्यवसाय'),
@@ -111,13 +112,13 @@ class _FlowPhonePageState extends State<FlowPhonePage> {
     super.dispose();
   }
 
-  bool get _valid =>
-      controller.text.replaceAll(RegExp(r'\D'), '').length == 10;
+  bool get _valid => controller.text.replaceAll(RegExp(r'\D'), '').length == 10;
 
   @override
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 1 / 3,
       sectionLabel: s.t('Getting started', 'शुरुआत'),
@@ -193,6 +194,7 @@ class _FlowOtpPageState extends State<FlowOtpPage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 2 / 3,
       sectionLabel: s.t('Getting started', 'शुरुआत'),
@@ -294,6 +296,7 @@ class _FlowLocationPageState extends State<FlowLocationPage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 2 / 6,
       sectionLabel: s.t('Your business', 'आपका व्यवसाय'),

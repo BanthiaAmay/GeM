@@ -104,6 +104,7 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
       'bank': Icons.account_balance_outlined,
     };
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 0.85,
       sectionLabel: s.t('Next step', 'अगला कदम'),
@@ -153,6 +154,7 @@ class FlowVideoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 0.9,
       sectionLabel: s.t('Next step', 'अगला कदम'),
@@ -185,7 +187,11 @@ class FlowVideoPage extends StatelessWidget {
                     BorderSide(color: Colors.black),
                   ),
                 ),
-                child: const Icon(Icons.play_arrow, size: 28, color: Colors.black),
+                child: const Icon(
+                  Icons.play_arrow,
+                  size: 28,
+                  color: Colors.black,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -230,7 +236,10 @@ class FlowVideoPage extends StatelessWidget {
         const SizedBox(height: 16),
         _CoverRow(
           icon: Icons.storefront_outlined,
-          text: s.t('Choose the right seller type', 'सही विक्रेता प्रकार चुनें'),
+          text: s.t(
+            'Choose the right seller type',
+            'सही विक्रेता प्रकार चुनें',
+          ),
         ),
         _CoverRow(
           icon: Icons.folder_outlined,
@@ -276,7 +285,10 @@ class _CoverRow extends StatelessWidget {
         Icon(icon, size: 22, color: Colors.black),
         const SizedBox(width: 14),
         Expanded(
-          child: Text(text, style: const TextStyle(fontSize: 16, color: Colors.black)),
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 16, color: Colors.black),
+          ),
         ),
       ],
     ),
@@ -297,6 +309,7 @@ class FlowRedirectPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
       progress: 1,
       sectionLabel: s.t('Next step', 'अगला कदम'),
@@ -414,4 +427,5 @@ class FlowRedirectPage extends StatelessWidget {
   }
 }
 
-const gemRegistrationUrl = 'https://mkp.gem.gov.in/registration/signup#!/seller';
+const gemRegistrationUrl =
+    'https://mkp.gem.gov.in/registration/signup#!/seller';

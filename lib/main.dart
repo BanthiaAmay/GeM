@@ -67,11 +67,11 @@ class _SplashGateState extends State<SplashGate> {
     super.initState();
     // Shown for a beat, then hands off to onboarding (new user) or
     // straight into the app (returning user) — never shown again itself.
-    Timer(const Duration(seconds: 2), () {
+    Timer(const Duration(milliseconds: 650), () {
       if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed(
-        widget.store.hasOnboarded ? '/home' : '/welcome',
-      );
+      Navigator.of(
+        context,
+      ).pushReplacementNamed(widget.store.hasOnboarded ? '/home' : '/welcome');
     });
   }
 
@@ -108,7 +108,10 @@ class SaathiApp extends StatelessWidget {
       onGenerateRoute: (settings) => MaterialPageRoute(
         settings: settings,
         builder: (context) {
-              final page = (settings.name ?? '/').replaceFirst('/', '').split('?').first;
+          final page = (settings.name ?? '/')
+              .replaceFirst('/', '')
+              .split('?')
+              .first;
           return ListenableBuilder(
             listenable: store,
             builder: (context, _) => flowPages.containsKey(page)

@@ -188,6 +188,13 @@ void main() {
           'register',
           'account',
           'support',
+          'gst',
+          'gst-invoices',
+          'gst-upload',
+          'gst-returns',
+          'gst-reconcile',
+          'gst-documents',
+          'about',
         ]) {
           nav.pushNamed('/$page');
           await tester.pumpAndSettle();

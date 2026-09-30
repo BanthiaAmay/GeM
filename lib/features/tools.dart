@@ -246,7 +246,7 @@ class _ToolPageState extends State<ToolPage> {
             Column(
               children: [
                 Panel(
-                  color: const Color(0xFFEEF2E6),
+                  color: subtle,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -680,7 +680,7 @@ class _ToolPageState extends State<ToolPage> {
       'roi': 'tracker',
     }[k]!;
     return Panel(
-      color: const Color(0xFFF0F5E9),
+      color: subtle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
