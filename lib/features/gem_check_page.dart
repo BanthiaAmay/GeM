@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
+import 'brand_logo.dart';
+import 'components.dart';
+import 'glass.dart';
+import 'onboarding_widgets.dart';
+import 'scroll_hint.dart';
 
 /// Onboarding step shown right after language selection: a quick check
 /// on whether the seller's business is already listed on GeM. Purely
@@ -33,131 +38,101 @@ class _GemCheckPageState extends State<GemCheckPage> {
   @override
   Widget build(BuildContext context) {
     final s = widget.store;
-    final size = MediaQuery.sizeOf(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: size.height - 44),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: back,
-                      icon: const Icon(Icons.arrow_back_ios_new, size: 24),
-                      color: Colors.black,
+        child: Column(
+          children: [
+            GlassBar.top(
+              child: Row(
+                children: [
+                  AppIconButton(
+                    onPressed: back,
+                    icon: Icons.arrow_back_ios_new,
+                    tooltip: s.t('Back', 'वापस'),
+                  ),
+                  const Expanded(
+                    child: BrandLogo(
+                      variant: BrandLogoVariant.lockup,
+                      width: 150,
                     ),
-                    Expanded(
-                      child: Image.asset(
-                        'assets/brand_logo_notag.png',
-                        width: 150,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                    const SizedBox(width: 48),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: Row(
+                  ),
+                  const SizedBox(width: 48),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ScrollMoreHint(
+                builder: (context, scrollController) => SingleChildScrollView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpace.gutter,
+                    AppSpace.xl,
+                    AppSpace.gutter,
+                    60,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        flex: 55,
-                        child: Container(height: 5, color: Colors.black),
+                      const AppProgressBar(value: 0.55),
+                      const SizedBox(height: 28),
+                      Text(
+                        s.t('Your business', 'आपका व्यवसाय'),
+                        style: AppText.secondary(AppText.bodySmall),
                       ),
-                      Expanded(
-                        flex: 45,
-                        child: Container(
-                          height: 5,
-                          color: const Color(0xFFE4E4E4),
+                      const SizedBox(height: 20),
+                      Text(
+                        s.t('ONE QUICK CHECK', 'एक जल्दी जाँच'),
+                        style: AppText.overline,
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        s.t(
+                          'Is your business already on GeM?',
+                          'क्या आपका व्यवसाय पहले से GeM पर है?',
                         ),
+                        style: AppText.h1,
                       ),
+                      const SizedBox(height: 12),
+                      Text(
+                        s.t(
+                          'We’ll guide you to the right next step.',
+                          'हम आपको सही अगले कदम तक मार्गदर्शन देंगे।',
+                        ),
+                        style: AppText.secondary(AppText.body),
+                      ),
+                      const SizedBox(height: 32),
+                      _CheckOption(
+                        asset: 'check_no',
+                        slot: 84,
+                        trailingIcon: Icons.circle_outlined,
+                        label: s.t('No', 'नहीं'),
+                        selected: !selected,
+                        onTap: () => setState(() => selected = false),
+                      ),
+                      const SizedBox(height: 14),
+                      _CheckOption(
+                        asset: 'check_yes',
+                        slot: 114,
+                        trailingIcon: Icons.check_circle_outline,
+                        label: s.t('Yes', 'हाँ'),
+                        selected: selected,
+                        onTap: () => setState(() => selected = true),
+                      ),
+                      const OnboardingArt('gemcheck', topGap: 40),
                     ],
                   ),
                 ),
-                const SizedBox(height: 28),
-                Text(
-                  s.t('Your business', 'आपका व्यवसाय'),
-                  style: const TextStyle(fontSize: 15, color: Color(0xFF737B84)),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  s.t('ONE QUICK CHECK', 'एक जल्दी जाँच'),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
-                    color: Color(0xFF737B84),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  s.t(
-                    'Is your business already on GeM?',
-                    'क्या आपका व्यवसाय पहले से GeM पर है?',
-                  ),
-                  style: const TextStyle(
-                    fontFamily: sfProDisplay,
-                    fontSize: 32,
-                    fontWeight: FontWeight.w800,
-                    height: 1.15,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  s.t(
-                    'We’ll guide you to the right next step.',
-                    'हम आपको सही अगले कदम तक मार्गदर्शन देंगे।',
-                  ),
-                  style: const TextStyle(fontSize: 16, color: Color(0xFF737B84)),
-                ),
-                const SizedBox(height: 32),
-                _CheckOption(
-                  icon: Icons.storefront_outlined,
-                  trailingIcon: Icons.circle_outlined,
-                  label: s.t('No', 'नहीं'),
-                  selected: !selected,
-                  onTap: () => setState(() => selected = false),
-                ),
-                const SizedBox(height: 14),
-                _CheckOption(
-                  icon: Icons.storefront_outlined,
-                  trailingIcon: Icons.check_circle_outline,
-                  label: s.t('Yes', 'हाँ'),
-                  selected: selected,
-                  onTap: () => setState(() => selected = true),
-                ),
-                const SizedBox(height: 40),
-                const Center(child: _JourneyIllustration()),
-                const SizedBox(height: 40),
-                SizedBox(
-                  width: double.infinity,
-                  height: 66,
-                  child: FilledButton(
-                    onPressed: continueToApp,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF151515),
-                      foregroundColor: Colors.white,
-                      shape: const StadiumBorder(),
-                    ),
-                    child: Text(
-                      s.t('Continue', 'जारी रखें'),
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+            GlassBar.bottom(
+              child: AppButton(
+                label: s.t('Continue', 'जारी रखें'),
+                onPressed: continueToApp,
+                size: AppButtonSize.lg,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -165,13 +140,15 @@ class _GemCheckPageState extends State<GemCheckPage> {
 }
 
 class _CheckOption extends StatelessWidget {
-  final IconData icon;
+  final String asset;
+  final double slot;
   final IconData trailingIcon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
   const _CheckOption({
-    required this.icon,
+    required this.asset,
+    required this.slot,
     required this.trailingIcon,
     required this.label,
     required this.selected,
@@ -185,96 +162,29 @@ class _CheckOption extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
       decoration: BoxDecoration(
         border: Border.all(
-          color: selected ? Colors.black : const Color(0xFFDDDDDD),
+          color: selected ? AppColors.ink : AppColors.borderStrong,
           width: selected ? 1.4 : 1,
         ),
-        borderRadius: BorderRadius.circular(14),
-        color: selected ? const Color(0xFFFAFAFA) : Colors.white,
+        borderRadius: AppRadius.input,
+        color: selected ? AppColors.surfaceMuted : AppColors.surface,
       ),
       child: Row(
         children: [
-          Icon(icon, size: 26, color: Colors.black),
+          OnboardingIcon(icon: null, asset: asset, slot: slot),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(fontSize: 20, color: Colors.black),
+              style: AppText.h3,
             ),
           ),
           Icon(
             trailingIcon,
             size: 24,
-            color: selected ? Colors.black : const Color(0xFFBBBBBB),
+            color: selected ? AppColors.ink : AppColors.borderStrong,
           ),
         ],
       ),
     ),
   );
-}
-
-/// Small store → location → verified-listing motif echoing the option
-/// icons above, tying "not listed yet" and "already listed" together.
-class _JourneyIllustration extends StatelessWidget {
-  const _JourneyIllustration();
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 90,
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const _JourneyStop(icon: Icons.storefront_outlined),
-        const _DashedConnector(),
-        const _JourneyStop(icon: Icons.location_on_outlined),
-        const _DashedConnector(),
-        const _JourneyStop(icon: Icons.verified_outlined),
-      ],
-    ),
-  );
-}
-
-class _JourneyStop extends StatelessWidget {
-  final IconData icon;
-  const _JourneyStop({required this.icon});
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 64,
-    height: 64,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      border: Border.all(color: const Color(0xFFDDDDDD)),
-    ),
-    child: Icon(icon, size: 28, color: Colors.black),
-  );
-}
-
-class _DashedConnector extends StatelessWidget {
-  const _DashedConnector();
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 36,
-    height: 20,
-    child: CustomPaint(painter: _DashedLinePainter()),
-  );
-}
-
-class _DashedLinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFBBBBBB)
-      ..strokeWidth = 2;
-    const dash = 4.0, gap = 3.0;
-    var x = 0.0;
-    final y = size.height / 2;
-    while (x < size.width) {
-      canvas.drawLine(Offset(x, y), Offset(x + dash, y), paint);
-      x += dash + gap;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _DashedLinePainter oldDelegate) => false;
 }

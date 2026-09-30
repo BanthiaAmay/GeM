@@ -15,6 +15,9 @@ class AppStore extends ChangeNotifier {
   List<Map<String, dynamic>> benchmarks = [];
   List<Map<String, dynamic>> outcomes = [];
   String status = '';
+  /// Date range (7, 30 or 90 days) shared by every Insights screen. Not
+  /// persisted — a fresh session starts on 30 days.
+  int insightsDays = 30;
   bool syncing = false;
   bool _loadedCloud = false;
   bool _syncAgain = false;
@@ -33,6 +36,17 @@ class AppStore extends ChangeNotifier {
   /// onboarding flow. Device-scoped (not per-account) so a returning
   /// user never sees the "Get started" welcome screen again.
   bool get hasOnboarded => prefs.getBool('saathi.v1.onboarded') ?? false;
+  /// Whether this device has already played the language screen's
+  /// multilingual greeting tour (see LanguagePage). Device-scoped, like
+  /// [hasOnboarded]: a fresh "Start onboarding again" plays it once more,
+  /// but simply navigating back and forth within one run does not.
+  bool get hasSeenGreetingIntro =>
+      prefs.getBool('saathi.v1.seenGreetingIntro') ?? false;
+
+  Future<void> markGreetingIntroSeen() async {
+    if (hasSeenGreetingIntro) return;
+    await prefs.setBool('saathi.v1.seenGreetingIntro', true);
+  }
   bool get signedIn => client?.auth.currentUser != null;
   bool get configured => client != null;
   Map<String, dynamic> section(String key) =>
@@ -93,6 +107,12 @@ class AppStore extends ChangeNotifier {
     await prefs.setString('$storageKey.events', jsonEncode(queue));
   }
 
+  void setInsightsDays(int days) {
+    if (insightsDays == days) return;
+    insightsDays = days;
+    notifyListeners();
+  }
+
   void setLanguage(String value) {
     data['language'] = value;
     unawaited(persist());
@@ -133,6 +153,7 @@ class AppStore extends ChangeNotifier {
   /// scratch) without reinstalling the app.
   Future<void> resetOnboarding() async {
     await prefs.setBool('saathi.v1.onboarded', false);
+    await prefs.setBool('saathi.v1.seenGreetingIntro', false);
     notifyListeners();
   }
 

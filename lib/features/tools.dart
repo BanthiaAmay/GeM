@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../core/models.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
+import 'charts.dart';
+import 'components.dart';
 import 'widgets.dart';
 
 class ToolPage extends StatefulWidget {
@@ -225,18 +227,16 @@ class _ToolPageState extends State<ToolPage> {
                     ),
                     const SizedBox(height: 24),
                     ...inputFields(),
-                    FilledButton.icon(
+                    AppButton(
                       onPressed: calculate,
-                      icon: const Icon(Icons.arrow_forward, size: 18),
-                      label: Text(
-                        t(
-                          k == 'eligibility'
-                              ? 'Check my eligibility'
-                              : 'Calculate my result',
-                          k == 'eligibility'
-                              ? 'मेरी पात्रता जाँचें'
-                              : 'मेरा परिणाम निकालें',
-                        ),
+                      trailingIcon: Icons.arrow_forward,
+                      label: t(
+                        k == 'eligibility'
+                            ? 'Check my eligibility'
+                            : 'Calculate my result',
+                        k == 'eligibility'
+                            ? 'मेरी पात्रता जाँचें'
+                            : 'मेरा परिणाम निकालें',
                       ),
                     ),
                   ],
@@ -246,11 +246,11 @@ class _ToolPageState extends State<ToolPage> {
             Column(
               children: [
                 Panel(
-                  color: const Color(0xFFEEF2E6),
+                  tone: AppCardTone.muted,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.lightbulb_outline, color: green),
+                      const Icon(Icons.lightbulb_outline, color: AppColors.brand),
                       const SizedBox(height: 16),
                       Text(
                         t(
@@ -308,7 +308,10 @@ class _ToolPageState extends State<ToolPage> {
             ),
           ],
         ),
-        if (result != null) ...[const SizedBox(height: 28), resultPanel()],
+        if (result != null) ...[
+          const SizedBox(height: 28),
+          FadeSlideIn(child: resultPanel()),
+        ],
       ],
     );
   }
@@ -680,7 +683,7 @@ class _ToolPageState extends State<ToolPage> {
       'roi': 'tracker',
     }[k]!;
     return Panel(
-      color: const Color(0xFFF0F5E9),
+      tone: AppCardTone.brand,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -688,9 +691,22 @@ class _ToolPageState extends State<ToolPage> {
           const SizedBox(height: 20),
           if (k == 'eligibility') ...eligibilityResult(r),
           if (k == 'revenue') ...[
-            Text(
-              '${money(r['low'])} – ${money(r['high'])}',
-              style: Theme.of(context).textTheme.headlineMedium,
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                AnimatedMoney(
+                  value: (r['low'] as num).toDouble(),
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                Text(
+                  ' – ',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                AnimatedMoney(
+                  value: (r['high'] as num).toDouble(),
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+              ],
             ),
             Text(
               t(
@@ -698,9 +714,22 @@ class _ToolPageState extends State<ToolPage> {
                 'लागत और कर से पहले उदाहरणात्मक वार्षिक सकल आय',
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              '${money(r['orderValue'])} × ${r['ordersLow']}–${r['ordersHigh']} ${t('orders per year', 'ऑर्डर प्रति वर्ष')}',
+            const SizedBox(height: 20),
+            RangeChart(
+              low: (r['low'] as num).toDouble(),
+              high: (r['high'] as num).toDouble(),
+              lowLabel: t('Cautious', 'सावधान'),
+              highLabel: t('Optimistic', 'आशावादी'),
+            ),
+            const SizedBox(height: 20),
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                AnimatedMoney(value: (r['orderValue'] as num).toDouble()),
+                Text(
+                  ' × ${r['ordersLow']}–${r['ordersHigh']} ${t('orders per year', 'ऑर्डर प्रति वर्ष')}',
+                ),
+              ],
             ),
             Text(
               t(
@@ -710,9 +739,18 @@ class _ToolPageState extends State<ToolPage> {
             ),
           ],
           if (k == 'pricing') ...[
-            Text(
-              '${money(r['price'])} ${t('/ unit', '/ इकाई')}',
-              style: Theme.of(context).textTheme.headlineMedium,
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                AnimatedMoney(
+                  value: (r['price'] as num).toDouble(),
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                Text(
+                  ' ${t('/ unit', '/ इकाई')}',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+              ],
             ),
             Text(
               t(
@@ -720,16 +758,46 @@ class _ToolPageState extends State<ToolPage> {
                 'वांछित सकल मार्जिन के लिए बिक्री मूल्य',
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              '${t('Break-even before order fees & taxes', 'ऑर्डर शुल्क और कर से पहले लागत वसूली मूल्य')}: ${money(r['cost'])}',
+            const SizedBox(height: 20),
+            CompositionBar(
+              slices: [
+                ChartSlice(
+                  t('Cost', 'लागत'),
+                  (r['cost'] as num).toDouble(),
+                  AppColors.chartCost,
+                ),
+                ChartSlice(
+                  t('Profit', 'लाभ'),
+                  (r['profit'] as num).toDouble(),
+                  AppColors.chartPositive,
+                ),
+              ],
             ),
-            Text(
-              '${t('Contribution per unit', 'प्रति इकाई योगदान')}: ${money(r['profit'])}',
+            const SizedBox(height: 20),
+            Wrap(
+              children: [
+                Text(
+                  '${t('Break-even before order fees & taxes', 'ऑर्डर शुल्क और कर से पहले लागत वसूली मूल्य')}: ',
+                ),
+                AnimatedMoney(value: (r['cost'] as num).toDouble()),
+              ],
+            ),
+            Wrap(
+              children: [
+                Text('${t('Contribution per unit', 'प्रति इकाई योगदान')}: '),
+                AnimatedMoney(value: (r['profit'] as num).toDouble()),
+              ],
             ),
             if ((r['benchmark'] as num) > 0)
-              Text(
-                '${t('Margin at your comparable price', 'आपके तुलनीय मूल्य पर मार्जिन')}: ${(r['competitiveMargin'] as num).toStringAsFixed(1)}%',
+              Wrap(
+                children: [
+                  Text(
+                    '${t('Margin at your comparable price', 'आपके तुलनीय मूल्य पर मार्जिन')}: ',
+                  ),
+                  AnimatedPercent(
+                    value: (r['competitiveMargin'] as num).toDouble(),
+                  ),
+                ],
               ),
             Text(
               t(
@@ -739,24 +807,51 @@ class _ToolPageState extends State<ToolPage> {
             ),
           ],
           if (k == 'roi') ...[
-            Text(
-              r['payback'] == null
-                  ? t(
+            r['payback'] == null
+                ? Text(
+                    t(
                       'No payback at these assumptions',
                       'इन धारणाओं पर लागत वसूली नहीं',
-                    )
-                  : t(
-                      'Illustrative payback: ${(r['payback'] as num).toStringAsFixed(1)} months',
-                      'उदाहरणात्मक लागत वसूली: ${(r['payback'] as num).toStringAsFixed(1)} महीने',
                     ),
-              style: Theme.of(context).textTheme.headlineMedium,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  )
+                : Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        '${t('Illustrative payback', 'उदाहरणात्मक लागत वसूली')}: ',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      AnimatedNumber(
+                        value: (r['payback'] as num).toDouble(),
+                        format: (v) => v.toStringAsFixed(1),
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      Text(
+                        ' ${t('months', 'महीने')}',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ],
+                  ),
+            const SizedBox(height: 20),
+            ValueBars(
+              items: [
+                ChartValue(
+                  t('1-year net contribution', '1-वर्ष शुद्ध योगदान'),
+                  (r['firstYear'] as num).toDouble(),
+                ),
+                ChartValue(
+                  t('3-year net contribution', '3-वर्ष शुद्ध योगदान'),
+                  (r['threeYear'] as num).toDouble(),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
             ResponsiveRow(
               children: [
                 Stat(
                   t('1-year net contribution', '1-वर्ष शुद्ध योगदान'),
-                  money(r['firstYear']),
+                  AnimatedMoney(value: (r['firstYear'] as num).toDouble()),
                   t(
                     'After setup, assumed delay & platform fees',
                     'तैयारी, अनुमानित देरी और प्लेटफ़ॉर्म शुल्क के बाद',
@@ -764,7 +859,7 @@ class _ToolPageState extends State<ToolPage> {
                 ),
                 Stat(
                   t('3-year net contribution', '3-वर्ष शुद्ध योगदान'),
-                  money(r['threeYear']),
+                  AnimatedMoney(value: (r['threeYear'] as num).toDouble()),
                   t(
                     'Constant sales and margins; not discounted',
                     'स्थिर बिक्री और मार्जिन; वर्तमान मूल्य छूट शामिल नहीं',
@@ -772,8 +867,15 @@ class _ToolPageState extends State<ToolPage> {
                 ),
               ],
             ),
-            Text(
-              '${t('Setup including time', 'समय सहित तैयारी')}: ${money(r['setup'])} · ${t('Annual GeM fees at full activity', 'पूरी गतिविधि पर वार्षिक GeM शुल्क')}: ${money(r['annualFees'])}',
+            Wrap(
+              children: [
+                Text('${t('Setup including time', 'समय सहित तैयारी')}: '),
+                AnimatedMoney(value: (r['setup'] as num).toDouble()),
+                Text(
+                  ' · ${t('Annual GeM fees at full activity', 'पूरी गतिविधि पर वार्षिक GeM शुल्क')}: ',
+                ),
+                AnimatedMoney(value: (r['annualFees'] as num).toDouble()),
+              ],
             ),
             Text(
               t(

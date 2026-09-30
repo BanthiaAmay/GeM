@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../core/transitions.dart';
 import '../data/app_store.dart';
 import 'onboarding_widgets.dart';
+import '../core/tokens.dart';
 
 /// Step 9 of 15: is the authorised person ready.
 class FlowAuthorisedPage extends StatefulWidget {
@@ -17,10 +19,8 @@ class _FlowAuthorisedPageState extends State<FlowAuthorisedPage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
-      progress: 3 / 5,
-      sectionLabel: s.t('Get ready', 'तैयार हो जाएँ'),
-      stepLabel: s.t('GET READY · 3 OF 5', 'तैयार हो जाएँ · 3 में से 5'),
       headline: s.t(
         'Is the authorised person ready?',
         'क्या अधिकृत व्यक्ति तैयार है?',
@@ -32,25 +32,34 @@ class _FlowAuthorisedPageState extends State<FlowAuthorisedPage> {
       continueLabel: s.t('Continue', 'जारी रखें'),
       onContinue: selected.isEmpty
           ? null
-          : () {
+          : () async {
               s.setProfile('authorisedReady', selected);
-              Navigator.of(context).pushNamed('/flow-privacy');
+              // Last step of "Your business" — a small checkpoint
+              // before moving into the next section.
+              await showSectionComplete(
+                context,
+                s.t('Your business complete', 'आपका व्यवसाय पूर्ण'),
+              );
+              if (!context.mounted) return;
+              Navigator.of(context).pushNamed('/flow-turnover');
             },
       children: [
+        const OnboardingArt('authorised', topGap: 0),
+        const SizedBox(height: 20),
         OnboardingRadioOption(
-          icon: Icons.verified_user_outlined,
+          iconAsset: 'auth_yes',
           label: s.t('Yes', 'हाँ'),
           selected: selected == 'yes',
           onTap: () => setState(() => selected = 'yes'),
         ),
         OnboardingRadioOption(
-          icon: Icons.pending_actions_outlined,
+          iconAsset: 'auth_notyet',
           label: s.t('Not yet', 'अभी नहीं'),
           selected: selected == 'not_yet',
           onTap: () => setState(() => selected = 'not_yet'),
         ),
         OnboardingRadioOption(
-          icon: Icons.help_outline,
+          iconAsset: 'auth_unsure',
           label: s.t('I’m not sure', 'मुझे यकीन नहीं'),
           selected: selected == 'unsure',
           onTap: () => setState(() => selected = 'unsure'),
@@ -75,10 +84,8 @@ class _FlowPrivacyPageState extends State<FlowPrivacyPage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
-      progress: 1,
-      sectionLabel: s.t('Getting started', 'शुरुआत'),
-      stepLabel: s.t('GETTING STARTED · 3 OF 3', 'शुरुआत · 3 में से 3'),
       headline: s.t('Your information stays yours', 'आपकी जानकारी आपकी ही रहती है'),
       subtitle: s.t(
         'We’ll use your answers to tailor a readiness guide.',
@@ -89,12 +96,14 @@ class _FlowPrivacyPageState extends State<FlowPrivacyPage> {
           ? () => Navigator.of(context).pushNamed('/flow-records')
           : null,
       children: [
+        const OnboardingArt('privacy', topGap: 0),
+        const SizedBox(height: 24),
         Text(
           s.t(
             'No PAN, Aadhaar, ITR files, or GeM passwords are collected here.',
             'यहाँ PAN, आधार, ITR फाइलें या GeM पासवर्ड नहीं लिए जाते।',
           ),
-          style: const TextStyle(fontSize: 16, color: Color(0xFF737B84)),
+          style: AppText.secondary(AppText.body),
         ),
         const SizedBox(height: 16),
         Text(
@@ -102,7 +111,7 @@ class _FlowPrivacyPageState extends State<FlowPrivacyPage> {
             'This prototype keeps your answers only while this page is open. No real OTP is sent.',
             'यह प्रोटोटाइप आपके उत्तर केवल इस पेज के खुले रहने तक रखता है। कोई असली OTP नहीं भेजा जाता।',
           ),
-          style: const TextStyle(fontSize: 16, color: Color(0xFF737B84)),
+          style: AppText.secondary(AppText.body),
         ),
         const SizedBox(height: 16),
         Text(
@@ -110,7 +119,7 @@ class _FlowPrivacyPageState extends State<FlowPrivacyPage> {
             'You’ll enter registration details yourself on the official GeM portal.',
             'आप पंजीकरण विवरण स्वयं आधिकारिक GeM पोर्टल पर देंगे।',
           ),
-          style: const TextStyle(fontSize: 16, color: Color(0xFF737B84)),
+          style: AppText.secondary(AppText.body),
         ),
         const SizedBox(height: 24),
         GestureDetector(
@@ -120,7 +129,7 @@ class _FlowPrivacyPageState extends State<FlowPrivacyPage> {
             children: [
               Icon(
                 understood ? Icons.check_box : Icons.check_box_outline_blank,
-                color: Colors.black,
+                color: AppColors.ink,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -129,7 +138,7 @@ class _FlowPrivacyPageState extends State<FlowPrivacyPage> {
                     'I understand this is a preparation guide.',
                     'मैं समझता/समझती हूँ कि यह एक तैयारी गाइड है।',
                   ),
-                  style: const TextStyle(fontSize: 16, color: Colors.black),
+                  style: AppText.body,
                 ),
               ),
             ],
@@ -161,10 +170,8 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
-      progress: 1,
-      sectionLabel: s.t('Get ready', 'तैयार हो जाएँ'),
-      stepLabel: s.t('GET READY · 5 OF 5', 'तैयार हो जाएँ · 5 में से 5'),
       headline: s.t(
         'Which business records do you have ready?',
         'आपके पास कौन से व्यवसाय दस्तावेज़ तैयार हैं?',
@@ -183,26 +190,29 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
           Navigator.of(context).pushNamedAndRemoveUntil(
             '/home',
             (route) => false,
+            arguments: fadeOnlyTransition,
           );
           return;
         }
         Navigator.of(context).pushNamed('/flow-pan');
       },
       children: [
+        const OnboardingArt('records', topGap: 0),
+        const SizedBox(height: 16),
         OnboardingCheckOption(
-          icon: Icons.folder_outlined,
+          iconAsset: 'rec_pan',
           label: s.t('Business PAN details', 'व्यवसाय PAN विवरण'),
           checked: selected.contains('pan'),
           onTap: () => toggle('pan'),
         ),
         OnboardingCheckOption(
-          icon: Icons.description_outlined,
+          iconAsset: 'rec_gstin',
           label: s.t('GSTIN', 'GSTIN'),
           checked: selected.contains('gstin'),
           onTap: () => toggle('gstin'),
         ),
         OnboardingCheckOption(
-          icon: Icons.storefront_outlined,
+          iconAsset: 'rec_udyam',
           label: s.t(
             'Udyam Registration Certificate',
             'उद्यम पंजीकरण प्रमाणपत्र',
@@ -212,7 +222,7 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
           onTap: () => toggle('udyam'),
         ),
         OnboardingCheckOption(
-          icon: Icons.apartment_outlined,
+          iconAsset: 'rec_registration',
           label: s.t(
             'Business registration details',
             'व्यवसाय पंजीकरण विवरण',
@@ -225,14 +235,14 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
           onTap: () => toggle('registration'),
         ),
         OnboardingCheckOption(
-          icon: Icons.bar_chart_outlined,
+          iconAsset: 'rec_itr',
           label: s.t('ITR details', 'ITR विवरण'),
           sublabel: s.t('If applicable', 'यदि लागू हो'),
           checked: selected.contains('itr'),
           onTap: () => toggle('itr'),
         ),
         OnboardingCheckOption(
-          icon: Icons.account_balance_outlined,
+          iconAsset: 'rec_bank',
           label: s.t('Bank account details', 'बैंक खाता विवरण'),
           sublabel: s.t(
             'For profile and payments',
@@ -242,7 +252,7 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
           onTap: () => toggle('bank'),
         ),
         OnboardingCheckOption(
-          icon: Icons.hourglass_empty,
+          iconAsset: 'rec_none',
           label: s.t('None yet', 'अभी कुछ नहीं'),
           checked: selected.contains('none'),
           onTap: () => toggle('none'),
@@ -253,7 +263,7 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
             'You’ll enter any required details yourself on the official GeM portal.',
             'आप आवश्यक विवरण स्वयं आधिकारिक GeM पोर्टल पर देंगे।',
           ),
-          style: const TextStyle(fontSize: 13, color: Color(0xFF9A9A9A)),
+          style: AppText.caption,
         ),
       ],
     );
@@ -275,10 +285,8 @@ class _FlowPanPageState extends State<FlowPanPage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
-      progress: 4 / 5,
-      sectionLabel: s.t('Get ready', 'तैयार हो जाएँ'),
-      stepLabel: s.t('GET READY · 4 OF 5', 'तैयार हो जाएँ · 4 में से 5'),
       headline: s.t(
         'Do you have business PAN details?',
         'क्या आपके पास व्यवसाय PAN विवरण है?',
@@ -295,20 +303,22 @@ class _FlowPanPageState extends State<FlowPanPage> {
               Navigator.of(context).pushNamed('/flow-checklist');
             },
       children: [
+        const OnboardingArt('pan', topGap: 0),
+        const SizedBox(height: 16),
         OnboardingRadioOption(
-          icon: Icons.folder_outlined,
+          iconAsset: 'pan_yes',
           label: s.t('Yes', 'हाँ'),
           selected: selected == 'yes',
           onTap: () => setState(() => selected = 'yes'),
         ),
         OnboardingRadioOption(
-          icon: Icons.folder_outlined,
+          iconAsset: 'pan_notyet',
           label: s.t('Not yet', 'अभी नहीं'),
           selected: selected == 'not_yet',
           onTap: () => setState(() => selected = 'not_yet'),
         ),
         OnboardingRadioOption(
-          icon: Icons.folder_outlined,
+          iconAsset: 'pan_unsure',
           label: s.t('I’m not sure', 'मुझे यकीन नहीं'),
           selected: selected == 'unsure',
           onTap: () => setState(() => selected = 'unsure'),

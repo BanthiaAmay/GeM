@@ -67,14 +67,34 @@ flutter:
   uses-material-design: true
   assets:
     - assets/fonts/OFL.txt
-    - assets/brand_logo.png
-    - assets/brand_logo_notag.png
-    - assets/splash_screen.png
+    - assets/brand/gem-bizready-logo-full.png
+    - assets/brand/gem-bizready-logo-lockup.png
+    - assets/brand/gem-bizready-logo-mark.png
     - assets/welcome_illustration.png
+    - assets/illustrations/
+    - assets/icons/
   fonts:
     - family: NotoSansDevanagari
       fonts:
         - asset: assets/fonts/NotoSansDevanagari.ttf
+    - family: NotoSansBengali
+      fonts:
+        - asset: assets/fonts/NotoSansBengali.ttf
+    - family: NotoSansGujarati
+      fonts:
+        - asset: assets/fonts/NotoSansGujarati.ttf
+    - family: NotoSansGurmukhi
+      fonts:
+        - asset: assets/fonts/NotoSansGurmukhi.ttf
+    - family: NotoSansTamil
+      fonts:
+        - asset: assets/fonts/NotoSansTamil.ttf
+    - family: NotoSansTelugu
+      fonts:
+        - asset: assets/fonts/NotoSansTelugu.ttf
+    - family: NotoSansKannada
+      fonts:
+        - asset: assets/fonts/NotoSansKannada.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../core/models.dart';
+import '../core/transitions.dart';
 import '../data/app_store.dart';
+import 'components.dart';
 import 'onboarding_widgets.dart';
 import 'widgets.dart';
+import '../core/tokens.dart';
 
 /// Step 13 of 15: readiness checklist — the user ticks each item off
 /// themselves rather than having it computed for them. Items the
@@ -92,44 +95,51 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
         'मैं बैंक विवरण बाद में दे सकता/सकती हूँ',
       ),
     };
-    final icons = {
-      'register': Icons.person_outline,
-      'email': Icons.email_outlined,
-      'phone': Icons.phone_iphone_outlined,
-      'authorised': Icons.badge_outlined,
-      'pan': Icons.folder_outlined,
-      'bizType': Icons.storefront_outlined,
-      'sellType': Icons.inventory_2_outlined,
-      'category': Icons.grid_view_outlined,
-      'bank': Icons.account_balance_outlined,
+    const icons = {
+      'register': 'cl_register',
+      'email': 'cl_email',
+      'phone': 'cl_phone',
+      'authorised': 'cl_identity',
+      'pan': 'cl_pan',
+      'bizType': 'cl_type',
+      'sellType': 'cl_offering',
+      'category': 'cl_category',
+      'bank': 'cl_bank',
     };
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
-      progress: 0.85,
-      sectionLabel: s.t('Next step', 'अगला कदम'),
-      stepLabel: s.t('YOUR TAILORED GUIDE', 'आपकी तैयार गाइड'),
       headline: s.t('Your GeM-ready checklist', 'आपकी GeM-तैयार चेकलिस्ट'),
       subtitle: s.t(
         'Tick off each item yourself as you get it ready.',
         'जैसे-जैसे तैयार होते जाएँ, हर आइटम खुद टिक करें।',
       ),
       continueLabel: s.t('Continue', 'जारी रखें'),
-      onContinue: () => Navigator.of(context).pushNamed('/flow-video'),
+      onContinue: () async {
+        // Last step of "Get ready" — a small checkpoint before
+        // moving into "Next step". Not shown for the already-on-GeM
+        // early exit (that happens earlier, in FlowRecordsPage, and
+        // never reaches this screen).
+        await showSectionComplete(
+          context,
+          s.t('Get ready complete', 'तैयार हो जाएँ पूर्ण'),
+        );
+        if (!context.mounted) return;
+        Navigator.of(context).pushNamed('/flow-video');
+      },
       children: [
+        const OnboardingArt('checklist', topGap: 0),
+        const SizedBox(height: 16),
         for (final key in _keys)
           OnboardingCheckOption(
-            icon: icons[key]!,
+            iconAsset: icons[key]!,
             label: labels[key]!,
             checked: checked.contains(key),
             onTap: () => toggle(key),
           ),
         Text(
           '${checked.length} ${s.t('of', 'में से')} ${_keys.length} ${s.t('checked', 'टिक किए')}',
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
+          style: AppText.bodyStrong,
         ),
         const SizedBox(height: 8),
         Text(
@@ -137,7 +147,7 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
             'This is preparation, not an eligibility decision.',
             'यह तैयारी है, पात्रता का निर्णय नहीं।',
           ),
-          style: const TextStyle(fontSize: 13, color: Color(0xFF9A9A9A)),
+          style: AppText.caption,
         ),
       ],
     );
@@ -153,10 +163,8 @@ class FlowVideoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
-      progress: 0.9,
-      sectionLabel: s.t('Next step', 'अगला कदम'),
-      stepLabel: s.t('REGISTRATION GUIDE', 'पंजीकरण गाइड'),
       headline: s.t(
         'How to register your business on GeM',
         'GeM पर अपना व्यवसाय कैसे पंजीकृत करें',
@@ -168,43 +176,20 @@ class FlowVideoPage extends StatelessWidget {
       continueLabel: s.t('Continue without video', 'वीडियो के बिना जारी रखें'),
       onContinue: () => Navigator.of(context).pushNamed('/flow-redirect'),
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 32),
-          decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFDDDDDD)),
-            borderRadius: BorderRadius.circular(14),
-          ),
+        AppCard(
+          padding: const EdgeInsets.fromLTRB(12, 24, 12, 28),
           child: Column(
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.fromBorderSide(
-                    BorderSide(color: Colors.black),
-                  ),
-                ),
-                child: const Icon(Icons.play_arrow, size: 28, color: Colors.black),
-              ),
+              const OnboardingArt('video', topGap: 0),
               const SizedBox(height: 16),
               Text(
                 s.t('VIDEO GUIDE', 'वीडियो गाइड'),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.1,
-                  color: Color(0xFF9A9A9A),
-                ),
+                style: AppText.overline,
               ),
               const SizedBox(height: 6),
               Text(
                 s.t('Video coming soon', 'वीडियो शीघ्र आ रहा है'),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black,
-                ),
+                style: AppText.title,
               ),
               const SizedBox(height: 6),
               Text(
@@ -213,7 +198,7 @@ class FlowVideoPage extends StatelessWidget {
                   'हम एक स्पष्ट, चरण-दर-चरण गाइड तैयार कर रहे हैं।',
                 ),
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF9A9A9A)),
+                style: AppText.secondary(AppText.bodySmall),
               ),
             ],
           ),
@@ -221,41 +206,37 @@ class FlowVideoPage extends StatelessWidget {
         const SizedBox(height: 28),
         Text(
           s.t('What the guide will cover', 'गाइड में क्या शामिल होगा'),
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: Colors.black,
-          ),
+          style: AppText.h3,
         ),
         const SizedBox(height: 16),
         _CoverRow(
-          icon: Icons.storefront_outlined,
+          asset: 'video_seller',
           text: s.t('Choose the right seller type', 'सही विक्रेता प्रकार चुनें'),
         ),
         _CoverRow(
-          icon: Icons.folder_outlined,
+          asset: 'video_details',
           text: s.t(
             'Keep your business details ready',
             'अपने व्यवसाय का विवरण तैयार रखें',
           ),
         ),
         _CoverRow(
-          icon: Icons.upload_outlined,
+          asset: 'video_portal',
           text: s.t(
             'Complete registration on the official GeM portal',
             'आधिकारिक GeM पोर्टल पर पंजीकरण पूरा करें',
           ),
         ),
         const SizedBox(height: 12),
-        TextButton(
-          onPressed: () => openLink(context, s, gemSource),
-          child: Text(
-            s.t('View registration overview', 'पंजीकरण अवलोकन देखें'),
-            style: const TextStyle(
-              fontSize: 15,
-              color: Colors.black,
-              decoration: TextDecoration.underline,
-            ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: AppButton(
+            label: s.t('View registration overview', 'पंजीकरण अवलोकन देखें'),
+            onPressed: () => openLink(context, s, gemSource),
+            variant: AppButtonVariant.tertiary,
+            size: AppButtonSize.sm,
+            expand: false,
+            haptic: false,
           ),
         ),
       ],
@@ -264,19 +245,19 @@ class FlowVideoPage extends StatelessWidget {
 }
 
 class _CoverRow extends StatelessWidget {
-  final IconData icon;
+  final String asset;
   final String text;
-  const _CoverRow({required this.icon, required this.text});
+  const _CoverRow({required this.asset, required this.text});
 
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 16),
     child: Row(
       children: [
-        Icon(icon, size: 22, color: Colors.black),
+        OnboardingIcon(icon: null, asset: asset, slot: 46),
         const SizedBox(width: 14),
         Expanded(
-          child: Text(text, style: const TextStyle(fontSize: 16, color: Colors.black)),
+          child: Text(text, style: AppText.body),
         ),
       ],
     ),
@@ -290,17 +271,19 @@ class FlowRedirectPage extends StatelessWidget {
 
   void _finish(BuildContext context) {
     store.completeOnboarding();
-    Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/home',
+      (route) => false,
+      arguments: fadeOnlyTransition,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final s = store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
-      progress: 1,
-      sectionLabel: s.t('Next step', 'अगला कदम'),
-      stepLabel: s.t('OFFICIAL REGISTRATION', 'आधिकारिक पंजीकरण'),
       headline: s.t(
         'You’re ready to register on GeM',
         'आप GeM पर पंजीकरण के लिए तैयार हैं',
@@ -318,68 +301,56 @@ class FlowRedirectPage extends StatelessWidget {
         if (context.mounted) _finish(context);
       },
       children: [
+        AppCard(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+          child: const OnboardingArt('redirect', topGap: 0),
+        ),
+        const SizedBox(height: 24),
         Text(
           s.t('Your next step', 'आपका अगला कदम'),
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: Colors.black,
-          ),
+          style: AppText.h3,
         ),
         const SizedBox(height: 16),
         _CoverRow(
-          icon: Icons.open_in_new,
+          asset: 'redir_open',
           text: s.t(
             'Open the official GeM registration page',
             'आधिकारिक GeM पंजीकरण पेज खोलें',
           ),
         ),
         _CoverRow(
-          icon: Icons.folder_outlined,
+          asset: 'redir_details',
           text: s.t(
             'Enter identity and business details only there',
             'पहचान और व्यवसाय विवरण केवल वहीं दें',
           ),
         ),
         _CoverRow(
-          icon: Icons.replay_outlined,
+          asset: 'redir_return',
           text: s.t(
             'Return to GeM BizReady whenever you need video guidance.',
             'जब भी वीडियो मार्गदर्शन चाहिए, GeM BizReady पर लौटें।',
           ),
         ),
-        Container(
+        AppCard(
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-          decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFDDDDDD)),
-            borderRadius: BorderRadius.circular(14),
-          ),
           child: Column(
             children: [
               Text(
                 s.t('OFFICIAL DESTINATION', 'आधिकारिक गंतव्य'),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.1,
-                  color: Color(0xFF9A9A9A),
-                ),
+                style: AppText.overline,
               ),
               const SizedBox(height: 10),
               const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.lock, size: 18, color: Colors.black),
+                  Icon(Icons.lock, size: 18, color: AppColors.ink),
                   SizedBox(width: 8),
                   Flexible(
                     child: Text(
                       'mkp.gem.gov.in',
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.black,
-                      ),
+                      style: AppText.h3,
                     ),
                   ),
                 ],
@@ -390,23 +361,19 @@ class FlowRedirectPage extends StatelessWidget {
                   'Opens securely in your browser',
                   'यह आपके ब्राउज़र में सुरक्षित रूप से खुलता है',
                 ),
-                style: const TextStyle(fontSize: 13, color: Color(0xFF9A9A9A)),
+                style: AppText.caption,
               ),
             ],
           ),
         ),
         const SizedBox(height: 16),
         Center(
-          child: TextButton(
+          child: AppButton(
+            label: s.t('Not now', 'अभी नहीं'),
             onPressed: () => _finish(context),
-            child: Text(
-              s.t('Not now', 'अभी नहीं'),
-              style: const TextStyle(
-                fontSize: 15,
-                color: Colors.black,
-                decoration: TextDecoration.underline,
-              ),
-            ),
+            variant: AppButtonVariant.tertiary,
+            expand: false,
+            haptic: false,
           ),
         ),
       ],

@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../core/models.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
+import 'brand_logo.dart';
+import 'components.dart';
 import 'widgets.dart';
-import 'pages.dart';
 import 'tools.dart';
 
 class AppShell extends StatefulWidget {
@@ -68,50 +69,20 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     ];
     Widget brand() => InkWell(
       onTap: () => go(context, s, ''),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: green,
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: const Icon(
-                Icons.handshake_outlined,
-                color: Colors.white,
-                size: 21,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Text(
-              'GeM ',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 22,
-                color: ink,
-              ),
-            ),
-            const Text(
-              'Saathi',
-              style: TextStyle(
-                fontWeight: FontWeight.w400,
-                fontSize: 22,
-                color: green,
-              ),
-            ),
-          ],
-        ),
-      ),
+      child: const BrandLogo(variant: BrandLogoVariant.lockup, width: 130),
     );
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: canvas,
+        // A translucent tint rather than a true backdrop blur: this
+        // page's forms auto-scroll a focused field into view, which
+        // can slide content up under a bar that extends behind it —
+        // a real blur there would make an underlying control briefly
+        // untappable. The onboarding flow's fixed GlassBar chrome
+        // (lib/features/glass.dart) doesn't have that risk and keeps
+        // the full frosted treatment.
+        backgroundColor: AppColors.surface.withValues(alpha: 0.92),
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
         toolbarHeight: 82,
         automaticallyImplyLeading: false,
         title: Padding(
@@ -127,8 +98,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                   onPressed: () => go(context, s, n[0]),
                   child: Text(
                     s.t(n[1], n[2]),
-                    style: TextStyle(
-                      color: widget.page == n[0] ? green : muted,
+                    style: AppText.bodySmall.copyWith(
+                      color: widget.page == n[0]
+                          ? AppColors.brand
+                          : AppColors.textSecondary,
                       fontWeight: widget.page == n[0]
                           ? FontWeight.w700
                           : FontWeight.w400,
@@ -157,61 +130,30 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               child: Text(
-                supportedLanguages
-                    .firstWhere(
-                      (lang) => lang[0] == s.language,
-                      orElse: () => supportedLanguages[0],
-                    )[1],
-                style: const TextStyle(color: muted),
+                supportedLanguages.firstWhere(
+                  (lang) => lang[0] == s.language,
+                  orElse: () => supportedLanguages[0],
+                )[1],
+                style: AppText.secondary(AppText.bodySmall),
               ),
             ),
           ),
           if (wide)
             Padding(
               padding: const EdgeInsets.only(right: 32, left: 12),
-              child: OutlinedButton.icon(
+              child: AppButton(
                 onPressed: () => go(context, s, 'account'),
-                icon: Icon(
-                  s.signedIn
-                      ? Icons.cloud_done_outlined
-                      : Icons.bookmark_border,
-                  size: 17,
-                ),
-                label: Text(s.t('Save progress', 'प्रगति सहेजें')),
-              ),
-            )
-          else
-            Builder(
-              builder: (context) => IconButton(
-                tooltip: s.t('Menu', 'मेन्यू'),
-                onPressed: () => Scaffold.of(context).openEndDrawer(),
-                icon: const Icon(Icons.menu),
+                icon: s.signedIn
+                    ? Icons.cloud_done_outlined
+                    : Icons.bookmark_border,
+                label: s.t('Save progress', 'प्रगति सहेजें'),
+                variant: AppButtonVariant.secondary,
+                size: AppButtonSize.sm,
+                expand: false,
+                haptic: false,
               ),
             ),
         ],
-      ),
-      endDrawer: Drawer(
-        child: SafeArea(
-          child: ListView(
-            children: [
-              Padding(padding: const EdgeInsets.all(24), child: brand()),
-              for (final n in [
-                ...nav,
-                ['tracker', 'Readiness tracker', 'तैयारी ट्रैकर'],
-                ['register', 'Register on GeM', 'GeM पर पंजीकरण'],
-                ['support', 'Get support', 'सहायता लें'],
-                ['account', 'Save & privacy', 'सहेजें और गोपनीयता'],
-              ])
-                ListTile(
-                  title: Text(s.t(n[1], n[2])),
-                  onTap: () {
-                    Navigator.pop(context);
-                    go(context, s, n[0]);
-                  },
-                ),
-            ],
-          ),
-        ),
       ),
       body: SelectionArea(
         child: SingleChildScrollView(
@@ -231,30 +173,39 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                     if (widget.page.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 20),
-                        child: TextButton.icon(
-                          onPressed: () => go(context, s, ''),
-                          icon: const Icon(Icons.arrow_back, size: 16),
-                          label: Text(s.t('Back to home', 'होम पर वापस')),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: AppButton(
+                            onPressed: () => go(context, s, ''),
+                            icon: Icons.arrow_back,
+                            label: s.t('Back to home', 'होम पर वापस'),
+                            variant: AppButtonVariant.tertiary,
+                            size: AppButtonSize.sm,
+                            expand: false,
+                            haptic: false,
+                          ),
                         ),
                       ),
                     switch (widget.page) {
-                      '' => HomePage(s),
-                      'tools' => ToolsPage(s),
-                      'learn' => LearnPage(s),
                       'eligibility' ||
                       'revenue' ||
                       'pricing' ||
                       'roi' => ToolPage(store: s, kind: widget.page),
-                      'tracker' => TrackerPage(s),
-                      'report' => ReportPage(s),
-                      'register' => RegisterPage(s),
-                      'account' => AccountPage(s),
-                      'support' => SupportPage(s),
-                      _ => Column(
-                        children: [
-                          Text(s.t('Page not found', 'पेज नहीं मिला')),
-                          NextActions(s, s.nextTool),
-                        ],
+                      // Cleared for a rebuild from scratch — see
+                      // pages.dart. Shows the shared empty state until
+                      // the page returns.
+                      _ => StateView(
+                        kind: StateKind.empty,
+                        title: s.t(
+                          'This page is being rebuilt',
+                          'यह पेज फिर से बनाया जा रहा है',
+                        ),
+                        message: s.t(
+                          'Please check back soon.',
+                          'कृपया जल्द ही दोबारा देखें।',
+                        ),
+                        actionLabel: s.t('Back to home', 'होम पर वापस'),
+                        onAction: () => go(context, s, ''),
                       ),
                     },
                     const SizedBox(height: 48),
@@ -269,9 +220,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                             'GeM BizReady  •  Small business. Bigger possibilities.',
                             'GeM BizReady  •  छोटा व्यवसाय। बड़ी संभावनाएँ।',
                           ),
-                          style: const TextStyle(
+                          style: AppText.bodySmall.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: ink,
                           ),
                         ),
                         Text(
@@ -279,6 +229,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                             'Independent project · Not affiliated with GeM',
                             'स्वतंत्र परियोजना · GeM से संबद्ध नहीं',
                           ),
+                          style: AppText.caption,
                         ),
                       ],
                     ),

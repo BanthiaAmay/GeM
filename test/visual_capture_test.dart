@@ -39,7 +39,7 @@ void main() {
       await tester.pumpWidget(
         RepaintBoundary(
           key: boundary,
-          child: SaathiApp(store: s),
+          child: SaathiApp(store: s, ready: s.initialize()),
         ),
       );
       await tester.pumpAndSettle();

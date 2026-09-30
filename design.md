@@ -3,19 +3,9 @@
 Version 1.0 · 9 September 2026
 
 ## Experience direction
-Calm, practical and independent. The home page introduces a new buyer for an existing business, then offers eligibility or the basics. It avoids giant, unsourced procurement numbers. Cream backgrounds, dark forest text and restrained green/lime accents make a text-first financial tool approachable. The UI uses Flutter Material components; no stock photography or heavy animation.
+Calm, practical and independent. The home page introduces a new buyer for an existing business, then offers eligibility or the basics. It avoids giant, unsourced procurement numbers. White surfaces, near-black ink and one restrained green make a text-first financial tool approachable. The UI uses Flutter Material components themed by the design system; illustrations come from the design mockups, with no stock photography or heavy animation.
 
-| Token | Value | Role |
-|---|---|---|
-| Canvas | `#F6F7F2` | Page background |
-| Ink | `#163E36` | Headings and dark support panel |
-| Primary | `#22654C` | Actions, links and meaningful icons |
-| Muted | `#62716B` | Supporting copy |
-| Border | `#DFE5DD` | Quiet panel/input boundaries |
-| Accent | `#E4EDB1` | Progress, next action and numbered markers |
-| Cards | 20 px radius / 24 px padding | Reusable panels |
-| Inputs/buttons | 10–12 px radius / ≥48 px action height | Touch interaction |
-| Content | 1200 px outer max | Desktop readability |
+Colour, type, spacing, radius, button, icon, chart and pattern rules are maintained in **[DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)** (values in `lib/core/tokens.dart`, shared widgets in `lib/features/components.dart`). Content is capped at 1200 px on desktop.
 
 ## Responsive layout
 Below 900 px, the header uses a drawer and persistent language toggle. Desktop shows the main links and save action. Tool cards use 1/2/3 columns based on available width; forms/results stack below 700 px. The hero splits at 780 px. Content scrolls vertically, text is selectable and numeric fields use number keyboards. Form errors appear inline; transient actions use snackbars. Result values are accompanied by labels and source notes, not colour alone.
@@ -50,10 +40,10 @@ flowchart TD
 |---|---|
 | `lib/main.dart` | Optional Supabase bootstrap, locale/theme and routes |
 | `lib/core/models.dart` | Pure classification, eligibility, pricing, revenue and ROI functions; source URLs |
-| `lib/core/theme.dart` | Material theme and visual tokens |
+| `lib/core/tokens.dart`, `lib/core/theme.dart` | Design tokens and the Material theme built from them |
 | `lib/data/app_store.dart` | Local state, authenticated snapshots, consent/event queue and cloud operations |
 | `lib/features/shell.dart` | Responsive navigation, footer and foreground engagement sampling |
-| `lib/features/widgets.dart` | Panels, headings, stats, source links and next actions |
+| `lib/features/components.dart`, `charts.dart`, `widgets.dart` | Shared components, charts, and page-level panels/stats/next actions |
 | `lib/features/tools.dart` | Validated input forms, calculations and result views |
 | `lib/features/pages.dart` | Home, education, tracker, report, account, support and trust pages |
 

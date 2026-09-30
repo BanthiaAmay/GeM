@@ -1,89 +1,314 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
+import 'tokens.dart';
 
-const ink = Color(0xFF163E36);
-const green = Color(0xFF22654C);
-const canvas = Color(0xFFF6F7F2);
-const muted = Color(0xFF62716B);
-const line = Color(0xFFDFE5DD);
-const lime = Color(0xFFE4EDB1);
+export 'tokens.dart';
 
-// Apple's own San Francisco typeface, referenced by the private family
-// names iOS already exposes for its system font — never bundled as
-// asset files, since SF Pro's license restricts redistribution. This
-// mirrors how apple.com itself styles text (`-apple-system`): Display
-// for headlines set at 20pt and above, Text below that, exactly where
-// Apple's own type ramp switches between the two optical sizes.
-const sfProText = '.SF Pro Text';
-const sfProDisplay = '.SF Pro Display';
+/// The one app theme. Every Material widget the app uses inherits its
+/// look from here, so feature code only overrides on purpose. Values come
+/// from `tokens.dart`; the rules are in DESIGN_SYSTEM.md.
+ThemeData saathiTheme() {
+  const scheme = ColorScheme.light(
+    primary: AppColors.ink,
+    onPrimary: AppColors.surface,
+    secondary: AppColors.brand,
+    onSecondary: AppColors.surface,
+    error: AppColors.danger,
+    onError: AppColors.surface,
+    surface: AppColors.surface,
+    onSurface: AppColors.ink,
+    onSurfaceVariant: AppColors.textSecondary,
+    outline: AppColors.borderStrong,
+    outlineVariant: AppColors.border,
+    surfaceContainerLowest: AppColors.surface,
+    surfaceContainerLow: AppColors.surfaceMuted,
+    surfaceContainer: AppColors.surfaceMuted,
+    surfaceContainerHigh: AppColors.surfaceMuted,
+    surfaceContainerHighest: AppColors.surfaceMuted,
+  );
 
-ThemeData saathiTheme() => ThemeData(
-  useMaterial3: true,
-  fontFamily: sfProText,
-  fontFamilyFallback: const ['NotoSansDevanagari'],
-  scaffoldBackgroundColor: canvas,
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: green,
-    primary: green,
-    surface: Colors.white,
-    onSurface: ink,
-  ),
-  textTheme: const TextTheme(
-    headlineLarge: TextStyle(
-      fontFamily: sfProDisplay,
-      fontSize: 42,
-      fontWeight: FontWeight.w700,
-      height: 1.15,
-      letterSpacing: -1.5,
-      color: ink,
+  final pill = WidgetStatePropertyAll<OutlinedBorder>(
+    const StadiumBorder(),
+  );
+  final label = WidgetStatePropertyAll<TextStyle>(AppText.button);
+
+  // Keyboard/switch focus: a 3px brand ring on every button kind.
+  BorderSide? focusSide(Set<WidgetState> s, BorderSide? rest) =>
+      s.contains(WidgetState.focused)
+      ? const BorderSide(color: AppColors.brand, width: 3)
+      : rest;
+
+  return ThemeData(
+    useMaterial3: true,
+    fontFamily: sfProText,
+    // One fallback family per supported script (Marathi/Hindi share
+    // Devanagari). Flutter tries each in order until a glyph is found,
+    // so this list must cover every script in `supportedLanguages`
+    // (core/models.dart) — add the new script's font here when a new
+    // language is added, or its text silently falls back to whatever
+    // (if anything) the OS itself ships for that script.
+    fontFamilyFallback: const [
+      'NotoSansDevanagari', // hi, mr
+      'NotoSansBengali', // bn
+      'NotoSansGujarati', // gu
+      'NotoSansGurmukhi', // pa
+      'NotoSansTamil', // ta
+      'NotoSansTelugu', // te
+      'NotoSansKannada', // kn
+    ],
+    scaffoldBackgroundColor: AppColors.surface,
+    canvasColor: AppColors.surface,
+    colorScheme: scheme,
+    visualDensity: VisualDensity.standard,
+    materialTapTargetSize: MaterialTapTargetSize.padded,
+    splashFactory: InkRipple.splashFactory,
+    // A single, calm slide-transition on every platform (including
+    // low-end Android and web) rather than each platform's own
+    // default — keeps page-to-page motion restrained and consistent.
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+      },
     ),
-    headlineMedium: TextStyle(
-      fontFamily: sfProDisplay,
-      fontSize: 30,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -.8,
-      color: ink,
+    textTheme: const TextTheme(
+      displayLarge: AppText.display,
+      headlineLarge: AppText.h1,
+      headlineMedium: AppText.h2,
+      headlineSmall: AppText.h3,
+      titleLarge: AppText.h3,
+      titleMedium: AppText.title,
+      titleSmall: AppText.bodySmall,
+      bodyLarge: AppText.body,
+      bodyMedium: AppText.bodySmall,
+      bodySmall: AppText.caption,
+      labelLarge: AppText.button,
+      labelMedium: AppText.label,
+      labelSmall: AppText.label,
     ),
-    titleLarge: TextStyle(
-      fontFamily: sfProDisplay,
-      fontSize: 22,
-      fontWeight: FontWeight.w600,
-      color: ink,
+    iconTheme: const IconThemeData(
+      size: AppIconSize.md,
+      color: AppColors.ink,
     ),
-    titleMedium: TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w600,
-      color: ink,
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: AppColors.surface,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpace.lg + 2,
+        vertical: AppSpace.lg + 2,
+      ),
+      hintStyle: AppText.body.copyWith(color: AppColors.textHint),
+      labelStyle: AppText.body.copyWith(color: AppColors.textSecondary),
+      helperStyle: AppText.caption,
+      helperMaxLines: 3,
+      errorStyle: AppText.caption.copyWith(color: AppColors.danger),
+      errorMaxLines: 3,
+      border: OutlineInputBorder(
+        borderRadius: AppRadius.input,
+        borderSide: const BorderSide(color: AppColors.borderStrong),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: AppRadius.input,
+        borderSide: const BorderSide(color: AppColors.borderStrong),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: AppRadius.input,
+        borderSide: const BorderSide(color: AppColors.ink, width: 1.6),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: AppRadius.input,
+        borderSide: const BorderSide(color: AppColors.danger),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: AppRadius.input,
+        borderSide: const BorderSide(color: AppColors.danger, width: 1.6),
+      ),
+      disabledBorder: OutlineInputBorder(
+        borderRadius: AppRadius.input,
+        borderSide: const BorderSide(color: AppColors.border),
+      ),
     ),
-    bodyLarge: TextStyle(fontSize: 16, height: 1.6, color: muted),
-    bodyMedium: TextStyle(fontSize: 14, height: 1.5, color: muted),
-  ),
-  inputDecorationTheme: InputDecorationTheme(
-    filled: true,
-    fillColor: Colors.white,
-    contentPadding: const EdgeInsets.all(18),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: line),
+    // Primary: solid ink pill.
+    filledButtonTheme: FilledButtonThemeData(
+      style: ButtonStyle(
+        minimumSize: const WidgetStatePropertyAll(
+          Size(AppSize.tap, AppSize.buttonMd),
+        ),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: AppSpace.xxl),
+        ),
+        shape: pill,
+        textStyle: label,
+        elevation: const WidgetStatePropertyAll(0),
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.disabled)
+              ? AppColors.disabled
+              : s.contains(WidgetState.pressed)
+              ? AppColors.inkPressed
+              : AppColors.ink,
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.disabled)
+              ? AppColors.surface.withValues(alpha: 0.7)
+              : AppColors.surface,
+        ),
+        side: WidgetStateProperty.resolveWith((s) => focusSide(s, null)),
+      ),
     ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: line),
+    // Secondary: outlined pill.
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: ButtonStyle(
+        minimumSize: const WidgetStatePropertyAll(
+          Size(AppSize.tap, AppSize.buttonMd),
+        ),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: AppSpace.xxl),
+        ),
+        shape: pill,
+        textStyle: label,
+        elevation: const WidgetStatePropertyAll(0),
+        backgroundColor: const WidgetStatePropertyAll(AppColors.surface),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.disabled)
+              ? AppColors.textHint
+              : AppColors.ink,
+        ),
+        overlayColor: WidgetStatePropertyAll(
+          AppColors.ink.withValues(alpha: 0.06),
+        ),
+        side: WidgetStateProperty.resolveWith(
+          (s) => focusSide(
+            s,
+            BorderSide(
+              color: s.contains(WidgetState.disabled)
+                  ? AppColors.border
+                  : AppColors.borderStrong,
+              width: 1.4,
+            ),
+          ),
+        ),
+      ),
     ),
-  ),
-  filledButtonTheme: FilledButtonThemeData(
-    style: FilledButton.styleFrom(
-      minimumSize: const Size(48, 50),
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 17),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    // Tertiary: text-only.
+    textButtonTheme: TextButtonThemeData(
+      style: ButtonStyle(
+        minimumSize: const WidgetStatePropertyAll(
+          Size(AppSize.tap, AppSize.tap),
+        ),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: AppSpace.md),
+        ),
+        shape: pill,
+        textStyle: WidgetStatePropertyAll(
+          AppText.button.copyWith(fontSize: 15),
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.disabled)
+              ? AppColors.textHint
+              : AppColors.ink,
+        ),
+        overlayColor: WidgetStatePropertyAll(
+          AppColors.ink.withValues(alpha: 0.06),
+        ),
+        side: WidgetStateProperty.resolveWith((s) => focusSide(s, null)),
+      ),
     ),
-  ),
-  outlinedButtonTheme: OutlinedButtonThemeData(
-    style: OutlinedButton.styleFrom(
-      minimumSize: const Size(48, 50),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      side: const BorderSide(color: line),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    // Icon button: 48px target, quiet hover/press wash.
+    iconButtonTheme: IconButtonThemeData(
+      style: ButtonStyle(
+        minimumSize: const WidgetStatePropertyAll(
+          Size(AppSize.tap, AppSize.tap),
+        ),
+        iconSize: const WidgetStatePropertyAll(AppIconSize.md),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.disabled)
+              ? AppColors.textHint
+              : AppColors.ink,
+        ),
+        overlayColor: WidgetStatePropertyAll(
+          AppColors.ink.withValues(alpha: 0.08),
+        ),
+        side: WidgetStateProperty.resolveWith((s) => focusSide(s, null)),
+      ),
     ),
-  ),
-  dividerTheme: const DividerThemeData(color: line, space: 32),
-);
+    cardTheme: CardThemeData(
+      color: AppColors.surface,
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.card,
+        side: const BorderSide(color: AppColors.border),
+      ),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+      ),
+      titleTextStyle: AppText.h3,
+      contentTextStyle: AppText.body.copyWith(color: AppColors.textSecondary),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.sheet),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: AppColors.ink,
+      contentTextStyle: AppText.bodySmall.copyWith(color: AppColors.surface),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.input),
+    ),
+    dividerTheme: const DividerThemeData(
+      color: AppColors.border,
+      thickness: 1,
+      space: 1,
+    ),
+    progressIndicatorTheme: const ProgressIndicatorThemeData(
+      color: AppColors.brand,
+      linearTrackColor: AppColors.chartTrack,
+      circularTrackColor: AppColors.chartTrack,
+    ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected)
+            ? AppColors.ink
+            : AppColors.surface,
+      ),
+      checkColor: const WidgetStatePropertyAll(AppColors.surface),
+      side: const BorderSide(color: AppColors.borderStrong, width: 1.6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+    ),
+    popupMenuTheme: PopupMenuThemeData(
+      color: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.input,
+        side: const BorderSide(color: AppColors.border),
+      ),
+      textStyle: AppText.body,
+    ),
+    listTileTheme: const ListTileThemeData(
+      iconColor: AppColors.ink,
+      textColor: AppColors.ink,
+    ),
+    tooltipTheme: TooltipThemeData(
+      decoration: BoxDecoration(
+        color: AppColors.ink,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      textStyle: AppText.caption.copyWith(color: AppColors.surface),
+    ),
+    navigationRailTheme: const NavigationRailThemeData(
+      backgroundColor: AppColors.surface,
+      indicatorColor: Colors.transparent,
+      selectedIconTheme: IconThemeData(color: AppColors.brand),
+      unselectedIconTheme: IconThemeData(color: AppColors.textSecondary),
+    ),
+  );
+}

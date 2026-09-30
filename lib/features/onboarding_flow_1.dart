@@ -1,6 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../core/motion.dart';
 import '../data/app_store.dart';
+import 'components.dart';
 import 'onboarding_widgets.dart';
+import '../core/tokens.dart';
 
 const _indianStates = [
   'Andhra Pradesh',
@@ -64,10 +70,8 @@ class _FlowFullNamePageState extends State<FlowFullNamePage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
-      progress: 1 / 6,
-      sectionLabel: s.t('Your business', 'आपका व्यवसाय'),
-      stepLabel: s.t('YOUR BUSINESS · 1 OF 6', 'आपका व्यवसाय · 1 में से 6'),
       headline: s.t('What is your full name?', 'आपका पूरा नाम क्या है?'),
       subtitle: s.t(
         'Use the full name you want us to use in your guide.',
@@ -86,6 +90,20 @@ class _FlowFullNamePageState extends State<FlowFullNamePage> {
           controller: controller,
           hint: s.t('e.g. Vijay Kumar', 'उदा. विजय कुमार'),
           onChanged: (_) => setState(() {}),
+        ),
+        OnboardingTextArt(
+          name: 'name_card',
+          pixelSize: const Size(585, 245),
+          textBox: const Rect.fromLTRB(0.359, 0.261, 0.752, 0.645),
+          angle: -0.11,
+          text: controller.text,
+          placeholder: s.t('Vijay Kumar', 'विजय कुमार'),
+          style: const TextStyle(
+            fontFamily: 'Snell Roundhand',
+            fontFamilyFallback: ['cursive'],
+            fontSize: 38,
+            color: AppColors.ink,
+          ),
         ),
       ],
     );
@@ -118,10 +136,8 @@ class _FlowPhonePageState extends State<FlowPhonePage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
-      progress: 1 / 3,
-      sectionLabel: s.t('Getting started', 'शुरुआत'),
-      stepLabel: s.t('GETTING STARTED · 1 OF 3', 'शुरुआत · 1 में से 3'),
       headline: s.t('Your mobile number', 'आपका मोबाइल नंबर'),
       subtitle: s.t(
         'This is a demonstration sign-in. No SMS will be sent.',
@@ -149,8 +165,9 @@ class _FlowPhonePageState extends State<FlowPhonePage> {
             'Use any 10 digits in this prototype. We won’t contact this number.',
             'इस प्रोटोटाइप में कोई भी 10 अंक दें। हम इस नंबर पर संपर्क नहीं करेंगे।',
           ),
-          style: const TextStyle(fontSize: 14, color: Color(0xFF9A9A9A)),
+          style: AppText.secondary(AppText.bodySmall),
         ),
+        const OnboardingArt('phone_shop', topGap: 28),
       ],
     );
   }
@@ -164,107 +181,162 @@ class FlowOtpPage extends StatefulWidget {
   State<FlowOtpPage> createState() => _FlowOtpPageState();
 }
 
-class _FlowOtpPageState extends State<FlowOtpPage> {
-  final controllers = List.generate(6, (_) => TextEditingController());
-  final focusNodes = List.generate(6, (_) => FocusNode());
+class _FlowOtpPageState extends State<FlowOtpPage>
+    with SingleTickerProviderStateMixin {
+  final _codeController = TextEditingController();
+  final _focusNode = FocusNode();
+  late final AnimationController _autoContinueTimer = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 300),
+  );
+  bool _navigated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() => setState(() {}));
+  }
 
   @override
   void dispose() {
-    for (final c in controllers) {
-      c.dispose();
-    }
-    for (final f in focusNodes) {
-      f.dispose();
-    }
+    _codeController.dispose();
+    _focusNode.dispose();
+    _autoContinueTimer.dispose();
     super.dispose();
   }
 
   void _fillDemoCode() {
-    const code = '123456';
-    for (var i = 0; i < 6; i++) {
-      controllers[i].text = code[i];
-    }
-    setState(() {});
+    _codeController.text = '123456';
+    _onChanged('123456');
   }
 
-  bool get _complete => controllers.every((c) => c.text.trim().length == 1);
+  bool get _complete => _codeController.text.length == 6;
+
+  void _proceed() {
+    if (_navigated) return;
+    _navigated = true;
+    Navigator.of(context).pushNamed('/flow-location');
+  }
+
+  void _onChanged(String value) {
+    setState(() {});
+    if (value.length == 6) {
+      unawaited(_autoContinueAfterPause());
+    }
+  }
+
+  Future<void> _autoContinueAfterPause() async {
+    if (Motion.reduced(context)) {
+      _autoContinueTimer.value = 1;
+    } else {
+      await _autoContinueTimer.forward(from: 0);
+    }
+    if (!mounted) return;
+    _proceed();
+  }
+
+  Widget _otpBox(int i) {
+    final text = _codeController.text;
+    final char = i < text.length ? text[i] : '';
+    final active = _focusNode.hasFocus && text.length == i;
+    return AnimatedContainer(
+      duration: Motion.of(context, Motion.fast),
+      curve: Motion.standard,
+      width: 46,
+      height: 56,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.input,
+        border: Border.all(
+          color: active ? AppColors.ink : AppColors.borderStrong,
+          width: active ? 1.4 : 1,
+        ),
+      ),
+      child: AnimatedSwitcher(
+        duration: Motion.of(context, Motion.fast),
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.8, end: 1).animate(animation),
+            child: child,
+          ),
+        ),
+        child: Text(
+          char,
+          key: ValueKey(char),
+          style: AppText.digit,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
-      progress: 2 / 3,
-      sectionLabel: s.t('Getting started', 'शुरुआत'),
-      stepLabel: s.t('GETTING STARTED · 2 OF 3', 'शुरुआत · 2 में से 3'),
       headline: s.t('Enter your code', 'अपना कोड डालें'),
       subtitle: s.t(
         'For this prototype, use 123456. No real code was sent.',
         'इस प्रोटोटाइप के लिए 123456 इस्तेमाल करें। कोई असली कोड नहीं भेजा गया।',
       ),
       continueLabel: s.t('Continue', 'जारी रखें'),
-      onContinue: _complete
-          ? () => Navigator.of(context).pushNamed('/flow-location')
-          : null,
+      onContinue: _complete ? _proceed : null,
       children: [
         Text(
           s.t('Demo verification code', 'डेमो सत्यापन कोड'),
-          style: const TextStyle(fontSize: 15, color: Color(0xFF737B84)),
+          style: AppText.secondary(AppText.bodySmall),
         ),
         const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            for (var i = 0; i < 6; i++)
-              SizedBox(
-                width: 46,
-                height: 56,
-                child: TextField(
-                  controller: controllers[i],
-                  focusNode: focusNodes[i],
-                  textAlign: TextAlign.center,
-                  keyboardType: TextInputType.number,
-                  maxLength: 1,
-                  style: const TextStyle(fontSize: 22, color: Colors.black),
-                  decoration: InputDecoration(
-                    counterText: '',
-                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+        SizedBox(
+          height: 56,
+          child: Stack(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [for (var i = 0; i < 6; i++) _otpBox(i)],
+              ),
+              // A fully unpainted (Opacity 0) input laid over the boxes:
+              // it still takes taps, focus, paste and autofill, but can
+              // never draw over them — the app theme fills and outlines
+              // every TextField, which otherwise hid all but the boxes'
+              // bottom edges.
+              Positioned.fill(
+                child: Opacity(
+                  opacity: 0,
+                  alwaysIncludeSemantics: true,
+                  child: TextField(
+                    controller: _codeController,
+                    focusNode: _focusNode,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    autofillHints: const [AutofillHints.oneTimeCode],
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    showCursor: false,
+                    enableInteractiveSelection: false,
+                    decoration: const InputDecoration(
+                      counterText: '',
+                      contentPadding: EdgeInsets.zero,
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Colors.black,
-                        width: 1.4,
-                      ),
-                    ),
+                    onChanged: _onChanged,
                   ),
-                  onChanged: (v) {
-                    setState(() {});
-                    if (v.isNotEmpty && i < 5) {
-                      focusNodes[i + 1].requestFocus();
-                    }
-                  },
                 ),
               ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 16),
         Center(
-          child: TextButton(
+          child: AppButton(
+            label: s.t('Use demo code', 'डेमो कोड इस्तेमाल करें'),
             onPressed: _fillDemoCode,
-            child: Text(
-              s.t('Use demo code', 'डेमो कोड इस्तेमाल करें'),
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black,
-                decoration: TextDecoration.underline,
-              ),
-            ),
+            variant: AppButtonVariant.tertiary,
+            expand: false,
+            haptic: false,
           ),
         ),
+        const OnboardingArt('otp_shop', topGap: 12),
       ],
     );
   }
@@ -294,10 +366,8 @@ class _FlowLocationPageState extends State<FlowLocationPage> {
   Widget build(BuildContext context) {
     final s = widget.store;
     return OnboardingStepScaffold(
+      store: s,
       onBack: () => Navigator.of(context).pop(),
-      progress: 2 / 6,
-      sectionLabel: s.t('Your business', 'आपका व्यवसाय'),
-      stepLabel: s.t('YOUR BUSINESS · 2 OF 6', 'आपका व्यवसाय · 2 में से 6'),
       headline: s.t(
         'Where is your business based?',
         'आपका व्यवसाय कहाँ स्थित है?',
@@ -309,12 +379,21 @@ class _FlowLocationPageState extends State<FlowLocationPage> {
       continueLabel: s.t('Continue', 'जारी रखें'),
       onContinue: state.isEmpty || districtController.text.trim().isEmpty
           ? null
-          : () {
+          : () async {
               s.setProfile('state', state);
               s.setProfile('district', districtController.text.trim());
+              // Last step of "Getting started" — a small checkpoint
+              // before moving into the next section.
+              await showSectionComplete(
+                context,
+                s.t('Getting started complete', 'शुरुआत पूर्ण'),
+              );
+              if (!context.mounted) return;
               Navigator.of(context).pushNamed('/flow-bizname');
             },
       children: [
+        const OnboardingArt('location_map', topGap: 0),
+        const SizedBox(height: 20),
         OnboardingPickerField(
           icon: Icons.location_on_outlined,
           value: state,
@@ -337,7 +416,7 @@ class _FlowLocationPageState extends State<FlowLocationPage> {
             'भारत भर के अवसर देखें। उपलब्धता हर बोली पर निर्भर करती है।',
           ),
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 13, color: Color(0xFF9A9A9A)),
+          style: AppText.caption,
         ),
       ],
     );
