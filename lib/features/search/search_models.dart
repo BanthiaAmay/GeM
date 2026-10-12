@@ -1,0 +1,140 @@
+/// Core data types for universal search — pure Dart, no Flutter imports.
+library;
+
+enum SearchType {
+  bid,
+  tool,
+  lesson,
+  finance,
+  calculator,
+  document,
+  faq,
+  myData,
+}
+
+/// One result returned by the search engine.
+class SearchItem {
+  final String id;
+  final SearchType type;
+  final String titleEn;
+  final String titleHi;
+  final String subtitleEn;
+  final String subtitleHi;
+
+  /// Keywords used by the engine (not shown in UI).
+  final List<String> keywords;
+
+  /// Named route to navigate to when tapped.
+  final String route;
+
+  /// Optional argument for the route (e.g. bid id, tool id).
+  final String? routeArg;
+
+  /// Primary action label for this result.
+  final String actionEn;
+  final String actionHi;
+
+  /// Relevance score set by the engine (higher = better). 0–100.
+  double score;
+
+  SearchItem({
+    required this.id,
+    required this.type,
+    required this.titleEn,
+    required this.titleHi,
+    required this.subtitleEn,
+    required this.subtitleHi,
+    required this.keywords,
+    required this.route,
+    this.routeArg,
+    required this.actionEn,
+    required this.actionHi,
+    this.score = 0,
+  });
+}
+
+/// Sort options for the results list.
+enum SortOption {
+  bestMatch,
+  closingSoon,
+  highestValue,
+  newest;
+
+  String get labelEn => switch (this) {
+    SortOption.bestMatch => 'Best match',
+    SortOption.closingSoon => 'Closing soon',
+    SortOption.highestValue => 'Highest value',
+    SortOption.newest => 'Newest',
+  };
+
+  String get labelHi => switch (this) {
+    SortOption.bestMatch => 'सर्वोत्तम मिलान',
+    SortOption.closingSoon => 'जल्द बंद होने वाले',
+    SortOption.highestValue => 'सर्वाधिक मूल्य',
+    SortOption.newest => 'नए',
+  };
+}
+
+/// Scope tabs on the search page.
+enum SearchScope { all, bids, tools, learn, finance }
+
+extension SearchScopeLabel on SearchScope {
+  String get labelEn => switch (this) {
+    SearchScope.all => 'All',
+    SearchScope.bids => 'Bids',
+    SearchScope.tools => 'Tools',
+    SearchScope.learn => 'Learn',
+    SearchScope.finance => 'Finance',
+  };
+
+  String get labelHi => switch (this) {
+    SearchScope.all => 'सभी',
+    SearchScope.bids => 'बोलियाँ',
+    SearchScope.tools => 'टूल',
+    SearchScope.learn => 'सीखें',
+    SearchScope.finance => 'वित्त',
+  };
+
+  SearchType? get typeFilter => switch (this) {
+    SearchScope.all => null,
+    SearchScope.bids => SearchType.bid,
+    SearchScope.tools => SearchType.tool,
+    SearchScope.learn => SearchType.lesson,
+    SearchScope.finance => SearchType.finance,
+  };
+}
+
+/// Active bid-list filter state.
+class BidFilter {
+  final String? state;
+  final String? district;
+  final int? maxValueRs;
+  final int? closingInDays;
+  final bool? mseRelaxation;
+  final bool? emdExemption;
+
+  const BidFilter({
+    this.state,
+    this.district,
+    this.maxValueRs,
+    this.closingInDays,
+    this.mseRelaxation,
+    this.emdExemption,
+  });
+
+  bool get hasAny =>
+      state != null ||
+      district != null ||
+      maxValueRs != null ||
+      closingInDays != null ||
+      mseRelaxation != null ||
+      emdExemption != null;
+
+  const BidFilter.empty()
+      : state = null,
+        district = null,
+        maxValueRs = null,
+        closingInDays = null,
+        mseRelaxation = null,
+        emdExemption = null;
+}

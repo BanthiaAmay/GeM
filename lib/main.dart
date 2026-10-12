@@ -18,6 +18,24 @@ import 'features/onboarding_flow_2.dart';
 import 'features/onboarding_flow_3.dart';
 import 'features/onboarding_flow_4.dart';
 import 'features/onboarding_flow_5.dart';
+import 'features/bid_docs/mii_certificate_page.dart';
+import 'features/bid_docs/escalation_matrix_page.dart';
+import 'features/bid_docs/bid_security_page.dart';
+import 'features/bid_docs/financial_standing_page.dart';
+import 'features/bid_docs/non_conviction_page.dart';
+import 'features/bid_docs/non_relation_page.dart';
+import 'features/bid_docs/non_blacklist_certificate_page.dart';
+import 'features/bid_docs/atc_certificate_page.dart';
+import 'features/bid_docs/land_border_declaration_page.dart';
+import 'features/bid_docs/lowest_price_declaration_page.dart';
+import 'features/bid_docs/mrp_declaration_page.dart';
+import 'features/bid_docs/oem_authorization_page.dart';
+import 'features/bid_docs/msme_emd_page.dart';
+import 'features/bid_docs/msme_turnover_page.dart';
+import 'features/bid_docs/warranty_declaration_page.dart';
+import 'features/search/bid_detail_page.dart';
+import 'features/search/search_page.dart';
+import 'features/search/search_store.dart';
 import 'features/shell.dart';
 import 'features/welcome_page.dart';
 
@@ -259,6 +277,106 @@ class SaathiApp extends StatelessWidget {
                 ? InsightsCategoriesPage(store: store)
                 : page == 'insights-fit'
                 ? InsightsFitPage(store: store)
+                : page == 'tool-mii'
+                ? MiiCertificatePage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-escalation'
+                ? EscalationMatrixPage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-bid-security'
+                ? BidSecurityPage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-financial-standing'
+                ? FinancialStandingPage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-non-conviction'
+                ? NonConvictionPage(store: store)
+                : page == 'tool-non-relation'
+                ? NonRelationPage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-atc-certificate'
+                ? AtcCertificatePage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-msme-turnover'
+                ? MsmeTurnoverPage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-msme-emd'
+                ? MsmeEmdPage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-warranty-declaration'
+                ? WarrantyDeclarationPage(store: store)
+                : page == 'tool-nbc'
+                ? NonBlacklistCertificatePage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-lowest-price-declaration'
+                ? LowestPriceDeclarationPage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-oem-authorization'
+                ? OemAuthorizationPage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-land-border-declaration'
+                ? LandBorderDeclarationPage(store: store)
+                : page == 'tool-mrp-declaration'
+                ? MrpDeclarationPage(store: store)
+                : page == 'search'
+                ? SearchPage(
+                    store: store,
+                    searchStore: SearchStore(store.prefs),
+                    initialQuery: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'bid-detail'
+                ? BidDetailPage(
+                    store: store,
+                    bidId: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
                 : AppShell(store: store, page: page),
           );
         }
