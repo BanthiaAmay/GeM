@@ -100,6 +100,11 @@ class _HomePageState extends State<HomePage> {
                   ),
                   _LanguageChip(store: s),
                   const SizedBox(width: 6),
+                  AppIconButton(
+                    onPressed: () => Navigator.of(context).pushNamed('/search'),
+                    icon: Icons.search,
+                    tooltip: s.t('Search', 'खोजें'),
+                  ),
                   _NotificationBell(store: s, onTap: () => _go(_Tab.home)),
                   AppIconButton(
                     onPressed: () => Scaffold.of(context).openEndDrawer(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/tokens.dart';
 import '../../data/sample_bids.dart';
 import '../components.dart';
+import 'search_engine.dart';
 import 'search_models.dart';
 
 // ─── Bid row ──────────────────────────────────────────────────────────────────
@@ -13,11 +14,15 @@ class BidResultRow extends StatelessWidget {
   final bool isHindi;
   final VoidCallback onTap;
 
+  /// Raw query string for match highlighting (empty = no highlight).
+  final String query;
+
   const BidResultRow({
     super.key,
     required this.bid,
     required this.isHindi,
     required this.onTap,
+    this.query = '',
   });
 
   @override
@@ -42,14 +47,19 @@ class BidResultRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: AppText.title, maxLines: 2),
+                  HighlightText(
+                    text: title,
+                    query: query,
+                    baseStyle: AppText.title,
+                    maxLines: 2,
+                  ),
                   if (bid.department != null) ...[
                     const SizedBox(height: AppSpace.xs),
-                    Text(
-                      bid.department!,
-                      style: AppText.caption,
+                    HighlightText(
+                      text: bid.department!,
+                      query: query,
+                      baseStyle: AppText.caption,
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                   const SizedBox(height: AppSpace.sm),
@@ -100,6 +110,9 @@ class SearchResultRow extends StatelessWidget {
   final bool isHindi;
   final VoidCallback onTap;
 
+  /// Raw query string for match highlighting (empty = no highlight).
+  final String query;
+
   static const _icons = <SearchType, IconData>{
     SearchType.tool: Icons.build_outlined,
     SearchType.lesson: Icons.school_outlined,
@@ -109,6 +122,7 @@ class SearchResultRow extends StatelessWidget {
     SearchType.faq: Icons.help_outline,
     SearchType.myData: Icons.person_outline,
     SearchType.bid: Icons.gavel_outlined,
+    SearchType.category: Icons.category_outlined,
   };
 
   const SearchResultRow({
@@ -116,6 +130,7 @@ class SearchResultRow extends StatelessWidget {
     required this.item,
     required this.isHindi,
     required this.onTap,
+    this.query = '',
   });
 
   @override
@@ -151,9 +166,18 @@ class SearchResultRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: AppText.body),
+                  HighlightText(
+                    text: title,
+                    query: query,
+                    baseStyle: AppText.body,
+                  ),
                   if (subtitle.isNotEmpty)
-                    Text(subtitle, style: AppText.caption, maxLines: 2),
+                    HighlightText(
+                      text: subtitle,
+                      query: query,
+                      baseStyle: AppText.caption,
+                      maxLines: 2,
+                    ),
                 ],
               ),
             ),
@@ -182,8 +206,68 @@ class IllustrativeLabel extends StatelessWidget {
       vertical: AppSpace.sm,
     ),
     child: Text(
-      isHindi ? 'चित्रण डेटा — वास्तविक GeM बोलियाँ नहीं' : 'Illustrative data — not real GeM bids',
+      isHindi
+          ? 'चित्रण डेटा — वास्तविक GeM बोलियाँ नहीं'
+          : 'Illustrative data — not real GeM bids',
       style: AppText.caption.copyWith(color: AppColors.textHint),
     ),
   );
+}
+
+// ─── Highlight text ───────────────────────────────────────────────────────────
+
+/// Renders [text] with any fragments matching [query] tokens shown in bold.
+/// Falls back to a plain [Text] when [query] is empty or no ranges match.
+class HighlightText extends StatelessWidget {
+  final String text;
+  final String query;
+  final TextStyle baseStyle;
+  final int? maxLines;
+
+  const HighlightText({
+    super.key,
+    required this.text,
+    required this.query,
+    required this.baseStyle,
+    this.maxLines,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (query.isEmpty) {
+      return Text(text, style: baseStyle, maxLines: maxLines, overflow: maxLines != null ? TextOverflow.ellipsis : null);
+    }
+    final tokens = SearchEngine.normalise(query)
+        .split(' ')
+        .where((t) => t.length >= 2)
+        .toList();
+    if (tokens.isEmpty) {
+      return Text(text, style: baseStyle, maxLines: maxLines, overflow: maxLines != null ? TextOverflow.ellipsis : null);
+    }
+    final ranges = SearchEngine.highlightRanges(text, tokens);
+    if (ranges.isEmpty) {
+      return Text(text, style: baseStyle, maxLines: maxLines, overflow: maxLines != null ? TextOverflow.ellipsis : null);
+    }
+
+    final spans = <TextSpan>[];
+    var pos = 0;
+    for (final (start, end) in ranges) {
+      if (start > pos) {
+        spans.add(TextSpan(text: text.substring(pos, start)));
+      }
+      spans.add(TextSpan(
+        text: text.substring(start, end),
+        style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
+      ));
+      pos = end;
+    }
+    if (pos < text.length) {
+      spans.add(TextSpan(text: text.substring(pos)));
+    }
+    return RichText(
+      maxLines: maxLines,
+      overflow: maxLines != null ? TextOverflow.ellipsis : TextOverflow.clip,
+      text: TextSpan(style: baseStyle, children: spans),
+    );
+  }
 }
