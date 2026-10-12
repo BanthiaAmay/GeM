@@ -79,7 +79,7 @@ enum SortOption {
 }
 
 /// Scope tabs on the search page.
-enum SearchScope { all, bids, tools, learn, finance }
+enum SearchScope { all, bids, tools, learn, finance, myData }
 
 extension SearchScopeLabel on SearchScope {
   String get labelEn => switch (this) {
@@ -88,6 +88,7 @@ extension SearchScopeLabel on SearchScope {
     SearchScope.tools => 'Tools',
     SearchScope.learn => 'Learn',
     SearchScope.finance => 'Finance',
+    SearchScope.myData => 'My data',
   };
 
   String get labelHi => switch (this) {
@@ -96,6 +97,7 @@ extension SearchScopeLabel on SearchScope {
     SearchScope.tools => 'टूल',
     SearchScope.learn => 'सीखें',
     SearchScope.finance => 'वित्त',
+    SearchScope.myData => 'मेरा डेटा',
   };
 
   SearchType? get typeFilter => switch (this) {
@@ -104,6 +106,7 @@ extension SearchScopeLabel on SearchScope {
     SearchScope.tools => SearchType.tool,
     SearchScope.learn => SearchType.lesson,
     SearchScope.finance => SearchType.finance,
+    SearchScope.myData => SearchType.myData,
   };
 }
 

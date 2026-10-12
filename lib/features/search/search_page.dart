@@ -8,9 +8,12 @@ import '../components.dart';
 import 'bid_source.dart';
 import 'search_content.dart';
 import 'search_engine.dart';
+import 'search_index.dart';
 import 'search_models.dart';
 import 'search_result_card.dart';
 import 'search_store.dart';
+import 'user_data_index.dart';
+import 'voice_search.dart';
 
 // ── Maximum items shown per group before the "See more" link appears ─────────
 const _kGroupPreview = 3;
@@ -38,7 +41,9 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   late final TextEditingController _controller;
   late final FocusNode _focus;
-  final _engine = SearchEngine();
+  late final SearchEngine _engine;
+  VoiceSearchController? _voice;
+  bool _isListening = false;
 
   SearchScope _scope = SearchScope.all;
   SortOption _sort = SortOption.bestMatch;
@@ -63,6 +68,24 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
+    // Build a merged index: static content + user's own data.
+    final userItems = buildUserDataItems(widget.store);
+    _engine = userItems.isEmpty
+        ? SearchEngine()
+        : SearchEngine(
+            index: SearchIndex.withItems([
+              ...SearchIndex.instance.items,
+              ...userItems,
+            ]),
+          );
+    // Init voice search (skipped on web via kVoiceSearchEnabled).
+    if (kVoiceSearchEnabled) {
+      _voice = VoiceSearchController()
+        ..onStateChanged = () {
+          if (mounted) setState(() => _isListening = _voice!.isListening);
+        };
+      _voice!.init();
+    }
     _controller = TextEditingController(text: widget.initialQuery ?? '');
     _focus = FocusNode();
     if (widget.initialQuery?.isNotEmpty == true) {
@@ -79,6 +102,7 @@ class _SearchPageState extends State<SearchPage> {
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
     _focus.dispose();
+    _voice?.dispose();
     super.dispose();
   }
 
@@ -218,6 +242,31 @@ class _SearchPageState extends State<SearchPage> {
     _focus.requestFocus();
   }
 
+  // ── Voice search ────────────────────────────────────────────────────────────
+
+  void _toggleVoice() {
+    final voice = _voice;
+    if (voice == null) return;
+    if (_isListening) {
+      voice.stop();
+    } else {
+      final locale = widget.store.language == 'hi' ? 'hi_IN' : 'en_IN';
+      voice.start(
+        localeId: locale,
+        onResult: (text, isFinal) {
+          if (!mounted || text.isEmpty) return;
+          setState(() {
+            _controller.text = text;
+            _controller.selection =
+                TextSelection.collapsed(offset: text.length);
+            _lastQuery = '';
+          });
+          if (isFinal) _submit(text);
+        },
+      );
+    }
+  }
+
   // ── Save / saved-search management ──────────────────────────────────────────
 
   void _toggleSave(String q) {
@@ -337,6 +386,9 @@ class _SearchPageState extends State<SearchPage> {
               onSubmitted: _submit,
               focusNode: _focus,
               autofocus: widget.initialQuery?.isNotEmpty != true,
+              showMic: kVoiceSearchEnabled,
+              isListening: _isListening,
+              onMic: _toggleVoice,
             ),
           ),
           // ── Scope segmented control with counts ───────────────────────────

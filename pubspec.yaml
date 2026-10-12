@@ -43,6 +43,11 @@ dependencies:
   uuid: ^4.6.0
   share_plus: ^13.3.0
   flutter_launcher_icons: ^0.14.4
+  pdf: ^3.11.0
+  printing: ^5.13.1
+  image_picker: any
+  super_clipboard: any
+  speech_to_text: ^6.6.2
 
 dev_dependencies:
   flutter_test:
@@ -67,6 +72,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/fonts/OFL.txt
+    - assets/fonts/NotoSans-Regular.ttf
+    - assets/fonts/NotoSans-Bold.ttf
     - assets/brand/gem-bizready-logo-full.png
     - assets/brand/gem-bizready-logo-lockup.png
     - assets/brand/gem-bizready-logo-mark.png
@@ -95,6 +102,11 @@ flutter:
     - family: NotoSansKannada
       fonts:
         - asset: assets/fonts/NotoSansKannada.ttf
+    - family: NotoSans
+      fonts:
+        - asset: assets/fonts/NotoSans-Regular.ttf
+        - asset: assets/fonts/NotoSans-Bold.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   # assets:

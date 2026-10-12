@@ -1094,9 +1094,12 @@ class AppSearchField extends StatelessWidget {
   final FocusNode? focusNode;
   final bool autofocus;
 
-  /// Show a trailing mic icon (Phase 3 — caller wires [onMic]).
+  /// Show a trailing mic icon (voice search).
   final bool showMic;
   final VoidCallback? onMic;
+
+  /// True while speech recognition is active — shows a pulsing mic.
+  final bool isListening;
   final TextInputAction textInputAction;
 
   const AppSearchField({
@@ -1109,6 +1112,7 @@ class AppSearchField extends StatelessWidget {
     this.autofocus = false,
     this.showMic = false,
     this.onMic,
+    this.isListening = false,
     this.textInputAction = TextInputAction.search,
   });
 
@@ -1167,14 +1171,9 @@ class AppSearchField extends StatelessWidget {
                 );
               }
               if (showMic) {
-                return IconButton(
-                  icon: const Icon(
-                    Icons.mic_none,
-                    size: AppIconSize.md - 4,
-                    color: AppColors.textHint,
-                  ),
-                  tooltip: 'Voice search',
-                  onPressed: onMic,
+                return _PulsingMicButton(
+                  isListening: isListening,
+                  onTap: onMic,
                 );
               }
               return const SizedBox(width: AppSpace.lg);
@@ -1183,5 +1182,69 @@ class AppSearchField extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ── Pulsing mic button for voice search ───────────────────────────────────────
+
+class _PulsingMicButton extends StatefulWidget {
+  final bool isListening;
+  final VoidCallback? onTap;
+
+  const _PulsingMicButton({required this.isListening, this.onTap});
+
+  @override
+  State<_PulsingMicButton> createState() => _PulsingMicButtonState();
+}
+
+class _PulsingMicButtonState extends State<_PulsingMicButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: Motion.emphasis);
+    _scale = Tween<double>(begin: 0.85, end: 1.15)
+        .chain(CurveTween(curve: Motion.standard))
+        .animate(_ctrl);
+    if (widget.isListening) _startPulse();
+  }
+
+  @override
+  void didUpdateWidget(_PulsingMicButton old) {
+    super.didUpdateWidget(old);
+    if (widget.isListening && !old.isListening) {
+      _startPulse();
+    } else if (!widget.isListening && old.isListening) {
+      _ctrl.stop();
+      _ctrl.reset();
+    }
+  }
+
+  void _startPulse() => _ctrl.repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduced = Motion.reduced(context);
+    final icon = Icon(
+      widget.isListening ? Icons.mic : Icons.mic_none,
+      size: AppIconSize.md - 4,
+      color: widget.isListening ? AppColors.brand : AppColors.textHint,
+    );
+    final btn = IconButton(
+      icon: icon,
+      tooltip: widget.isListening ? 'Listening…' : 'Voice search',
+      onPressed: widget.onTap,
+    );
+    if (reduced || !widget.isListening) return btn;
+    return ScaleTransition(scale: _scale, child: btn);
   }
 }

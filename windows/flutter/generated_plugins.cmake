@@ -4,7 +4,11 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
+  file_selector_windows
+  irondash_engine_context
+  printing
   share_plus
+  super_native_extensions
   url_launcher_windows
 )
 
