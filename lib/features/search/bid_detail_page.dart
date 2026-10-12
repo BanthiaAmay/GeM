@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/tokens.dart';
 import '../../data/app_store.dart';
 import '../../data/sample_bids.dart';
@@ -44,12 +46,19 @@ class BidDetailPage extends StatelessWidget {
     final title = isHi ? (bid.titleHi ?? bid.displayTitle) : bid.displayTitle;
     final urgent = bid.closesInDays <= 3;
 
-    final checklist = <(String label, bool met)>[
-      (isHi ? 'बैंक विवरण' : 'Bank details', bid.needsBankDetails),
-      (isHi ? 'बैंक गारंटी' : 'Bank guarantee', bid.needsBG),
-      (isHi ? 'MSE शिथिलता लागू' : 'MSE relaxation', bid.mseRelaxation),
-      (isHi ? 'EMD छूट' : 'EMD exemption', bid.emdExemption),
+    // Eligibility checklist from the user's real profile/onboarding answers.
+    final elig = s.section('eligibility');
+    final List<(String, bool)> checklist = [
+      (s.t('GST registered', 'GST पंजीकृत'), elig['gst'] == 'yes'),
+      (s.t('PAN registered', 'PAN पंजीकृत'), elig['pan'] == true),
+      (s.t('Bank account linked', 'बैंक खाता लिंक'), elig['bank'] == true),
+      (s.t('Udyam registered', 'Udyam पंजीकृत'), elig['udyam'] == true),
+      (
+        s.t('Product category set', 'उत्पाद श्रेणी सेट'),
+        elig['category'] != null && elig['category'] != 'other',
+      ),
     ];
+    final readyCount = checklist.where((c) => c.$2).length;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -58,6 +67,25 @@ class BidDetailPage extends StatelessWidget {
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            tooltip: isHi ? 'साझा करें' : 'Share',
+            onPressed: () async {
+              await SharePlus.instance.share(ShareParams(text: title));
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.bookmark_border),
+            tooltip: isHi ? 'सहेजें' : 'Bookmark',
+            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(isHi ? 'सहेजा गया' : 'Saved'),
+                duration: const Duration(seconds: 2),
+              ),
+            ),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
@@ -72,7 +100,7 @@ class BidDetailPage extends StatelessWidget {
             Text(bid.department!, style: AppText.secondary(AppText.body)),
           const SizedBox(height: AppSpace.lg),
 
-          // Match score + closing
+          // Match pill + closing pill
           Row(
             children: [
               StatusChip(
@@ -80,26 +108,42 @@ class BidDetailPage extends StatelessWidget {
                 tone: StatusTone.success,
               ),
               const SizedBox(width: AppSpace.sm),
-              Text(
-                isHi
-                    ? '${bid.closesInDays} दिन शेष'
-                    : '${bid.closesInDays} days left',
-                style: AppText.caption.copyWith(
-                  color: urgent ? AppColors.danger : AppColors.textSecondary,
-                  fontWeight: urgent ? FontWeight.w700 : FontWeight.normal,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.md,
+                  vertical: AppSpace.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Text(
+                  isHi
+                      ? '${bid.closesInDays} दिन शेष'
+                      : '${bid.closesInDays} days left',
+                  style: AppText.caption.copyWith(
+                    color: urgent ? AppColors.danger : AppColors.textSecondary,
+                    fontWeight:
+                        urgent ? FontWeight.w700 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: AppSpace.xxl),
 
-          // Key details
+          // Key details card — Bid ID is marked Illustrative
           AppCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: [
+                _row(
+                  s.t('Bid ID', 'बोली ID'),
+                  '${bid.id} (${isHi ? "चित्रण" : "Illustrative"})',
+                  icon: Icons.tag_outlined,
+                ),
                 if (bid.state != null && bid.state!.isNotEmpty)
-                  _row(
+                  _divRow(
                     isHi ? 'राज्य' : 'State',
                     bid.state!,
                     icon: Icons.location_on_outlined,
@@ -138,9 +182,10 @@ class BidDetailPage extends StatelessWidget {
             const SizedBox(height: AppSpace.xxl),
           ],
 
-          // Eligibility flags
+          // Eligibility checklist — computed from real profile answers
           Text(
-            isHi ? 'पात्रता' : 'Eligibility',
+            '${s.t("Eligibility checklist", "पात्रता जांचसूची")} · '
+            '${s.t("{n} of 5 ready", "{n} में से 5 तैयार", vars: {"n": "$readyCount"})}',
             style: AppText.h3,
           ),
           const SizedBox(height: AppSpace.sm),
@@ -169,10 +214,69 @@ class BidDetailPage extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: AppSpace.lg),
+
+          // Estimate working capital — navigates to Financial Hub
+          InkWell(
+            onTap: () => Navigator.of(context).pushNamed('/home'),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpace.md),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.calculate_outlined,
+                    size: AppIconSize.md,
+                    color: AppColors.brand,
+                  ),
+                  const SizedBox(width: AppSpace.sm),
+                  Expanded(
+                    child: Text(
+                      s.t(
+                        'Estimate working capital',
+                        'कार्यशील पूँजी का अनुमान',
+                      ),
+                      style: AppText.body.copyWith(color: AppColors.brand),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right,
+                    size: AppIconSize.sm,
+                    color: AppColors.textHint,
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: AppSpace.xxl),
 
           // Illustrative disclaimer
           IllustrativeLabel(isHindi: isHi),
+          const SizedBox(height: AppSpace.lg),
+
+          // Primary action: open on GeM portal
+          AppButton(
+            label: s.t('Open bid on GeM', 'GeM पर बोली खोलें'),
+            onPressed: () async {
+              final uri = Uri.parse('https://bidplus.gem.gov.in/');
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            },
+          ),
+          const SizedBox(height: AppSpace.md),
+
+          // Secondary action: set reminder
+          AppButton(
+            label: s.t('Set reminder', 'अनुस्मारक सेट करें'),
+            variant: AppButtonVariant.secondary,
+            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(isHi ? 'अनुस्मारक सेट किया गया' : 'Reminder set'),
+                duration: const Duration(seconds: 2),
+              ),
+            ),
+          ),
           const SizedBox(height: AppSpace.xxl),
         ],
       ),
@@ -189,20 +293,24 @@ class BidDetailPage extends StatelessWidget {
         Icon(icon, size: AppIconSize.sm, color: AppColors.textSecondary),
         const SizedBox(width: AppSpace.sm),
         Expanded(child: Text(label, style: AppText.caption)),
-        Text(
-          value,
-          style: AppText.bodySmall.copyWith(fontWeight: FontWeight.w600),
+        Flexible(
+          child: Text(
+            value,
+            style: AppText.bodySmall.copyWith(fontWeight: FontWeight.w600),
+            textAlign: TextAlign.end,
+          ),
         ),
       ],
     ),
   );
 
-  Widget _divRow(String label, String value, {required IconData icon}) => Column(
-    children: [
-      const Divider(height: 1),
-      _row(label, value, icon: icon),
-    ],
-  );
+  Widget _divRow(String label, String value, {required IconData icon}) =>
+      Column(
+        children: [
+          const Divider(height: 1),
+          _row(label, value, icon: icon),
+        ],
+      );
 
   static String _fmt(int v) {
     if (v >= 10000000) return '${(v / 10000000).toStringAsFixed(1)} Cr';

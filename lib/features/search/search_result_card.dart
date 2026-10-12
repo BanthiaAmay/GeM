@@ -35,6 +35,17 @@ class BidResultRow extends StatelessWidget {
     return store.t('Partial match', 'आंशिक मिलान');
   }
 
+  String _nextAction() {
+    if (bid.requiredCertifications.isNotEmpty) {
+      final cert = bid.requiredCertifications.first;
+      return '$cert ${store.t("needed → Get certified", "आवश्यक → प्रमाणन पाएं")}';
+    }
+    if (bid.needsBG || bid.needsBankDetails) {
+      return store.t('Check eligibility', 'पात्रता जांचें');
+    }
+    return store.t('Review bid', 'बोली समीक्षा करें');
+  }
+
   @override
   Widget build(BuildContext context) {
     final title = isHindi ? (bid.titleHi ?? bid.displayTitle) : bid.displayTitle;
@@ -98,6 +109,14 @@ class BidResultRow extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: AppSpace.xs),
+                  Text(
+                    _nextAction(),
+                    style: AppText.caption.copyWith(
+                      color: AppColors.textSecondary,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ],
               ),
@@ -191,6 +210,16 @@ class SearchResultRow extends StatelessWidget {
                       baseStyle: AppText.caption,
                       maxLines: 2,
                     ),
+                  if ((isHindi ? item.actionHi : item.actionEn).isNotEmpty) ...[
+                    const SizedBox(height: AppSpace.xs),
+                    Text(
+                      isHindi ? item.actionHi : item.actionEn,
+                      style: AppText.caption.copyWith(
+                        color: AppColors.textSecondary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
