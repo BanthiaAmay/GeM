@@ -1,6 +1,8 @@
 /// Core data types for universal search — pure Dart, no Flutter imports.
 library;
 
+import '../../data/sample_bids.dart';
+
 enum SearchType {
   bid,
   tool,
@@ -113,6 +115,9 @@ class BidFilter {
   final int? closingInDays;
   final bool? mseRelaxation;
   final bool? emdExemption;
+  final bool? startupRelaxation;
+  final String? category;
+  final String? department;
 
   const BidFilter({
     this.state,
@@ -121,6 +126,9 @@ class BidFilter {
     this.closingInDays,
     this.mseRelaxation,
     this.emdExemption,
+    this.startupRelaxation,
+    this.category,
+    this.department,
   });
 
   bool get hasAny =>
@@ -129,7 +137,10 @@ class BidFilter {
       maxValueRs != null ||
       closingInDays != null ||
       mseRelaxation != null ||
-      emdExemption != null;
+      emdExemption != null ||
+      startupRelaxation != null ||
+      category != null ||
+      department != null;
 
   const BidFilter.empty()
       : state = null,
@@ -137,5 +148,64 @@ class BidFilter {
         maxValueRs = null,
         closingInDays = null,
         mseRelaxation = null,
-        emdExemption = null;
+        emdExemption = null,
+        startupRelaxation = null,
+        category = null,
+        department = null;
+
+  // Sentinel value — allows copyWith to distinguish "keep current" from "set null".
+  static const Object _keep = Object();
+
+  BidFilter copyWith({
+    Object? state = _keep,
+    Object? district = _keep,
+    Object? maxValueRs = _keep,
+    Object? closingInDays = _keep,
+    Object? mseRelaxation = _keep,
+    Object? emdExemption = _keep,
+    Object? startupRelaxation = _keep,
+    Object? category = _keep,
+    Object? department = _keep,
+  }) {
+    T? resolve<T>(Object? arg, T? current) =>
+        identical(arg, _keep) ? current : arg as T?;
+    return BidFilter(
+      state: resolve(state, this.state),
+      district: resolve(district, this.district),
+      maxValueRs: resolve(maxValueRs, this.maxValueRs),
+      closingInDays: resolve(closingInDays, this.closingInDays),
+      mseRelaxation: resolve(mseRelaxation, this.mseRelaxation),
+      emdExemption: resolve(emdExemption, this.emdExemption),
+      startupRelaxation: resolve(startupRelaxation, this.startupRelaxation),
+      category: resolve(category, this.category),
+      department: resolve(department, this.department),
+    );
+  }
+
+  /// Returns true when [bid] satisfies every active filter criterion.
+  bool matches(SampleBid bid) {
+    if (state != null &&
+        bid.state?.toLowerCase() != state!.toLowerCase()) {
+      return false;
+    }
+    if (district != null &&
+        bid.district?.toLowerCase() != district!.toLowerCase()) {
+      return false;
+    }
+    if (maxValueRs != null && bid.valueRs > maxValueRs!) { return false; }
+    if (closingInDays != null &&
+        (bid.closesInDays < 0 || bid.closesInDays > closingInDays!)) {
+      return false;
+    }
+    if (mseRelaxation == true && !bid.mseRelaxation) { return false; }
+    if (emdExemption == true && !bid.emdExemption) { return false; }
+    if (startupRelaxation == true && !bid.startupRelaxation) { return false; }
+    if (category != null && bid.category != category) { return false; }
+    if (department != null &&
+        !(bid.department?.toLowerCase().contains(department!.toLowerCase()) ??
+            false)) {
+      return false;
+    }
+    return true;
+  }
 }

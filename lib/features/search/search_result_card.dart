@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/tokens.dart';
+import '../../data/app_store.dart';
 import '../../data/sample_bids.dart';
-import '../components.dart';
 import 'search_engine.dart';
 import 'search_models.dart';
 
@@ -13,6 +13,7 @@ class BidResultRow extends StatelessWidget {
   final SampleBid bid;
   final bool isHindi;
   final VoidCallback onTap;
+  final AppStore store;
 
   /// Raw query string for match highlighting (empty = no highlight).
   final String query;
@@ -22,8 +23,17 @@ class BidResultRow extends StatelessWidget {
     required this.bid,
     required this.isHindi,
     required this.onTap,
+    required this.store,
     this.query = '',
   });
+
+  String _scoreReason() {
+    final s = bid.effectiveScore;
+    if (s >= 85) return store.t('Product fit: Excellent', 'उत्पाद मिलान: उत्कृष्ट');
+    if (s >= 70) return store.t('Product fit: Good', 'उत्पाद मिलान: अच्छा');
+    if (s >= 55) return store.t('Product fit: Fair', 'उत्पाद मिलान: ठीक');
+    return store.t('Partial match', 'आंशिक मिलान');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,9 +75,12 @@ class BidResultRow extends StatelessWidget {
                   const SizedBox(height: AppSpace.sm),
                   Row(
                     children: [
-                      StatusChip(
-                        '${bid.effectiveScore}%',
-                        tone: StatusTone.success,
+                      Text(
+                        '${bid.effectiveScore} · ${_scoreReason()}',
+                        style: AppText.caption.copyWith(
+                          color: AppColors.brand,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       if (bid.state != null && bid.state!.isNotEmpty) ...[
                         const SizedBox(width: AppSpace.sm),

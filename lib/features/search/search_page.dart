@@ -42,6 +42,7 @@ class _SearchPageState extends State<SearchPage> {
 
   SearchScope _scope = SearchScope.all;
   SortOption _sort = SortOption.bestMatch;
+  BidFilter _bidFilter = const BidFilter.empty();
 
   /// Full result set (scope = all) for the current query.
   List<SearchItem> _allResults = [];
@@ -111,14 +112,73 @@ class _SearchPageState extends State<SearchPage> {
     final all = _engine.query(q, sort: _sort);
     setState(() {
       _allResults = all;
-      _results = _filterForScope(all);
+      _results = _applySortToBids(_filterForScope(all));
       _expandedSections.clear();
     });
   }
 
   List<SearchItem> _filterForScope(List<SearchItem> all) {
     final f = _scope.typeFilter;
-    return f == null ? all : all.where((r) => r.type == f).toList();
+    var filtered = f == null ? all : all.where((r) => r.type == f).toList();
+    if (_scope == SearchScope.bids && _bidFilter.hasAny) {
+      filtered = filtered.where((item) {
+        final found = sampleBidSource.bids.where((b) => b.id == item.routeArg);
+        if (found.isEmpty) return false;
+        return _bidFilter.matches(found.first);
+      }).toList();
+    }
+    return filtered;
+  }
+
+  List<SearchItem> _applySortToBids(List<SearchItem> items) {
+    if (_sort == SortOption.bestMatch) return items;
+    final bids = <SearchItem>[];
+    final others = <SearchItem>[];
+    for (final item in items) {
+      (item.type == SearchType.bid ? bids : others).add(item);
+    }
+    SampleBid? lookup(SearchItem item) {
+      final found = sampleBidSource.bids.where((b) => b.id == item.routeArg);
+      return found.isEmpty ? null : found.first;
+    }
+    bids.sort((a, b) {
+      final ba = lookup(a);
+      final bb = lookup(b);
+      return switch (_sort) {
+        SortOption.closingSoon =>
+          (ba?.closesInDays ?? 999).compareTo(bb?.closesInDays ?? 999),
+        SortOption.highestValue =>
+          (bb?.valueRs ?? 0).compareTo(ba?.valueRs ?? 0),
+        SortOption.newest =>
+          (ba?.postedDaysAgo ?? 999).compareTo(bb?.postedDaysAgo ?? 999),
+        SortOption.bestMatch => 0,
+      };
+    });
+    return [...bids, ...others];
+  }
+
+  void _updateFilter(BidFilter f) {
+    setState(() => _bidFilter = f);
+    _runSearch();
+  }
+
+  void _showSortSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (_) => _SortSheet(
+        current: _sort,
+        isHindi: _isHi,
+        store: _store,
+        onApply: (s) {
+          setState(() => _sort = s);
+          _runSearch();
+        },
+      ),
+    );
   }
 
   void _submit(String q) {
@@ -255,20 +315,44 @@ class _SearchPageState extends State<SearchPage> {
                     style: AppText.caption,
                   ),
                   const Spacer(),
-                  AppDropdownChip<SortOption>(
-                    options: [
-                      for (final s in SortOption.values)
-                        (s, isHi ? s.labelHi : s.labelEn),
-                    ],
-                    value: _sort,
-                    onChanged: (s) {
-                      setState(() => _sort = s);
-                      _runSearch();
-                    },
-                    semanticLabel: _store.t('Sort by', 'क्रम से लगाएँ'),
+                  GestureDetector(
+                    onTap: _showSortSheet,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpace.md,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceMuted,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        border: Border.all(color: AppColors.borderStrong),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${_store.t('Sort', 'क्रम')}: ${isHi ? _sort.labelHi : _sort.labelEn}',
+                            style: AppText.label.copyWith(fontSize: 12),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.keyboard_arrow_down,
+                            size: 16,
+                            color: AppColors.textSecondary,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
+            ),
+          // ── Bid filter chip row (Bids scope only) ─────────────────────────
+          if (hasQuery && _scope == SearchScope.bids)
+            _BidFilterRow(
+              filter: _bidFilter,
+              onUpdate: _updateFilter,
+              store: _store,
             ),
           const Divider(height: 1),
           Expanded(child: _buildBody(hasQuery, isQuestion)),
@@ -407,6 +491,7 @@ class _GroupedResults extends StatelessWidget {
         bid: bid,
         isHindi: isHindi,
         query: allQuery,
+        store: store,
         onTap: () => onTap(item),
       );
     }
@@ -867,6 +952,363 @@ class _SectionLabel extends StatelessWidget {
     ),
     child: Text(label, style: AppText.overline),
   );
+}
+
+// ── Bid filter chip row ───────────────────────────────────────────────────────
+
+class _BidFilterRow extends StatelessWidget {
+  final BidFilter filter;
+  final ValueChanged<BidFilter> onUpdate;
+  final AppStore store;
+
+  const _BidFilterRow({
+    required this.filter,
+    required this.onUpdate,
+    required this.store,
+  });
+
+  static const _valueOptions = [
+    (100000, '< ₹1L'),
+    (500000, '< ₹5L'),
+    (2500000, '< ₹25L'),
+    (10000000, '< ₹1Cr'),
+  ];
+
+  static const _closingOptions = [
+    (3, '≤3d'),
+    (7, '≤7d'),
+    (30, '≤30d'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final isHi = store.language == 'hi';
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpace.lg,
+        vertical: AppSpace.xs,
+      ),
+      child: SizedBox(
+        height: 44,
+        child: Row(
+          children: [
+          // Reset button first so it's always visible when any filter is active
+          if (filter.hasAny) ...[
+            _BidFilterChip(
+              label: store.t('Reset filters', 'फ़िल्टर रीसेट करें'),
+              active: false,
+              onTap: () => onUpdate(const BidFilter.empty()),
+            ),
+            const SizedBox(width: AppSpace.md),
+          ],
+          _BidFilterChip(
+            label: filter.state != null
+                ? (isHi ? _stateHi(filter.state!) : filter.state!)
+                : store.t('State', 'राज्य'),
+            active: filter.state != null,
+            onTap: () => _showStatePicker(context),
+          ),
+          const SizedBox(width: AppSpace.sm),
+          for (final (val, label) in _valueOptions) ...[
+            _BidFilterChip(
+              label: label,
+              active: filter.maxValueRs == val,
+              onTap: () => onUpdate(
+                filter.copyWith(maxValueRs: filter.maxValueRs == val ? null : val),
+              ),
+            ),
+            const SizedBox(width: AppSpace.sm),
+          ],
+          for (final (days, label) in _closingOptions) ...[
+            _BidFilterChip(
+              label: label,
+              active: filter.closingInDays == days,
+              onTap: () => onUpdate(
+                filter.copyWith(
+                  closingInDays: filter.closingInDays == days ? null : days,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpace.sm),
+          ],
+          _BidFilterChip(
+            label: 'MSE',
+            active: filter.mseRelaxation == true,
+            onTap: () => onUpdate(
+              filter.copyWith(
+                mseRelaxation: filter.mseRelaxation == true ? null : true,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpace.sm),
+          _BidFilterChip(
+            label: store.t('Startup', 'स्टार्टअप'),
+            active: filter.startupRelaxation == true,
+            onTap: () => onUpdate(
+              filter.copyWith(
+                startupRelaxation: filter.startupRelaxation == true ? null : true,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpace.sm),
+          _BidFilterChip(
+            label: store.t('EMD free', 'EMD मुक्त'),
+            active: filter.emdExemption == true,
+            onTap: () => onUpdate(
+              filter.copyWith(
+                emdExemption: filter.emdExemption == true ? null : true,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+    );
+  }
+
+  String _stateHi(String state) {
+    return const {
+      'Delhi': 'दिल्ली',
+      'Maharashtra': 'महाराष्ट्र',
+      'Pan India': 'सर्व भारत',
+    }[state] ?? state;
+  }
+
+  void _showStatePicker(BuildContext context) {
+    final states = kNamedBids
+        .map((b) => b.state)
+        .whereType<String>()
+        .where((s) => s.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (_) => _StatePickerSheet(
+        states: states,
+        selected: filter.state,
+        store: store,
+        onSelect: (state) {
+          onUpdate(filter.copyWith(state: state));
+          Navigator.pop(context);
+        },
+        onClear: () {
+          onUpdate(filter.copyWith(state: null));
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+}
+
+// ── Bid filter chip ───────────────────────────────────────────────────────────
+
+class _BidFilterChip extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _BidFilterChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    behavior: HitTestBehavior.opaque,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.md, vertical: 5),
+      decoration: BoxDecoration(
+        color: active ? AppColors.ink : AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(
+          color: active ? AppColors.ink : AppColors.borderStrong,
+        ),
+      ),
+      child: Text(
+        label,
+        style: AppText.label.copyWith(
+          fontSize: 12,
+          color: active ? AppColors.surface : AppColors.textSecondary,
+        ),
+      ),
+    ),
+  );
+}
+
+// ── State picker sheet ────────────────────────────────────────────────────────
+
+class _StatePickerSheet extends StatelessWidget {
+  final List<String> states;
+  final String? selected;
+  final AppStore store;
+  final ValueChanged<String> onSelect;
+  final VoidCallback onClear;
+
+  const _StatePickerSheet({
+    required this.states,
+    required this.selected,
+    required this.store,
+    required this.onSelect,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpace.xxl,
+              AppSpace.xl,
+              AppSpace.xxl,
+              AppSpace.sm,
+            ),
+            child: Text(
+              store.t('State', 'राज्य'),
+              style: AppText.h3,
+            ),
+          ),
+          for (final state in states)
+            ListTile(
+              title: Text(state, style: AppText.body),
+              trailing: selected == state
+                  ? const Icon(Icons.check, color: AppColors.ink)
+                  : null,
+              onTap: () => onSelect(state),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpace.xxl,
+              ),
+            ),
+          if (selected != null)
+            ListTile(
+              title: Text(
+                store.t('Any state', 'कोई भी राज्य'),
+                style: AppText.body.copyWith(color: AppColors.brand),
+              ),
+              onTap: onClear,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpace.xxl,
+              ),
+            ),
+          const SizedBox(height: AppSpace.md),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Sort bottom sheet ─────────────────────────────────────────────────────────
+
+class _SortSheet extends StatefulWidget {
+  final SortOption current;
+  final bool isHindi;
+  final AppStore store;
+  final ValueChanged<SortOption> onApply;
+
+  const _SortSheet({
+    required this.current,
+    required this.isHindi,
+    required this.store,
+    required this.onApply,
+  });
+
+  @override
+  State<_SortSheet> createState() => _SortSheetState();
+}
+
+class _SortSheetState extends State<_SortSheet> {
+  late SortOption _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.current;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.store;
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpace.xxl,
+              AppSpace.xl,
+              AppSpace.xxl,
+              AppSpace.sm,
+            ),
+            child: Text(s.t('Sort', 'क्रम'), style: AppText.h3),
+          ),
+          Flexible(
+            child: SingleChildScrollView(
+              child: RadioGroup<SortOption>(
+                groupValue: _selected,
+                onChanged: (v) => setState(() => _selected = v!),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final opt in SortOption.values)
+                      RadioListTile<SortOption>(
+                        value: opt,
+                        title: Text(
+                          widget.isHindi ? opt.labelHi : opt.labelEn,
+                          style: AppText.body,
+                        ),
+                        activeColor: AppColors.ink,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppSpace.xxl,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(AppSpace.lg),
+            child: Row(
+              children: [
+                Expanded(
+                  child: AppButton(
+                    label: s.t('Reset', 'रीसेट'),
+                    variant: AppButtonVariant.secondary,
+                    onPressed: () => setState(
+                      () => _selected = SortOption.bestMatch,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpace.md),
+                Expanded(
+                  child: AppButton(
+                    label: s.t('Done', 'हो गया'),
+                    onPressed: () {
+                      widget.onApply(_selected);
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Search header (AppBar with plain "Search" title) ─────────────────────────
