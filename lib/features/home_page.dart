@@ -396,7 +396,9 @@ class _HomeTab extends StatelessWidget {
           ),
           style: AppText.secondary(AppText.body),
         ),
-        const SizedBox(height: AppSpace.xxl),
+        const SizedBox(height: AppSpace.lg),
+        _HomeSearchBar(store: s),
+        const SizedBox(height: AppSpace.lg),
         StaggeredEntrance(index: 1, child: _NotificationsSection(store: s)),
         const SizedBox(height: AppSpace.xxxl),
         SectionHeader(s.t('Bids for you', 'आपके लिए बोलियाँ')),
@@ -471,6 +473,51 @@ class _HomeTab extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Tappable fake search bar on the Home tab — opens the full search page.
+/// Matches the concept: rounded grey field, search icon, muted hint text.
+class _HomeSearchBar extends StatelessWidget {
+  final AppStore store;
+  const _HomeSearchBar({required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final hint = store.t('Search bids, tools…', 'बोलियाँ, टूल खोजें…');
+    return Semantics(
+      button: true,
+      label: hint,
+      child: GestureDetector(
+        onTap: () => Navigator.pushNamed(context, '/search'),
+        child: Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.search,
+                size: AppIconSize.md,
+                color: AppColors.textHint,
+              ),
+              const SizedBox(width: AppSpace.sm),
+              Expanded(
+                child: Text(
+                  hint,
+                  style: AppText.body.copyWith(color: AppColors.textHint),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
