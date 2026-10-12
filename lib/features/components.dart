@@ -1079,3 +1079,109 @@ class ReassuranceNote extends StatelessWidget {
     ),
   );
 }
+
+// ─────────────────────────── Search field ───────────────────────────
+
+/// Shared search / filter input used by the universal search page and the
+/// Tools hub filter. Styled to spec: grey fill, rounded, no border, leading
+/// search icon, trailing clear × when text is present, optional mic for
+/// Phase-3 voice input.
+class AppSearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final FocusNode? focusNode;
+  final bool autofocus;
+
+  /// Show a trailing mic icon (Phase 3 — caller wires [onMic]).
+  final bool showMic;
+  final VoidCallback? onMic;
+  final TextInputAction textInputAction;
+
+  const AppSearchField({
+    super.key,
+    required this.controller,
+    required this.hint,
+    required this.onChanged,
+    this.onSubmitted,
+    this.focusNode,
+    this.autofocus = false,
+    this.showMic = false,
+    this.onMic,
+    this.textInputAction = TextInputAction.search,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceMuted,
+        borderRadius: AppRadius.input,
+      ),
+      child: Row(
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpace.md),
+            child: Icon(
+              Icons.search,
+              size: AppIconSize.md,
+              color: AppColors.textHint,
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              autofocus: autofocus,
+              onChanged: onChanged,
+              onSubmitted: onSubmitted,
+              textInputAction: textInputAction,
+              style: AppText.body,
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: AppText.body.copyWith(color: AppColors.textHint),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: AppSpace.md,
+                ),
+              ),
+            ),
+          ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (_, v, _) {
+              if (v.text.isNotEmpty) {
+                return IconButton(
+                  icon: const Icon(
+                    Icons.close,
+                    size: AppIconSize.md - 4,
+                    color: AppColors.textHint,
+                  ),
+                  tooltip: 'Clear',
+                  onPressed: () {
+                    controller.clear();
+                    onChanged('');
+                  },
+                );
+              }
+              if (showMic) {
+                return IconButton(
+                  icon: const Icon(
+                    Icons.mic_none,
+                    size: AppIconSize.md - 4,
+                    color: AppColors.textHint,
+                  ),
+                  tooltip: 'Voice search',
+                  onPressed: onMic,
+                );
+              }
+              return const SizedBox(width: AppSpace.lg);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
