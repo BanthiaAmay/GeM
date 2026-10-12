@@ -48,6 +48,17 @@ class SampleBidSource implements BidSource {
     if (bid.state != null) bid.state!.toLowerCase(),
     if (bid.district != null) bid.district!.toLowerCase(),
     if (bid.items != null) bid.items!.toLowerCase(),
+    // HSN codes enable "9405 → LED lighting" style queries
+    ...bid.hsnCodes,
+    // Bank-guarantee bids surface on "bank guarantee / BG" queries
+    if (bid.needsBG) ...['bank', 'guarantee', 'bg', 'security', 'deposit'],
+    // EMD-exempt bids surface on EMD queries
+    if (bid.emdExemption) ...['emd', 'earnest', 'money', 'exemption'],
+    // MSE / startup relaxation bids surface on those queries
+    if (bid.mseRelaxation) ...['mse', 'msme', 'relaxation'],
+    if (bid.startupRelaxation) ...['startup', 'relaxation'],
+    // Certification keywords
+    ...bid.requiredCertifications.map((c) => c.toLowerCase()),
   ];
 }
 

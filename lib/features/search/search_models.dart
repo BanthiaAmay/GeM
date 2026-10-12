@@ -10,6 +10,7 @@ enum SearchType {
   document,
   faq,
   myData,
+  category,
 }
 
 /// One result returned by the search engine.
@@ -35,9 +36,9 @@ class SearchItem {
   final String actionHi;
 
   /// Relevance score set by the engine (higher = better). 0–100.
-  double score;
+  final double score;
 
-  SearchItem({
+  const SearchItem({
     required this.id,
     required this.type,
     required this.titleEn,

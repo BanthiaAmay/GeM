@@ -6,6 +6,7 @@ library;
 
 import '../../features/tools_hub/tool_registry.dart';
 import 'bid_source.dart';
+import 'search_content.dart';
 import 'search_models.dart';
 
 class SearchIndex {
@@ -13,6 +14,13 @@ class SearchIndex {
 
   static SearchIndex? _instance;
   static SearchIndex get instance => _instance ??= SearchIndex._()..build();
+
+  /// Test-only factory — inject a custom item list without the full pipeline.
+  static SearchIndex withItems(List<SearchItem> items) {
+    final idx = SearchIndex._();
+    idx._items.addAll(items);
+    return idx;
+  }
 
   final List<SearchItem> _items = [];
 
@@ -22,6 +30,11 @@ class SearchIndex {
     _items.clear();
     _addBids();
     _addTools();
+    _addLessons();
+    _addFinanceItems();
+    _addCalculators();
+    _addCategories();
+    _addFaqs();
   }
 
   void _addBids() {
@@ -54,4 +67,14 @@ class SearchIndex {
       );
     }
   }
+
+  void _addLessons() => _items.addAll(kLessons);
+
+  void _addFinanceItems() => _items.addAll(kFinanceItems);
+
+  void _addCalculators() => _items.addAll(kCalculators);
+
+  void _addCategories() => _items.addAll(kCategories);
+
+  void _addFaqs() => _items.addAll(kFaqs);
 }

@@ -32,7 +32,14 @@ class SampleBid {
   /// Whether a bank guarantee is mentioned in illustrative tender terms.
   final bool needsBG;
   final bool mseRelaxation;
+  final bool startupRelaxation;
   final bool emdExemption;
+
+  /// Required quality/compliance certifications, e.g. ['ISO 9001']. Illustrative.
+  final List<String> requiredCertifications;
+
+  /// Relevant HSN codes for search indexing. Verify against official GST list.
+  final List<String> hsnCodes;
 
   /// 0–100 opportunity score. Falls back to [matchPct] if null.
   final int? score;
@@ -53,7 +60,10 @@ class SampleBid {
     this.needsBankDetails = false,
     this.needsBG = false,
     this.mseRelaxation = false,
+    this.startupRelaxation = false,
     this.emdExemption = false,
+    this.requiredCertifications = const [],
+    this.hsnCodes = const [],
     this.score,
   });
 
@@ -93,6 +103,7 @@ const List<SampleBid> kNamedBids = [
     needsBankDetails: true,
     mseRelaxation: true,
     emdExemption: true,
+    hsnCodes: ['4820', '9608', '9609'],
   ),
   SampleBid(
     id: 'NAMED-002',
@@ -111,6 +122,8 @@ const List<SampleBid> kNamedBids = [
     needsBankDetails: false,
     needsBG: true,
     mseRelaxation: true,
+    requiredCertifications: ['ISO 9001'],
+    hsnCodes: ['8471', '8473', '8443'],
   ),
   SampleBid(
     id: 'NAMED-003',
@@ -127,6 +140,8 @@ const List<SampleBid> kNamedBids = [
     district: 'Pune',
     items: 'Disinfectants, mops, brooms',
     emdExemption: true,
+    startupRelaxation: true,
+    hsnCodes: ['3401', '3402'],
   ),
   SampleBid(
     id: 'NAMED-004',
@@ -143,7 +158,9 @@ const List<SampleBid> kNamedBids = [
     district: 'Nagpur',
     items: 'Single-seater school desks, chairs',
     mseRelaxation: true,
+    startupRelaxation: true,
     emdExemption: true,
+    hsnCodes: ['9403', '9401'],
   ),
   SampleBid(
     id: 'NAMED-005',
@@ -160,6 +177,7 @@ const List<SampleBid> kNamedBids = [
     district: '',
     items: 'LED 20W tube lights, ISI marked',
     needsBG: true,
+    hsnCodes: ['9405', '9405.40'],
   ),
   SampleBid(
     id: 'NAMED-006',
@@ -177,6 +195,7 @@ const List<SampleBid> kNamedBids = [
     items: 'HP, Canon, Brother compatible cartridges',
     emdExemption: true,
     mseRelaxation: true,
+    hsnCodes: ['8443'],
   ),
   SampleBid(
     id: 'NAMED-007',
@@ -192,6 +211,7 @@ const List<SampleBid> kNamedBids = [
     state: 'Delhi',
     district: 'New Delhi',
     items: 'Mesh-back adjustable office chairs',
+    hsnCodes: ['9401'],
   ),
   SampleBid(
     id: 'NAMED-008',
@@ -209,6 +229,7 @@ const List<SampleBid> kNamedBids = [
     items: '500 ml sanitiser bottles, 3-layer masks',
     emdExemption: true,
     needsBankDetails: true,
+    hsnCodes: ['3808', '6217', '3926'],
   ),
 ];
 
