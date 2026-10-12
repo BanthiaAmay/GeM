@@ -7,6 +7,8 @@ import '../data/app_store.dart';
 import 'brand_logo.dart';
 import 'components.dart';
 import 'drawer_pages.dart';
+import 'search/search_engine.dart';
+import 'search/search_store.dart';
 import 'tools_hub/tool_card.dart';
 import 'glass.dart';
 import 'onboarding_flow_4.dart' show gemRegistrationUrl;
@@ -67,6 +69,26 @@ class _HomePageState extends State<HomePage> {
   _Tab _tab = _Tab.home;
   void _go(_Tab tab) => setState(() => _tab = tab);
 
+  SearchStore? _searchStore;
+  List<String> _searchAlerts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initAlerts();
+  }
+
+  Future<void> _initAlerts() async {
+    final store = SearchStore(widget.store.prefs);
+    final engine = SearchEngine();
+    final alerts = await store.checkAlerts(engine);
+    if (!mounted) return;
+    setState(() {
+      _searchStore = store;
+      _searchAlerts = alerts;
+    });
+  }
+
   String get _firstName {
     final full = (widget.store.profile['fullName'] as String? ?? '').trim();
     if (full.isEmpty) return '';
@@ -105,7 +127,12 @@ class _HomePageState extends State<HomePage> {
                     icon: Icons.search,
                     tooltip: s.t('Search', 'खोजें'),
                   ),
-                  _NotificationBell(store: s, onTap: () => _go(_Tab.home)),
+                  _NotificationBell(
+                    store: s,
+                    hasUnread: _searchAlerts.isNotEmpty ||
+                        (_searchStore?.hasUnread ?? false),
+                    onTap: () => _go(_Tab.home),
+                  ),
                   AppIconButton(
                     onPressed: () => Scaffold.of(context).openEndDrawer(),
                     icon: Icons.menu,
@@ -131,6 +158,7 @@ class _HomePageState extends State<HomePage> {
                           store: s,
                           name: _firstName,
                           onNavigate: _go,
+                          searchAlerts: _searchAlerts,
                         ),
                       _Tab.tools => _ToolsTab(store: s),
                       _Tab.gem101 => _Gem101Tab(store: s),
@@ -365,10 +393,12 @@ class _HomeTab extends StatelessWidget {
   final AppStore store;
   final String name;
   final ValueChanged<_Tab> onNavigate;
+  final List<String> searchAlerts;
   const _HomeTab({
     required this.store,
     required this.name,
     required this.onNavigate,
+    this.searchAlerts = const [],
   });
 
   @override
@@ -401,7 +431,10 @@ class _HomeTab extends StatelessWidget {
           style: AppText.secondary(AppText.body),
         ),
         const SizedBox(height: AppSpace.lg),
-        StaggeredEntrance(index: 1, child: _NotificationsSection(store: s)),
+        StaggeredEntrance(
+          index: 1,
+          child: _NotificationsSection(store: s, searchAlerts: searchAlerts),
+        ),
         const SizedBox(height: AppSpace.xxxl),
         SectionHeader(s.t('Bids for you', 'आपके लिए बोलियाँ')),
         StaggeredEntrance(
@@ -608,7 +641,11 @@ class _DashboardCard extends StatelessWidget {
 /// below on the same page, so there is nowhere else for a tap to go.
 class _NotificationsSection extends StatelessWidget {
   final AppStore store;
-  const _NotificationsSection({required this.store});
+  final List<String> searchAlerts;
+  const _NotificationsSection({
+    required this.store,
+    this.searchAlerts = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -617,15 +654,26 @@ class _NotificationsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(s.t('Notifications', 'सूचनाएं')),
-        _NotificationRow(
-          title: s.t('Office stationery supplies', 'ऑफिस स्टेशनरी सामग्री'),
-          subtitle: s.t('New bid match', 'नया बोली मैच'),
-        ),
-        const SizedBox(height: AppSpace.md),
-        _NotificationRow(
-          title: s.t('IT hardware procurement', 'IT हार्डवेयर खरीद'),
-          subtitle: s.t('New bid match', 'नया बोली मैच'),
-        ),
+        // Dynamic saved-search alerts take priority when present.
+        if (searchAlerts.isNotEmpty) ...[
+          for (var i = 0; i < searchAlerts.length; i++) ...[
+            if (i > 0) const SizedBox(height: AppSpace.md),
+            _NotificationRow(
+              title: searchAlerts[i],
+              subtitle: s.t('New bid match', 'नया बोली मैच'),
+            ),
+          ],
+        ] else ...[
+          _NotificationRow(
+            title: s.t('Office stationery supplies', 'ऑफिस स्टेशनरी सामग्री'),
+            subtitle: s.t('New bid match', 'नया बोली मैच'),
+          ),
+          const SizedBox(height: AppSpace.md),
+          _NotificationRow(
+            title: s.t('IT hardware procurement', 'IT हार्डवेयर खरीद'),
+            subtitle: s.t('New bid match', 'नया बोली मैच'),
+          ),
+        ],
       ],
     );
   }
@@ -1008,8 +1056,13 @@ void _showLanguageSheet(BuildContext context, AppStore store) {
 
 class _NotificationBell extends StatelessWidget {
   final AppStore store;
+  final bool hasUnread;
   final VoidCallback onTap;
-  const _NotificationBell({required this.store, required this.onTap});
+  const _NotificationBell({
+    required this.store,
+    required this.onTap,
+    this.hasUnread = true,
+  });
 
   @override
   Widget build(BuildContext context) => IconButton(
@@ -1019,18 +1072,19 @@ class _NotificationBell extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         const Icon(Icons.notifications_outlined),
-        Positioned(
-          right: -1,
-          top: -1,
-          child: Container(
-            width: 8,
-            height: 8,
-            decoration: const BoxDecoration(
-              color: AppColors.brand,
-              shape: BoxShape.circle,
+        if (hasUnread)
+          Positioned(
+            right: -1,
+            top: -1,
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: AppColors.brand,
+                shape: BoxShape.circle,
+              ),
             ),
           ),
-        ),
       ],
     ),
   );

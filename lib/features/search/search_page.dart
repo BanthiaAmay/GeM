@@ -218,6 +218,59 @@ class _SearchPageState extends State<SearchPage> {
     _focus.requestFocus();
   }
 
+  // ── Save / saved-search management ──────────────────────────────────────────
+
+  void _toggleSave(String q) {
+    if (widget.searchStore.isSaved(q)) {
+      unawaited(widget.searchStore.removeSaved(q));
+      _store.event('search_saved', props: {'action': 'remove'});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_store.t('Search removed', 'खोज हटाई गई')),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } else {
+      unawaited(widget.searchStore.saveSearch(q));
+      _store.event('search_saved', props: {'action': 'save'});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_store.t('Search saved', 'खोज सेव हुई')),
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: _store.t('Manage', 'प्रबंधित करें'),
+              onPressed: _showSavedSearches,
+            ),
+          ),
+        );
+      }
+    }
+    setState(() {});
+  }
+
+  void _showSavedSearches() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (_) => _SavedSearchesSheet(
+        searchStore: widget.searchStore,
+        store: _store,
+        onSearch: (q) {
+          Navigator.pop(context);
+          _fillField(q);
+          _submit(q);
+        },
+      ),
+    );
+  }
+
   // ── Navigation ──────────────────────────────────────────────────────────────
 
   void _openItem(SearchItem item) {
@@ -256,6 +309,7 @@ class _SearchPageState extends State<SearchPage> {
     final q = _controller.text.trim();
     final hasQuery = q.isNotEmpty;
     final isQuestion = hasQuery && SearchEngine.isQuestion(q);
+    final isSaved = hasQuery && widget.searchStore.isSaved(q);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -263,6 +317,8 @@ class _SearchPageState extends State<SearchPage> {
         isHindi: isHi,
         store: _store,
         onBack: () => Navigator.pop(context),
+        hasSaved: widget.searchStore.saved.isNotEmpty,
+        onSavedSearches: _showSavedSearches,
       ),
       body: Column(
         children: [
@@ -305,16 +361,30 @@ class _SearchPageState extends State<SearchPage> {
           if (hasQuery && _results.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppSpace.xxl,
+                horizontal: AppSpace.lg,
                 vertical: AppSpace.sm,
               ),
               child: Row(
                 children: [
+                  const SizedBox(width: AppSpace.sm),
                   Text(
                     '${_results.length} ${_store.t('matches', 'परिणाम')}',
                     style: AppText.caption,
                   ),
                   const Spacer(),
+                  IconButton(
+                    icon: Icon(
+                      isSaved ? Icons.bookmark : Icons.bookmark_border,
+                      size: AppIconSize.md,
+                      color: isSaved ? AppColors.brand : AppColors.textSecondary,
+                    ),
+                    tooltip: isSaved
+                        ? _store.t('Remove saved search', 'सेव की गई खोज हटाएँ')
+                        : _store.t('Save this search', 'यह खोज सेव करें'),
+                    onPressed: () => _toggleSave(q),
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                  ),
                   GestureDetector(
                     onTap: _showSortSheet,
                     child: Container(
@@ -355,13 +425,13 @@ class _SearchPageState extends State<SearchPage> {
               store: _store,
             ),
           const Divider(height: 1),
-          Expanded(child: _buildBody(hasQuery, isQuestion)),
+          Expanded(child: _buildBody(hasQuery, isQuestion, q)),
         ],
       ),
     );
   }
 
-  Widget _buildBody(bool hasQuery, bool isQuestion) {
+  Widget _buildBody(bool hasQuery, bool isQuestion, String q) {
     if (!hasQuery) {
       return _EmptyQueryBody(
         store: _store,
@@ -379,9 +449,13 @@ class _SearchPageState extends State<SearchPage> {
       return _NoResultsBody(store: _store, onSuggestion: _fillField);
     }
 
+    final weakResults = _results.isNotEmpty && _results.first.score < 35;
+    final askCardQuery = (isQuestion || weakResults) ? q : null;
+
     return _GroupedResults(
       results: _results,
-      allQuery: _controller.text.trim(),
+      allQuery: q,
+      askCardQuery: askCardQuery,
       expandedSections: _expandedSections,
       isHindi: _isHi,
       onExpand: (type) => setState(() => _expandedSections.add(type)),
@@ -396,6 +470,7 @@ class _SearchPageState extends State<SearchPage> {
 class _GroupedResults extends StatelessWidget {
   final List<SearchItem> results;
   final String allQuery;
+  final String? askCardQuery;
   final Set<SearchType> expandedSections;
   final bool isHindi;
   final ValueChanged<SearchType> onExpand;
@@ -405,6 +480,7 @@ class _GroupedResults extends StatelessWidget {
   const _GroupedResults({
     required this.results,
     required this.allQuery,
+    this.askCardQuery,
     required this.expandedSections,
     required this.isHindi,
     required this.onExpand,
@@ -452,6 +528,8 @@ class _GroupedResults extends StatelessWidget {
           if (type == SearchType.bid) IllustrativeLabel(isHindi: isHindi),
           ..._buildSection(grouped[type]!, type, context),
         ],
+        if (askCardQuery != null)
+          _AskBizReadyCard(query: askCardQuery!, isHindi: isHindi),
         const SizedBox(height: AppSpace.huge),
       ],
     );
@@ -1317,11 +1395,15 @@ class _SearchHeader extends StatelessWidget implements PreferredSizeWidget {
   final bool isHindi;
   final AppStore store;
   final VoidCallback onBack;
+  final bool hasSaved;
+  final VoidCallback? onSavedSearches;
 
   const _SearchHeader({
     required this.isHindi,
     required this.store,
     required this.onBack,
+    this.hasSaved = false,
+    this.onSavedSearches,
   });
 
   @override
@@ -1342,5 +1424,233 @@ class _SearchHeader extends StatelessWidget implements PreferredSizeWidget {
       style: AppText.title,
     ),
     centerTitle: false,
+    actions: [
+      if (hasSaved)
+        IconButton(
+          icon: const Icon(Icons.bookmarks_outlined),
+          onPressed: onSavedSearches,
+          tooltip: store.t('Saved searches', 'सेव की गई खोजें'),
+        ),
+    ],
+  );
+}
+
+// ── Saved searches bottom sheet ───────────────────────────────────────────────
+
+class _SavedSearchesSheet extends StatefulWidget {
+  final SearchStore searchStore;
+  final AppStore store;
+  final ValueChanged<String> onSearch;
+
+  const _SavedSearchesSheet({
+    required this.searchStore,
+    required this.store,
+    required this.onSearch,
+  });
+
+  @override
+  State<_SavedSearchesSheet> createState() => _SavedSearchesSheetState();
+}
+
+class _SavedSearchesSheetState extends State<_SavedSearchesSheet> {
+  late List<String> _saved;
+
+  @override
+  void initState() {
+    super.initState();
+    _saved = widget.searchStore.saved;
+  }
+
+  void _delete(String q) async {
+    await widget.searchStore.removeSaved(q);
+    if (mounted) setState(() => _saved = widget.searchStore.saved);
+  }
+
+  void _showRenameDialog(String q) {
+    final controller = TextEditingController(text: q);
+    final s = widget.store;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(s.t('Rename', 'नाम बदलें')),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: s.t('New name', 'नया नाम'),
+          ),
+          onSubmitted: (_) => Navigator.pop(ctx),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(s.t('Cancel', 'रद्द करें')),
+          ),
+          TextButton(
+            onPressed: () async {
+              final newQ = controller.text.trim();
+              if (newQ.isNotEmpty && newQ != q) {
+                await widget.searchStore.renameSaved(q, newQ);
+                if (mounted) {
+                  setState(() => _saved = widget.searchStore.saved);
+                }
+              }
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: Text(s.t('Save', 'सेव करें')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.store;
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpace.xxl,
+              AppSpace.xl,
+              AppSpace.xxl,
+              AppSpace.sm,
+            ),
+            child: Text(s.t('Saved searches', 'सेव की गई खोजें'), style: AppText.h3),
+          ),
+          if (_saved.isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpace.xxl,
+                AppSpace.lg,
+                AppSpace.xxl,
+                AppSpace.xl,
+              ),
+              child: Text(
+                s.t('No saved searches yet', 'अभी कोई सेव की गई खोज नहीं'),
+                style: AppText.secondary(AppText.body),
+              ),
+            )
+          else
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 320),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: _saved.length,
+                separatorBuilder: (context, i) => const Divider(height: 1),
+                itemBuilder: (_, i) {
+                  final q = _saved[i];
+                  return ListTile(
+                    leading: const Icon(
+                      Icons.bookmark_outline,
+                      color: AppColors.textSecondary,
+                    ),
+                    title: Text(q, style: AppText.body),
+                    onTap: () => widget.onSearch(q),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpace.xxl,
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.edit_outlined,
+                            size: AppIconSize.sm,
+                            color: AppColors.textHint,
+                          ),
+                          tooltip: s.t('Rename', 'नाम बदलें'),
+                          onPressed: () => _showRenameDialog(q),
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            size: AppIconSize.sm,
+                            color: AppColors.textHint,
+                          ),
+                          tooltip: s.t('Remove saved search', 'सेव की गई खोज हटाएँ'),
+                          onPressed: () => _delete(q),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          const SizedBox(height: AppSpace.sm),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Ask BizReady inline card ──────────────────────────────────────────────────
+
+class _AskBizReadyCard extends StatelessWidget {
+  final String query;
+  final bool isHindi;
+
+  const _AskBizReadyCard({required this.query, required this.isHindi});
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: () {
+      Navigator.pop(context);
+      Navigator.pushNamed(context, '/gem-check');
+    },
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpace.xxl,
+        AppSpace.lg,
+        AppSpace.xxl,
+        AppSpace.sm,
+      ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.brandTint,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: AppColors.brand.withValues(alpha: 0.25)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpace.lg),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.support_agent_outlined,
+                color: AppColors.brand,
+                size: AppIconSize.md,
+              ),
+              const SizedBox(width: AppSpace.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isHindi ? 'Ask BizReady से पूछें' : 'Ask BizReady',
+                      style: AppText.label.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      isHindi
+                          ? 'इस सवाल के लिए BizReady सहायक खोलें'
+                          : 'Open the BizReady assistant for this question',
+                      style: AppText.secondary(AppText.bodySmall),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpace.sm),
+              const Icon(
+                Icons.arrow_forward_ios,
+                size: AppIconSize.sm,
+                color: AppColors.brand,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
   );
 }
