@@ -83,15 +83,30 @@ class SearchEngine {
         }
       }
     }
-    for (final t in tokens) {
-      expanded.add(t);
-      final dev = kDevanagariMap[t];
+    void lookup(String key) {
+      final dev = kDevanagariMap[key];
       if (dev != null) addAll(dev);
-      final hin = kHinglishMap[t];
+      final hin = kHinglishMap[key];
       if (hin != null) addAll(hin);
-      final syn = kSynonyms[t];
+      final syn = kSynonyms[key];
       if (syn != null) addAll(syn);
     }
+
+    // Single-token lookups.
+    for (final t in tokens) {
+      expanded.add(t);
+      lookup(t);
+    }
+
+    // Phrase lookups: bigrams and trigrams catch multi-word jargon like
+    // "money before payment", "bijli ka saman", "loan for order".
+    for (var i = 0; i < tokens.length - 1; i++) {
+      lookup('${tokens[i]} ${tokens[i + 1]}');
+      if (i < tokens.length - 2) {
+        lookup('${tokens[i]} ${tokens[i + 1]} ${tokens[i + 2]}');
+      }
+    }
+
     return expanded.toList();
   }
 

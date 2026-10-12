@@ -84,14 +84,18 @@ const Map<String, List<String>> kHinglishMap = {
 };
 
 /// Maps Devanagari query fragments to canonical English tokens.
+/// Covers both Hindi and Marathi Devanagari variants.
 const Map<String, List<String>> kDevanagariMap = {
   'बोली': ['bid', 'tender'],
   'निविदा': ['bid', 'tender'],
   'स्टेशनरी': ['stationery', 'office'],
   'फर्नीचर': ['furniture'],
-  'कुर्सी': ['furniture', 'chair'],
+  'कुर्सी': ['furniture', 'chair'], // Hindi
+  'खुर्ची': ['furniture', 'chair'], // Marathi
+  'मेज': ['desk', 'furniture', 'table'], // Marathi/Hindi desk
   'सफाई': ['cleaning'],
   'आईटी': ['it'],
+  'संगणक': ['computer', 'it'], // Marathi for computer
   'बिजली': ['electrical', 'it', 'lighting'],
   'उद्यम': ['udyam', 'msme', 'registration'],
   'MSME': ['msme', 'registration'],
