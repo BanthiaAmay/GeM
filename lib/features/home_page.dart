@@ -100,11 +100,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                   _LanguageChip(store: s),
                   const SizedBox(width: 6),
-                  AppIconButton(
-                    onPressed: () => Navigator.pushNamed(context, '/search'),
-                    icon: Icons.search,
-                    tooltip: s.t('Search', 'खोजें'),
-                  ),
                   _NotificationBell(store: s, onTap: () => _go(_Tab.home)),
                   AppIconButton(
                     onPressed: () => Scaffold.of(context).openEndDrawer(),
@@ -159,9 +154,13 @@ class _HomePageState extends State<HomePage> {
               ),
             );
 
+            final searchBar = _PersistentSearchBar(store: s);
+
             final mainColumn = Column(
               children: [
                 topBar,
+                searchBar,
+                const Divider(height: 1),
                 scrollArea,
                 // The bottom tab bar is a phone pattern only — wide
                 // layouts get a NavigationRail on the side instead.
@@ -397,8 +396,6 @@ class _HomeTab extends StatelessWidget {
           style: AppText.secondary(AppText.body),
         ),
         const SizedBox(height: AppSpace.lg),
-        _HomeSearchBar(store: s),
-        const SizedBox(height: AppSpace.lg),
         StaggeredEntrance(index: 1, child: _NotificationsSection(store: s)),
         const SizedBox(height: AppSpace.xxxl),
         SectionHeader(s.t('Bids for you', 'आपके लिए बोलियाँ')),
@@ -477,11 +474,12 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
-/// Tappable fake search bar on the Home tab — opens the full search page.
-/// Matches the concept: rounded grey field, search icon, muted hint text.
-class _HomeSearchBar extends StatelessWidget {
+/// Persistent search bar that sits between the top glass bar and the tab
+/// content — always visible regardless of which tab is active or how far
+/// the user has scrolled. Tapping opens the universal search page.
+class _PersistentSearchBar extends StatelessWidget {
   final AppStore store;
-  const _HomeSearchBar({required this.store});
+  const _PersistentSearchBar({required this.store});
 
   @override
   Widget build(BuildContext context) {
@@ -491,30 +489,36 @@ class _HomeSearchBar extends StatelessWidget {
       label: hint,
       child: GestureDetector(
         onTap: () => Navigator.pushNamed(context, '/search'),
-        child: Container(
-          height: 48,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceMuted,
-            borderRadius: BorderRadius.circular(AppRadius.pill),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.lg,
+            vertical: AppSpace.sm,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.search,
-                size: AppIconSize.md,
-                color: AppColors.textHint,
-              ),
-              const SizedBox(width: AppSpace.sm),
-              Expanded(
-                child: Text(
-                  hint,
-                  style: AppText.body.copyWith(color: AppColors.textHint),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          child: Container(
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceMuted,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.search,
+                  size: AppIconSize.md,
+                  color: AppColors.textHint,
                 ),
-              ),
-            ],
+                const SizedBox(width: AppSpace.sm),
+                Expanded(
+                  child: Text(
+                    hint,
+                    style: AppText.body.copyWith(color: AppColors.textHint),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
