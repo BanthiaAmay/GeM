@@ -21,6 +21,10 @@ const _kGroupPreview = 3;
 // ── Trending category IDs to surface on the empty-query screen ───────────────
 const _kTrendingIds = ['cat-it', 'cat-office', 'cat-furniture', 'cat-cleaning'];
 
+// ── Max content width for centred wide-screen layout ─────────────────────────
+const _kWideBreak = 900.0;
+const _kContentMaxWidth = 640.0;
+
 /// Universal search page. Route: `/search`.
 class SearchPage extends StatefulWidget {
   final AppStore store;
@@ -369,116 +373,148 @@ class _SearchPageState extends State<SearchPage> {
         hasSaved: widget.searchStore.saved.isNotEmpty,
         onSavedSearches: _showSavedSearches,
       ),
-      body: Column(
-        children: [
-          // ── Autofocused search field ──────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpace.lg,
-              AppSpace.sm,
-              AppSpace.lg,
-              AppSpace.sm,
-            ),
-            child: AppSearchField(
-              controller: _controller,
-              hint: _store.t('Search bids, tools…', 'बोलियाँ, टूल खोजें…'),
-              onChanged: (_) {}, // handled by listener
-              onSubmitted: _submit,
-              focusNode: _focus,
-              autofocus: widget.initialQuery?.isNotEmpty != true,
-              showMic: kVoiceSearchEnabled,
-              isListening: _isListening,
-              onMic: _toggleVoice,
-            ),
-          ),
-          // ── Scope segmented control with counts ───────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpace.lg,
-              0,
-              AppSpace.lg,
-              AppSpace.sm,
-            ),
-            child: AppSegmentedControl<SearchScope>(
-              options: [
-                for (final s in SearchScope.values)
-                  (s, _scopeLabel(s), null),
-              ],
-              value: _scope,
-              onChanged: _selectScope,
-              semanticLabel: _store.t('Search scope', 'खोज दायरा'),
-            ),
-          ),
-          // ── Count + sort row ───────────────────────────────────────────────
-          if (hasQuery && _results.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpace.lg,
-                vertical: AppSpace.sm,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= _kWideBreak;
+          Widget content = Column(
+            children: [
+              // ── Autofocused search field ────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpace.lg,
+                  AppSpace.sm,
+                  AppSpace.lg,
+                  AppSpace.sm,
+                ),
+                child: AppSearchField(
+                  controller: _controller,
+                  hint: _store.t('Search bids, tools…', 'बोलियाँ, टूल खोजें…'),
+                  onChanged: (_) {}, // handled by listener
+                  onSubmitted: _submit,
+                  focusNode: _focus,
+                  autofocus: widget.initialQuery?.isNotEmpty != true,
+                  showMic: kVoiceSearchEnabled,
+                  isListening: _isListening,
+                  onMic: _toggleVoice,
+                ),
               ),
-              child: Row(
-                children: [
-                  const SizedBox(width: AppSpace.sm),
-                  Text(
-                    '${_results.length} ${_store.t('matches', 'परिणाम')}',
-                    style: AppText.caption,
+              // ── Scope segmented control with counts ─────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpace.lg,
+                  0,
+                  AppSpace.lg,
+                  AppSpace.sm,
+                ),
+                child: AppSegmentedControl<SearchScope>(
+                  options: [
+                    for (final s in SearchScope.values)
+                      (s, _scopeLabel(s), null),
+                  ],
+                  value: _scope,
+                  onChanged: _selectScope,
+                  semanticLabel: _store.t('Search scope', 'खोज दायरा'),
+                ),
+              ),
+              // ── Count + sort row ─────────────────────────────────────────
+              if (hasQuery && _results.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpace.lg,
+                    vertical: AppSpace.sm,
                   ),
-                  const Spacer(),
-                  IconButton(
-                    icon: Icon(
-                      isSaved ? Icons.bookmark : Icons.bookmark_border,
-                      size: AppIconSize.md,
-                      color: isSaved ? AppColors.brand : AppColors.textSecondary,
-                    ),
-                    tooltip: isSaved
-                        ? _store.t('Remove saved search', 'सेव की गई खोज हटाएँ')
-                        : _store.t('Save this search', 'यह खोज सेव करें'),
-                    onPressed: () => _toggleSave(q),
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                  ),
-                  GestureDetector(
-                    onTap: _showSortSheet,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpace.md,
-                        vertical: 6,
+                  child: Row(
+                    children: [
+                      const SizedBox(width: AppSpace.sm),
+                      Text(
+                        '${_results.length} ${_store.t('matches', 'परिणाम')}',
+                        style: AppText.caption,
                       ),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceMuted,
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                        border: Border.all(color: AppColors.borderStrong),
+                      const Spacer(),
+                      IconButton(
+                        icon: Icon(
+                          isSaved ? Icons.bookmark : Icons.bookmark_border,
+                          size: AppIconSize.md,
+                          color: isSaved
+                              ? AppColors.brand
+                              : AppColors.textSecondary,
+                        ),
+                        tooltip: isSaved
+                            ? _store.t(
+                                'Remove saved search', 'सेव की गई खोज हटाएँ')
+                            : _store.t('Save this search', 'यह खोज सेव करें'),
+                        onPressed: () => _toggleSave(q),
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
+                      Semantics(
+                        button: true,
+                        label:
                             '${_store.t('Sort', 'क्रम')}: ${isHi ? _sort.labelHi : _sort.labelEn}',
-                            style: AppText.label.copyWith(fontSize: 12),
+                        child: GestureDetector(
+                          onTap: _showSortSheet,
+                          child: Container(
+                            constraints: const BoxConstraints(
+                              minHeight: AppSize.tap,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpace.md,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceMuted,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.pill),
+                              border: Border.all(color: AppColors.borderStrong),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    '${_store.t('Sort', 'क्रम')}: ${isHi ? _sort.labelHi : _sort.labelEn}',
+                                    style: AppText.label.copyWith(fontSize: 12),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.keyboard_arrow_down,
+                                  size: 16,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.keyboard_arrow_down,
-                            size: 16,
-                            color: AppColors.textSecondary,
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
+              // ── Bid filter chip row (Bids scope only) ───────────────────
+              if (hasQuery && _scope == SearchScope.bids)
+                _BidFilterRow(
+                  filter: _bidFilter,
+                  onUpdate: _updateFilter,
+                  store: _store,
+                ),
+              const Divider(height: 1),
+              Expanded(child: _buildBody(hasQuery, isQuestion, q)),
+            ],
+          );
+
+          if (wide) {
+            content = Center(
+              child: ConstrainedBox(
+                constraints:
+                    const BoxConstraints(maxWidth: _kContentMaxWidth),
+                child: content,
               ),
-            ),
-          // ── Bid filter chip row (Bids scope only) ─────────────────────────
-          if (hasQuery && _scope == SearchScope.bids)
-            _BidFilterRow(
-              filter: _bidFilter,
-              onUpdate: _updateFilter,
-              store: _store,
-            ),
-          const Divider(height: 1),
-          Expanded(child: _buildBody(hasQuery, isQuestion, q)),
-        ],
+            );
+          }
+          return content;
+        },
       ),
     );
   }
@@ -889,18 +925,23 @@ class _RecentRow extends StatelessWidget {
           const SizedBox(width: AppSpace.md),
           Expanded(child: Text(query, style: AppText.body)),
           // ↖ fills the field without running the search
-          GestureDetector(
-            onTap: () => onFill(query),
-            behavior: HitTestBehavior.opaque,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpace.sm,
-                vertical: AppSpace.xs,
-              ),
-              child: Icon(
-                Icons.north_west,
-                size: AppIconSize.sm,
-                color: AppColors.textHint,
+          Semantics(
+            button: true,
+            label: 'Fill search field with: $query',
+            excludeSemantics: true,
+            child: GestureDetector(
+              onTap: () => onFill(query),
+              behavior: HitTestBehavior.opaque,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpace.sm,
+                  vertical: AppSpace.xs,
+                ),
+                child: Icon(
+                  Icons.north_west,
+                  size: AppIconSize.sm,
+                  color: AppColors.textHint,
+                ),
               ),
             ),
           ),
@@ -917,20 +958,29 @@ class _TrendingChip extends StatelessWidget {
   const _TrendingChip({required this.label, required this.onTap});
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    behavior: HitTestBehavior.opaque,
-    child: Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpace.md,
-        vertical: AppSpace.xs + 2,
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: label,
+    excludeSemantics: true,
+    child: GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: AppSize.tap),
+        child: Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.md,
+            vertical: AppSpace.xs + 2,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Text(label, style: AppText.label.copyWith(fontSize: 13)),
+        ),
       ),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Text(label, style: AppText.label.copyWith(fontSize: 13)),
     ),
   );
 }
@@ -949,29 +999,39 @@ class _SeeMoreRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpace.xxl,
-        vertical: AppSpace.md,
-      ),
-      child: Row(
-        children: [
-          Text(
-            isHindi ? 'और $count देखें' : 'See $count more',
-            style: AppText.label.copyWith(color: AppColors.brand),
+  Widget build(BuildContext context) {
+    final seeMoreLabel = isHindi ? 'और $count देखें' : 'See $count more';
+    return Semantics(
+      button: true,
+      label: seeMoreLabel,
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: AppSize.tap),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpace.xxl,
+              vertical: AppSpace.md,
+            ),
+            child: Row(
+              children: [
+                Text(
+                  seeMoreLabel,
+                  style: AppText.label.copyWith(color: AppColors.brand),
+                ),
+                const SizedBox(width: AppSpace.xs),
+                const Icon(
+                  Icons.keyboard_arrow_down,
+                  size: AppIconSize.sm + 2,
+                  color: AppColors.brand,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(width: AppSpace.xs),
-          const Icon(
-            Icons.keyboard_arrow_down,
-            size: AppIconSize.sm + 2,
-            color: AppColors.brand,
-          ),
-        ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _SuggestedBidCard extends StatelessWidget {
@@ -1119,9 +1179,7 @@ class _BidFilterRow extends StatelessWidget {
         horizontal: AppSpace.lg,
         vertical: AppSpace.xs,
       ),
-      child: SizedBox(
-        height: 44,
-        child: Row(
+      child: Row(
           children: [
           // Reset button first so it's always visible when any filter is active
           if (filter.hasAny) ...[
@@ -1193,7 +1251,6 @@ class _BidFilterRow extends StatelessWidget {
           ),
         ],
       ),
-    ),
     );
   }
 
@@ -1250,23 +1307,33 @@ class _BidFilterChip extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    behavior: HitTestBehavior.opaque,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.md, vertical: 5),
-      decoration: BoxDecoration(
-        color: active ? AppColors.ink : AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(
-          color: active ? AppColors.ink : AppColors.borderStrong,
-        ),
-      ),
-      child: Text(
-        label,
-        style: AppText.label.copyWith(
-          fontSize: 12,
-          color: active ? AppColors.surface : AppColors.textSecondary,
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: label,
+    selected: active,
+    excludeSemantics: true,
+    child: GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: AppSize.tap),
+        child: Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.md, vertical: 5),
+          decoration: BoxDecoration(
+            color: active ? AppColors.ink : AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            border: Border.all(
+              color: active ? AppColors.ink : AppColors.borderStrong,
+            ),
+          ),
+          child: Text(
+            label,
+            style: AppText.label.copyWith(
+              fontSize: 12,
+              color: active ? AppColors.surface : AppColors.textSecondary,
+            ),
+          ),
         ),
       ),
     ),

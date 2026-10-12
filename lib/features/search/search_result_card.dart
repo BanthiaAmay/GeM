@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/tokens.dart';
 import '../../data/app_store.dart';
 import '../../data/sample_bids.dart';
+import '../components.dart';
 import 'search_engine.dart';
 import 'search_models.dart';
 
@@ -54,80 +55,127 @@ class BidResultRow extends StatelessWidget {
         ? '${bid.closesInDays} दिन शेष'
         : '${bid.closesInDays}d left';
 
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpace.xxl,
-          vertical: AppSpace.lg,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  HighlightText(
-                    text: title,
-                    query: query,
-                    baseStyle: AppText.title,
-                    maxLines: 2,
-                  ),
-                  if (bid.department != null) ...[
-                    const SizedBox(height: AppSpace.xs),
-                    HighlightText(
-                      text: bid.department!,
-                      query: query,
-                      baseStyle: AppText.caption,
-                      maxLines: 1,
-                    ),
-                  ],
-                  const SizedBox(height: AppSpace.sm),
-                  Row(
+    return Semantics(
+      button: true,
+      label: '$title. ${bid.effectiveScore}% match. ${_scoreReason()}. '
+          '${bid.department ?? ''}. $closingLabel.',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: AppSize.tap),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpace.xxl,
+              vertical: AppSpace.lg,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${bid.effectiveScore} · ${_scoreReason()}',
-                        style: AppText.caption.copyWith(
-                          color: AppColors.brand,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      // Title + match pill
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: HighlightText(
+                              text: title,
+                              query: query,
+                              baseStyle: AppText.title,
+                              maxLines: 2,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpace.sm),
+                          StatusChip(
+                            '${bid.effectiveScore}%',
+                            tone: StatusTone.success,
+                          ),
+                        ],
                       ),
-                      if (bid.state != null && bid.state!.isNotEmpty) ...[
-                        const SizedBox(width: AppSpace.sm),
-                        Text(bid.state!, style: AppText.caption),
+                      // Department with icon
+                      if (bid.department != null) ...[
+                        const SizedBox(height: AppSpace.xs),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.business_outlined,
+                              size: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: AppSpace.xs),
+                            Flexible(
+                              child: HighlightText(
+                                text: bid.department!,
+                                query: query,
+                                baseStyle: AppText.caption,
+                                maxLines: 1,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
-                      const Spacer(),
+                      const SizedBox(height: AppSpace.sm),
+                      // Score reason + state + closing date
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              '${bid.effectiveScore} · ${_scoreReason()}',
+                              style: AppText.caption.copyWith(
+                                color: AppColors.brand,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (bid.state != null && bid.state!.isNotEmpty) ...[
+                            const SizedBox(width: AppSpace.sm),
+                            Text(bid.state!, style: AppText.caption),
+                          ],
+                          const Spacer(),
+                          Icon(
+                            urgent ? Icons.schedule : Icons.schedule_outlined,
+                            size: 12,
+                            color: urgent
+                                ? AppColors.danger
+                                : AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            closingLabel,
+                            style: AppText.caption.copyWith(
+                              color: urgent
+                                  ? AppColors.danger
+                                  : AppColors.textSecondary,
+                              fontWeight:
+                                  urgent ? FontWeight.w700 : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpace.xs),
                       Text(
-                        closingLabel,
+                        _nextAction(),
                         style: AppText.caption.copyWith(
-                          color: urgent
-                              ? AppColors.danger
-                              : AppColors.textSecondary,
-                          fontWeight:
-                              urgent ? FontWeight.w700 : FontWeight.normal,
+                          color: AppColors.textSecondary,
+                          fontStyle: FontStyle.italic,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpace.xs),
-                  Text(
-                    _nextAction(),
-                    style: AppText.caption.copyWith(
-                      color: AppColors.textSecondary,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: AppSpace.md),
+                const Icon(
+                  Icons.chevron_right,
+                  size: AppIconSize.md,
+                  color: AppColors.textHint,
+                ),
+              ],
             ),
-            const SizedBox(width: AppSpace.md),
-            const Icon(
-              Icons.chevron_right,
-              size: AppIconSize.md,
-              color: AppColors.textHint,
-            ),
-          ],
+          ),
         ),
       ),
     );

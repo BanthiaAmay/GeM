@@ -147,6 +147,100 @@ Progress uses `AppProgressBar`/`AppProgressRing`, never raw `LinearProgressIndic
 `Category mix` (`/insights-categories`, pie) · `Bid fit` (`/insights-fit`, scatter). The date range
 (`AppStore.insightsDays`) is shared by all four screens. Entry points: Home tab card and Tools tab card.
 
+## Search (`/search`)
+
+### AppSearchField
+`AppSearchField` is the universal search input — a rounded `TextField` with a search icon prefix,
+clear button when non-empty, and an optional pulsing mic button.
+
+| Param | Type | Notes |
+|-------|------|-------|
+| `controller` | `TextEditingController` | required |
+| `hint` | `String` | required |
+| `onChanged` | `ValueChanged<String>` | required |
+| `onSubmitted` | `ValueChanged<String>?` | — |
+| `focusNode` | `FocusNode?` | — |
+| `autofocus` | `bool` | default `false` |
+| `showMic` | `bool` | default `false`; set `kVoiceSearchEnabled` (false on web) |
+| `isListening` | `bool` | default `false`; animates mic red when true |
+| `onMic` | `VoidCallback?` | called on mic tap/keyboard activation |
+
+The mic button is a `_PulsingMicButton` in `components.dart` — `Icons.mic_none` (idle) /
+`Icons.mic` (active, red) + a scale-pulse animation. Background radius is `AppRadius.md`.
+
+### Scope control
+`AppSegmentedControl<SearchScope>` — values All / Bids / Tools / Learn / My data.
+Passes `semanticLabel` = `'Search scope'` / `'खोज दायरा'`.
+Scope labels show a count badge when results exist: e.g. `Bids 12`.
+
+### Result card (`BidResultRow`)
+Each bid in the results list uses `BidResultRow` from `search_result_card.dart`:
+- Whole row: `Semantics(button: true, label: '<title>. <n>% match. <reason>. <dept>. <n>d left.', excludeSemantics: true)`
+- Min height: `ConstrainedBox(BoxConstraints(minHeight: AppSize.tap))`
+- Right of title: `StatusChip('${score}%', tone: StatusTone.success)` (green pill)
+- Department row: `Icons.business_outlined` (12 px) + `HighlightText`
+- Score+reason row: `Flexible` text (brand, w600) + state text + `Spacer` + clock icon + closing days
+  — closing ≤ 3 days uses `AppColors.danger` and `FontWeight.w700`
+- Next-action row: italic caption, `AppColors.textSecondary`
+- Chevron: `Icons.chevron_right`, `AppIconSize.md`, `AppColors.textHint`
+
+`SearchResultRow` (tools/lessons/finance/FAQs/myData) uses an icon in a 40 px circular muted
+surface, then title + subtitle `HighlightText` + italic action caption.
+
+`HighlightText` renders matched query tokens in `FontWeight.w700` / `AppColors.ink`; falls
+back to plain `Text` when no tokens match.
+
+`IllustrativeLabel` must appear above every bid result group and on the empty-query "Suggested
+for you" row — text `'Illustrative data — not real GeM bids'` / `'चित्रण डेटा — वास्तविक GeM बोलियाँ नहीं'`,
+`AppText.caption`, `AppColors.textHint`.
+
+### Filter chips (`_BidFilterChip`)
+Shown in a horizontal `SingleChildScrollView` (Bids scope only). Each chip:
+- `Semantics(button: true, label: label, selected: active, excludeSemantics: true)`
+- `ConstrainedBox(BoxConstraints(minHeight: AppSize.tap))` — 48 px WCAG tap target
+- Active: `AppColors.ink` background, `AppColors.surface` text
+- Inactive: `AppColors.surfaceMuted` background, `AppColors.textSecondary` text
+- Border radius: `AppRadius.pill`
+
+### Sort sheet (`_SortSheet`)
+`showModalBottomSheet` with `AppColors.surface` background and `AppRadius.xl` top radius.
+Sort button in the count row: `Semantics(button: true, label: 'Sort: <option>')` wrapping a
+`GestureDetector` → `Container` with `BoxConstraints(minHeight: AppSize.tap)`.
+
+### Bid detail (`/bid-detail`)
+Title in `AppText.h2`; match score as `StatusChip(score%, tone: StatusTone.success)`;
+section labels in `AppText.overline`; action buttons use `AppButton` / `AppOutlinedButton`.
+
+### Tokens added
+| Token | Value | Location |
+|-------|-------|----------|
+| `AppSize.tap` | `48.0` | `tokens.dart` |
+| `AppSize.wide` | `768.0` | `tokens.dart` |
+| `AppSize.contentMax` | `1200.0` | `tokens.dart` |
+| `_kWideBreak` (local) | `900.0` | `search_page.dart` — wide layout break |
+| `_kContentMaxWidth` (local) | `640.0` | `search_page.dart` — centred column max width |
+
+### Wide layout
+At `constraints.maxWidth >= 900` the `body` wraps in
+`Center > ConstrainedBox(maxWidth: 640)` via `LayoutBuilder`. Below 900 it fills the screen.
+
+### Voice search
+`VoiceSearchController` in `voice_search.dart`. Enabled via `kVoiceSearchEnabled = !kIsWeb`.
+Locale: `hi_IN` when app language is Hindi, `en_IN` otherwise. On-device only; no query text
+is sent to any server. See `docs/search/status.md` for platform permission details.
+
+### My-data scope
+`buildUserDataItems(AppStore)` in `user_data_index.dart` — allowlist-only indexing of
+profile, checklist, outcomes and completed tools. PAN/Aadhaar/OTPs/passwords are never indexed.
+Results appear under `SearchType.myData` with `Icons.person_outline`.
+
+### Analytics (search)
+Events fired (no raw query text ever logged):
+- `search_performed` — `{len, results, scope}`
+- `search_result_opened` — `{type, id}`
+- `search_saved` — `{action: 'save'|'remove'}`
+- `bid_detail_opened` — `{id}`
+
 ## Responsive
 Phone-first single column; ≥768 switches to a navigation rail and `ResponsiveRow`
 (1/2/3 columns); content max width 1200. Text scales with the OS setting — never fix a
