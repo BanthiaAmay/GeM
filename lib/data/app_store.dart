@@ -23,6 +23,8 @@ class AppStore extends ChangeNotifier {
   bool _syncAgain = false;
   bool _deleting = false;
   Completer<void>? _syncDone;
+  StreamSubscription<AuthState>? _authSubscription;
+  bool _handlingAuth = false;
   final sessionId = const Uuid().v4();
   AppStore(this.prefs, {this.client}) {
     _read();
@@ -49,6 +51,7 @@ class AppStore extends ChangeNotifier {
   }
   bool get signedIn => client?.auth.currentUser != null;
   bool get configured => client != null;
+  User? get currentUser => client?.auth.currentUser;
   Map<String, dynamic> section(String key) =>
       Map<String, dynamic>.from(data[key] as Map? ?? {});
   List<String> get completed => List<String>.from(data['completed'] ?? []);
@@ -81,6 +84,18 @@ class AppStore extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
+    if (client != null) {
+      _authSubscription ??= client!.auth.onAuthStateChange.listen((change) {
+        if (change.event == AuthChangeEvent.signedIn && change.session != null) {
+          unawaited(_adoptAuthenticatedSession());
+        } else if (change.event == AuthChangeEvent.signedOut) {
+          _loadedCloud = false;
+          outcomes = [];
+          _read();
+          notifyListeners();
+        }
+      });
+    }
     final ref = Uri.base.queryParameters['ref'];
     if (ref != null && RegExp(r'^[a-zA-Z0-9_-]{1,64}$').hasMatch(ref)) {
       data['referral'] ??= ref;
@@ -239,29 +254,81 @@ class AppStore extends ChangeNotifier {
 
   Future<void> sendOtp(String email) async {
     if (client == null) throw StateError('Supabase is not configured');
-    await client!.auth.signInWithOtp(email: email);
+    await _stashGuestState();
+    await client!.auth.signInWithOtp(email: email.trim(), shouldCreateUser: true);
   }
 
   Future<void> verifyOtp(String email, String token) async {
-    final guest = Map<String, dynamic>.from(data);
-    final guestQueue = List<Map<String, dynamic>>.from(queue);
     await client!.auth.verifyOTP(
-      email: email,
-      token: token,
+      email: email.trim(),
+      token: token.trim(),
       type: OtpType.email,
     );
-    _read();
-    if (data.isEmpty) {
-      data = guest;
-      queue = guestQueue;
+    await _adoptAuthenticatedSession();
+  }
+
+  /// Starts Supabase's Google OAuth flow. Web returns to the current origin;
+  /// Android returns through the app-owned custom scheme declared in the
+  /// manifest. Supabase uses PKCE and restores the resulting session.
+  Future<bool> signInWithGoogle() async {
+    if (client == null) throw StateError('Supabase is not configured');
+    await _stashGuestState();
+    return client!.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: kIsWeb
+          ? Uri.base.origin
+          : 'com.gembizready.app://login-callback/',
+      authScreenLaunchMode: kIsWeb
+          ? LaunchMode.platformDefault
+          : LaunchMode.externalApplication,
+      queryParams: const {'prompt': 'select_account'},
+    );
+  }
+
+  Future<void> _stashGuestState() async {
+    if (signedIn) return;
+    await prefs.setString(
+      'saathi.auth.pending_guest',
+      jsonEncode({'data': data, 'queue': queue}),
+    );
+  }
+
+  Future<void> _adoptAuthenticatedSession() async {
+    if (!signedIn || _handlingAuth) return;
+    _handlingAuth = true;
+    try {
+      Map<String, dynamic> guest = {};
+      List<Map<String, dynamic>> guestQueue = [];
+      final pending = prefs.getString('saathi.auth.pending_guest');
+      if (pending != null) {
+        try {
+          final decoded = Map<String, dynamic>.from(jsonDecode(pending));
+          guest = Map<String, dynamic>.from(decoded['data'] as Map? ?? {});
+          guestQueue = List<Map<String, dynamic>>.from(
+            (decoded['queue'] as List? ?? []).map(
+              (e) => Map<String, dynamic>.from(e as Map),
+            ),
+          );
+        } catch (_) {
+          // A malformed hand-off is ignored; account/cloud state still loads.
+        }
+      }
+      _read();
+      if (data.isEmpty && guest.isNotEmpty) {
+        data = guest;
+        queue = guestQueue;
+      }
+      _loadedCloud = false;
+      await restoreCloud();
+      await prefs.remove('saathi.auth.pending_guest');
+      await prefs.remove('saathi.v1.guest');
+      await prefs.remove('saathi.v1.guest.events');
+      await persist();
+      await sync();
+      notifyListeners();
+    } finally {
+      _handlingAuth = false;
     }
-    _loadedCloud = false;
-    await restoreCloud();
-    await prefs.remove('saathi.v1.guest');
-    await prefs.remove('saathi.v1.guest.events');
-    await persist();
-    await sync();
-    notifyListeners();
   }
 
   Future<void> restoreCloud() async {
@@ -374,6 +441,36 @@ class AppStore extends ChangeNotifier {
     outcomes = [];
     _read();
     notifyListeners();
+  }
+
+  /// Deletes the authenticated Supabase identity and its cascade-owned app
+  /// rows through the no-argument, auth.uid()-scoped database function.
+  Future<void> deleteAccount() async {
+    if (!signedIn) throw StateError('sign_in_required');
+    _deleting = true;
+    try {
+      if (syncing) await _syncDone!.future;
+      final accountStorageKey = storageKey;
+      await client!.rpc('delete_my_account');
+      await client!.auth.signOut(scope: SignOutScope.local);
+      data = {};
+      queue = [];
+      outcomes = [];
+      _loadedCloud = false;
+      await prefs.remove('saathi.auth.pending_guest');
+      await prefs.remove(accountStorageKey);
+      await prefs.remove('$accountStorageKey.events');
+      _read();
+      notifyListeners();
+    } finally {
+      _deleting = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> deleteData() async {

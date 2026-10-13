@@ -45,20 +45,33 @@ void message(BuildContext context, String text) {
 class Panel extends StatelessWidget {
   final Widget child;
   final AppCardTone tone;
+  final Color? color;
   final EdgeInsets padding;
   const Panel({
     super.key,
     required this.child,
     this.tone = AppCardTone.outlined,
+    this.color,
     this.padding = const EdgeInsets.all(AppSpace.xxl),
   });
   @override
-  Widget build(BuildContext context) => AppCard(
-    tone: tone,
-    padding: padding,
-    radius: AppRadius.xl,
-    child: child,
-  );
+  Widget build(BuildContext context) => color == null
+      ? AppCard(
+          tone: tone,
+          padding: padding,
+          radius: AppRadius.xl,
+          child: child,
+        )
+      : Container(
+          width: double.infinity,
+          padding: padding,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: child,
+        );
 }
 
 class Heading extends StatelessWidget {
@@ -88,8 +101,10 @@ class Tag extends StatelessWidget {
   final String label;
   const Tag(this.label, {super.key});
   @override
-  Widget build(BuildContext context) =>
-      Align(alignment: Alignment.centerLeft, child: StatusChip(label, tone: StatusTone.success));
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.centerLeft,
+    child: StatusChip(label, tone: StatusTone.success),
+  );
 }
 
 /// A labelled figure: caption, big value, supporting detail.
@@ -274,8 +289,7 @@ class NextActions extends StatelessWidget {
       runSpacing: AppSpace.md,
       children: [
         AppButton(
-          label:
-              '${store.t('Continue', 'आगे बढ़ें')}: ${store.toolName(next)}',
+          label: '${store.t('Continue', 'आगे बढ़ें')}: ${store.toolName(next)}',
           onPressed: () => go(context, store, next),
           trailingIcon: Icons.arrow_forward,
           expand: false,

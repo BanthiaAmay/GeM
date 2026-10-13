@@ -7,6 +7,7 @@ import 'brand_logo.dart';
 import 'components.dart';
 import 'widgets.dart';
 import 'tools.dart';
+import 'pages.dart';
 
 class AppShell extends StatefulWidget {
   final AppStore store;
@@ -191,9 +192,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                       'revenue' ||
                       'pricing' ||
                       'roi' => ToolPage(store: s, kind: widget.page),
-                      // Cleared for a rebuild from scratch — see
-                      // pages.dart. Shows the shared empty state until
-                      // the page returns.
+                      'tools' => ToolsPage(s),
+                      'learn' => LearnPage(s),
+                      'tracker' => TrackerPage(s),
+                      'report' => ReportPage(s),
+                      'register' => RegisterPage(s),
+                      'support' => SupportPage(s),
                       _ => StateView(
                         kind: StateKind.empty,
                         title: s.t(

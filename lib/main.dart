@@ -9,6 +9,7 @@ import 'core/theme.dart';
 import 'core/transitions.dart';
 import 'data/app_store.dart';
 import 'features/brand_logo.dart';
+import 'features/account_page.dart';
 import 'features/gem_check_page.dart';
 import 'features/home_page.dart';
 import 'features/insights_page.dart';
@@ -251,6 +252,8 @@ class SaathiApp extends StatelessWidget {
                 ? LanguagePage(store: store)
                 : page == 'gem-check'
                 ? GemCheckPage(store: store)
+                : page == 'account' || page == 'auth'
+                ? AccountPage(store: store)
                 : page == 'insights'
                 ? InsightsPage(store: store)
                 : page == 'insights-trends'

@@ -1,4 +1,4 @@
-package com.gembizready
+package com.gembizready.app
 
 import io.flutter.embedding.android.FlutterActivity
 

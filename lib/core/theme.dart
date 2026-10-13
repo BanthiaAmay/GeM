@@ -4,6 +4,13 @@ import 'tokens.dart';
 
 export 'tokens.dart';
 
+// Compatibility aliases for the calculator/report pages while they migrate
+// onto the named design tokens. They resolve to the same audited palette.
+const green = AppColors.brand;
+const ink = AppColors.ink;
+const lime = AppColors.brandTint;
+const line = AppColors.border;
+
 /// The one app theme. Every Material widget the app uses inherits its
 /// look from here, so feature code only overrides on purpose. Values come
 /// from `tokens.dart`; the rules are in DESIGN_SYSTEM.md.
@@ -27,9 +34,7 @@ ThemeData saathiTheme() {
     surfaceContainerHighest: AppColors.surfaceMuted,
   );
 
-  final pill = WidgetStatePropertyAll<OutlinedBorder>(
-    const StadiumBorder(),
-  );
+  final pill = WidgetStatePropertyAll<OutlinedBorder>(const StadiumBorder());
   final label = WidgetStatePropertyAll<TextStyle>(AppText.button);
 
   // Keyboard/switch focus: a 3px brand ring on every button kind.
@@ -89,10 +94,7 @@ ThemeData saathiTheme() {
       labelMedium: AppText.label,
       labelSmall: AppText.label,
     ),
-    iconTheme: const IconThemeData(
-      size: AppIconSize.md,
-      color: AppColors.ink,
-    ),
+    iconTheme: const IconThemeData(size: AppIconSize.md, color: AppColors.ink),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AppColors.surface,

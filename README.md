@@ -1,6 +1,6 @@
 # GeM BizReady
 
-Flutter application for **Android and web**: GeM education, eligibility/classification, revenue scenarios, pricing, ROI, onboarding tracker, combined reports and Supabase-backed follow-up.
+Flutter application for **Android and web**: GeM education, eligibility/classification, revenue scenarios, pricing, ROI, onboarding and Supabase-backed private accounts with email-code and Google sign-in.
 
 ## Run locally
 Requires Flutter 3.44.4 / Dart 3.12 or a compatible newer SDK.
@@ -15,7 +15,7 @@ flutter run -d <device-id>
 No credentials are needed to explore the full local calculator journey. Progress is saved on the current device. Online saving and support/milestone submission are explicitly unavailable until Supabase is configured.
 
 ## Connect Supabase
-1. Create a Supabase project and run [the migration](supabase/migrations/202609090001_initial.sql) in its SQL editor, or use `supabase db push` from a linked CLI project.
+1. Create a Supabase project and run [the core migration](supabase/migrations/202609090001_initial.sql) followed by [the account-deletion migration](supabase/migrations/202610130001_account_deletion.sql), or use `supabase db push` from a linked CLI project.
 2. Enable email authentication and user signups. Configure **Authentication → Email Templates → Magic Link** to show the OTP using `{{ .Token }}`. The app verifies a code; it does not depend on a magic-link redirect. Configure production SMTP and suitable auth rate limits before rollout.
 3. Copy `config/env.example.json` to `config/env.json`. Enter the project URL and **publishable/anon key**. Do not use a service-role key.
 4. Run:
@@ -37,7 +37,7 @@ flutter build apk --debug --dart-define-from-file=config/env.json
 
 Omit the `--dart-define-from-file` option for local-only builds. Web artifacts are in `build/web`; Android evaluation APK is `build/app/outputs/flutter-apk/app-debug.apk`. Serve the web directory over HTTPS. Hash routes need no application-route rewrites. Use links such as `https://your-host/?ref=ca_pune_01#/eligibility`.
 
-Android release signing accepts `android/key.properties` (see [deployment guide](docs/deployment.md)). The default `com.example.gem` ID should be replaced with your owned ID before store distribution. Existing iOS/desktop scaffolding is retained but not in this release's tested scope.
+Android release signing uses the ignored local upload key configuration (see [deployment guide](docs/deployment.md)). The permanent application ID is `com.gembizready.app`. Existing iOS/desktop scaffolding is retained but not in this release's tested scope.
 
 ## What is included
 - Responsive forest-green/cream UI, mobile drawer and English/Hindi toggle.

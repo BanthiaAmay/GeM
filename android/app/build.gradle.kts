@@ -12,7 +12,7 @@ val signingFile = rootProject.file("key.properties")
 if (signingFile.exists()) { FileInputStream(signingFile).use { signingProperties.load(it) } }
 
 android {
-    namespace = "com.gembizready"
+    namespace = "com.gembizready.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,8 +22,8 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.gembizready"
+        // Permanent Play identity. Do not change after the first Play upload.
+        applicationId = "com.gembizready.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -44,7 +44,11 @@ android {
     }
     buildTypes {
         release {
-            if (signingFile.exists()) { signingConfig = signingConfigs.getByName("release") }
+            if (signingFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+            isMinifyEnabled = true
+            isShrinkResources = true
         }
     }
 
