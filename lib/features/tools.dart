@@ -743,6 +743,44 @@ class _ToolPageState extends State<ToolPage> {
                 ),
               ],
             ),
+            const SizedBox(height: 20),
+            () {
+              final low = (r['low'] as num).toDouble();
+              final high = (r['high'] as num).toDouble();
+              final ordersLow = (r['ordersLow'] as num).toDouble();
+              final ordersHigh = (r['ordersHigh'] as num).toDouble();
+              final orderValue = (r['orderValue'] as num).toDouble();
+              final midOrders = (ordersLow + ordersHigh) / 2;
+              final mid = orderValue * midOrders;
+              return ResponsiveRow(
+                children: [
+                  Stat(
+                    t('Most likely scenario', 'सबसे संभावित परिदृश्य'),
+                    AnimatedMoney(value: mid),
+                    t(
+                      '${midOrders % 1 == 0 ? midOrders.toInt() : midOrders} orders/yr · illustrative',
+                      '${midOrders % 1 == 0 ? midOrders.toInt() : midOrders} ऑर्डर/वर्ष · उदाहरणात्मक',
+                    ),
+                  ),
+                  Stat(
+                    t('Monthly equivalent', 'मासिक समकक्ष'),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        AnimatedMoney(value: low / 12),
+                        Text(' – '),
+                        AnimatedMoney(value: high / 12),
+                      ],
+                    ),
+                    t(
+                      'Annual ÷ 12 · gross, before costs',
+                      'वार्षिक ÷ 12 · सकल, लागत से पहले',
+                    ),
+                  ),
+                ],
+              );
+            }(),
+            const SizedBox(height: 12),
             Text(
               t(
                 'Source: your inputs, calculated today. Not a forecast or observed category benchmark. Zero orders remains possible.',
