@@ -67,6 +67,17 @@ void main() {
     expect(r.high, 0);
     expect(r.orderValue, 0);
   });
+  test('midpoint and monthly figures derive correctly from RevenueResult', () {
+    final r = RevenueResult.calculate(50000, 4, 12);
+    // low = 50 000 × 4 = 200 000; high = 50 000 × 12 = 600 000
+    expect(r.low, 200000);
+    expect(r.high, 600000);
+    // midpoint orders = (4 + 12) / 2 = 8 → mid = 50 000 × 8 = 400 000
+    final mid = r.orderValue * (r.ordersLow + r.ordersHigh) / 2;
+    expect(mid, 400000);
+    // monthly low = 200 000 / 12 ≈ 16 666.67
+    expect(r.low / 12, closeTo(16666.67, 0.01));
+  });
   test('ROI subtracts costs and uses delay only once', () {
     final r = RoiResult.calculate(
       orderValue: 100000,

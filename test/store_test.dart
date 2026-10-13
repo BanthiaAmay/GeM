@@ -39,6 +39,27 @@ void main() {
     s.setConsent(false);
     expect(s.queue, isEmpty);
   });
+  test('revenue result map round-trips through persist/restore', () async {
+    s.complete('revenue', {
+      'orderValue': 75000.0,
+      'ordersLow': 3.0,
+      'ordersHigh': 9.0,
+      'low': 225000.0,
+      'high': 675000.0,
+      'category': 'office',
+      'city': 'Pune',
+      'source': 'user_assumptions',
+    });
+    await s.persist();
+    final restored = AppStore(prefs);
+    final sec = restored.section('revenue');
+    expect(sec['orderValue'], 75000.0);
+    expect(sec['ordersLow'], 3.0);
+    expect(sec['ordersHigh'], 9.0);
+    expect(sec['low'], 225000.0);
+    expect(sec['high'], 675000.0);
+    expect(restored.completed, contains('revenue'));
+  });
   test('completing revenue invalidates any saved ROI result', () {
     // Constraint 7: revenue edits must wipe downstream ROI.
     s.complete('roi', {'firstYear': 5000, 'threeYear': 15000});
