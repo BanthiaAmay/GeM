@@ -39,6 +39,20 @@ void main() {
     s.setConsent(false);
     expect(s.queue, isEmpty);
   });
+  test('completing revenue invalidates any saved ROI result', () {
+    // Constraint 7: revenue edits must wipe downstream ROI.
+    s.complete('roi', {'firstYear': 5000, 'threeYear': 15000});
+    expect(s.completed, contains('roi'));
+    s.complete('revenue', {
+      'orderValue': 100000,
+      'ordersLow': 2,
+      'ordersHigh': 6,
+      'low': 200000,
+      'high': 600000,
+    });
+    expect(s.completed, isNot(contains('roi')));
+    expect(s.section('roi'), isEmpty);
+  });
   test('local deletion clears report and research data', () async {
     s.setConsent(true);
     s.complete('pricing', {'price': 10});

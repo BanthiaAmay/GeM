@@ -586,6 +586,18 @@ class _ToolPageState extends State<ToolPage> {
       );
       return;
     }
+    // Soft warning only — zero order value is valid (zero revenue is a real
+    // outcome), but a value of exactly ₹0 is most likely a data-entry slip.
+    if (k == 'revenue' && n('orderValue') == 0) {
+      message(
+        context,
+        t(
+          'Order value is zero — double-check if this is a data-entry slip.',
+          'ऑर्डर मूल्य शून्य है — जाँचें कि यह प्रविष्टि त्रुटि तो नहीं।',
+        ),
+      );
+      // Calculation continues: zero revenue is a valid planning scenario.
+    }
     final out = <String, dynamic>{};
     if (k == 'eligibility') {
       out.addAll(values);

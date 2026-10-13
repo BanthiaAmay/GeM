@@ -57,10 +57,10 @@ class VoiceSearchController {
         onResult(r.recognizedWords, r.finalResult);
         if (r.finalResult) _setListening(false);
       },
-      localeId: localeId,
       listenOptions: SpeechListenOptions(
         cancelOnError: true,
         partialResults: true,
+        localeId: localeId,
       ),
     );
   }

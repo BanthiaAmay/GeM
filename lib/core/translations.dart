@@ -13,6 +13,16 @@
 // OTP, GeM, MSME, Udyam, CA, L1) are kept in Latin script throughout, the
 // same convention the existing Hindi text already uses.
 const Map<String, Map<String, String>> kTranslations = {
+  // ── Revenue calculator ─────────────────────────────────────────
+  'Order value is zero — double-check if this is a data-entry slip.': {
+    'mr': 'ऑर्डरचे मूल्य शून्य आहे — हे चुकून झाले आहे का ते तपासा.',
+    'bn': 'অর্ডার মূল্য শূন্য — এটি তথ্য-প্রবেশের ভুল কিনা দেখুন।',
+    'pa': 'ਆਰਡਰ ਮੁੱਲ ਜ਼ੀਰੋ ਹੈ — ਜਾਂਚੋ ਕਿ ਇਹ ਡੇਟਾ-ਐਂਟਰੀ ਗਲਤੀ ਤਾਂ ਨਹੀਂ।',
+    'gu': 'ઓર્ડરનું મૂલ્ય શૂન્ય છે — ચકાસો કે આ ડેટા-એન્ટ્રી ભૂલ છે કે નહિ.',
+    'ta': 'ஆர்டர் மதிப்பு பூஜ்யம் — இது தரவு-உள்ளீட்டு தவறா என சரிபார்க்கவும்.',
+    'te': 'ఆర్డర్ విలువ సున్నా — ఇది డేటా-ఎంట్రీ తప్పిదమా అని తనిఖీ చేయండి.',
+    'kn': 'ಆರ್ಡರ್ ಮೌಲ್ಯ ಶೂನ್ಯ — ಇದು ಡೇಟಾ-ಪ್ರವೇಶ ದೋಷವೇ ಎಂದು ಪರಿಶೀಲಿಸಿ.',
+  },
   // ── Tools tab: Bid Documents hub ──────────────────────────────
   'Find and prepare the documents your tender requires.': {
     'mr': 'तुमच्या निविदेसाठी आवश्यक कागदपत्रे शोधा आणि तयार करा.',

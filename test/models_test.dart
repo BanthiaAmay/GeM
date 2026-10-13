@@ -60,6 +60,13 @@ void main() {
     expect(RevenueResult.calculate(1000, 0, 4).low, 0);
     expect(() => RevenueResult.calculate(1000, 5, 4), throwsArgumentError);
   });
+  test('zero order value is valid and produces zero revenue range', () {
+    // Constraint 6: zero order value must be treated as valid, not an error.
+    final r = RevenueResult.calculate(0, 2, 6);
+    expect(r.low, 0);
+    expect(r.high, 0);
+    expect(r.orderValue, 0);
+  });
   test('ROI subtracts costs and uses delay only once', () {
     final r = RoiResult.calculate(
       orderValue: 100000,
