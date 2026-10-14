@@ -74,6 +74,61 @@ void main() {
     expect(s.completed, isNot(contains('roi')));
     expect(s.section('roi'), isEmpty);
   });
+  // ── Phase 2 persistence tests ─────────────────────────────────
+  test('new optional revenue fields round-trip through persist/restore', () async {
+    s.complete('revenue', {
+      'orderValue': 50000.0,
+      'ordersLow': 3.0,
+      'ordersHigh': 9.0,
+      'low': 150000.0,
+      'high': 450000.0,
+      'orderValueVaries': true,
+      'minOrderValue': 40000.0,
+      'maxOrderValue': 60000.0,
+      'priorOrdersCount': 12,
+      'priorOrdersValue': 45000.0,
+      'hasSeasonal': true,
+      'seasonalMonths': [10, 11, 12],
+      'source': 'user_assumptions',
+    });
+    await s.persist();
+    final restored = AppStore(prefs);
+    final sec = restored.section('revenue');
+    expect(sec['orderValueVaries'], isTrue);
+    expect(sec['minOrderValue'], 40000.0);
+    expect(sec['maxOrderValue'], 60000.0);
+    expect(sec['priorOrdersCount'], 12);
+    expect(sec['priorOrdersValue'], 45000.0);
+    expect(sec['hasSeasonal'], isTrue);
+    expect(sec['seasonalMonths'], [10, 11, 12]);
+    expect(restored.completed, contains('revenue'));
+  });
+  test('revenue section saved before new fields loads without error', () async {
+    // Simulate an old-format section (no new optional keys at all).
+    s.complete('revenue', {
+      'orderValue': 80000.0,
+      'ordersLow': 2.0,
+      'ordersHigh': 8.0,
+      'low': 160000.0,
+      'high': 640000.0,
+      'source': 'user_assumptions',
+    });
+    await s.persist();
+    final restored = AppStore(prefs);
+    final sec = restored.section('revenue');
+    // Original keys still present
+    expect(sec['orderValue'], 80000.0);
+    expect(sec['low'], 160000.0);
+    // New keys absent — must return null, not throw
+    expect(sec['orderValueVaries'], isNull);
+    expect(sec['minOrderValue'], isNull);
+    expect(sec['maxOrderValue'], isNull);
+    expect(sec['priorOrdersCount'], isNull);
+    expect(sec['priorOrdersValue'], isNull);
+    expect(sec['hasSeasonal'], isNull);
+    expect(sec['seasonalMonths'], isNull);
+    expect(restored.completed, contains('revenue'));
+  });
   test('local deletion clears report and research data', () async {
     s.setConsent(true);
     s.complete('pricing', {'price': 10});

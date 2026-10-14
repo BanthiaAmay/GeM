@@ -153,44 +153,22 @@ class ToolsHub extends StatefulWidget {
 }
 
 class _ToolsHubState extends State<ToolsHub> {
-  final _searchController = TextEditingController();
-  String _query = '';
   DocCategory? _category; // null = All
 
   AppStore get s => widget.store;
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
+  List<ToolEntry> get _filtered => kTools
+      .where((t) => _category == null || t.docCategory == _category)
+      .toList();
 
-  List<ToolEntry> get _filtered {
-    final q = _query.toLowerCase().trim();
-    return kTools.where((t) {
-      if (_category != null && t.docCategory != _category) return false;
-      if (q.isEmpty) return true;
-      return t.titleEn.toLowerCase().contains(q) ||
-          t.titleHi.contains(q) ||
-          t.descriptionEn.toLowerCase().contains(q) ||
-          t.descriptionHi.contains(q);
-    }).toList();
-  }
-
-  void _clearAll() {
-    setState(() {
-      _query = '';
-      _category = null;
-      _searchController.clear();
-    });
-  }
+  void _clearAll() => setState(() => _category = null);
 
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
     final count = filtered.length;
     final total = kTools.length;
-    final hasFilter = _query.isNotEmpty || _category != null;
+    final hasFilter = _category != null;
 
     // ── Count label ──────────────────────────────────────────────
     final countText = count == total
@@ -204,14 +182,6 @@ class _ToolsHubState extends State<ToolsHub> {
         for (final group in ToolGroup.values)
           if (kTools.any((t) => t.group == group))
             SectionHeader(s.t(group.titleEn, group.titleHi)),
-
-        // ── Search bar ───────────────────────────────────────────
-        AppSearchField(
-          controller: _searchController,
-          hint: s.t('Search documents…', 'दस्तावेज़ खोजें…'),
-          onChanged: (v) => setState(() => _query = v),
-        ),
-        const SizedBox(height: AppSpace.md),
 
         // ── Filter chips (horizontal scroll) ─────────────────────
         _FilterChips(

@@ -46,8 +46,8 @@ dependencies:
   pdf: ^3.11.0
   printing: ^5.13.1
   image_picker: any
-  super_clipboard: any
-  speech_to_text: ^6.6.2
+  pasteboard: ^0.5.0
+  speech_to_text: ^7.5.0
 
 dev_dependencies:
   flutter_test:

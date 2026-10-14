@@ -134,6 +134,16 @@ class AppStore extends ChangeNotifier {
   /// walkthrough (name, business details, readiness checks). One bag
   /// rather than a field per screen — this is preparation input, not
   /// verified identity data (no PAN/Aadhaar numbers are ever asked for).
+  ///
+  /// Onboarding step 13 (FlowExperienceDetailPage) stores
+  ///   profile['pastOrderCount']      — raw String, e.g. "5"
+  ///   profile['pastOrderValueRange'] — turnover-band key, e.g. 'under10L'
+  ///                                    (a TOTAL-value band, not per-order ₹)
+  // TODO(prefill-revenue-prior-orders): Wire the Revenue form's
+  // priorOrdersCount/priorOrdersValue prefill once onboarding stores
+  // pastOrderCount as an int and pastOrderValueRange as a per-order rupee
+  // amount.  The current band-key format is incompatible with RevenueResult's
+  // int/double fields and must not be mapped by guessing a midpoint.
   Map<String, dynamic> get profile =>
       Map<String, dynamic>.from(data['profile'] as Map? ?? {});
 
@@ -457,6 +467,12 @@ class AppStore extends ChangeNotifier {
     'pricing' => t('Pricing & margin', 'मूल्य और मार्जिन'),
     'roi' => t('ROI & effort', 'लाभ और प्रयास'),
     'tracker' => t('Readiness tracker', 'तैयारी ट्रैकर'),
+    'workingCapital' => t('Working capital', 'कार्यशील पूँजी'),
+    'emd' => t('EMD', 'EMD'),
+    'unitEconomics' => t('Unit economics', 'यूनिट अर्थशास्त्र'),
+    'gstCalc' => t('GST calculator', 'GST कैलकुलेटर'),
+    'netCash' => t('Net cash receivable', 'वास्तविक प्राप्त नकद'),
+    'raWalkaway' => t('Reverse auction walk-away price', 'रिवर्स ऑक्शन वॉक-अवे मूल्य'),
     _ => key,
   };
 }

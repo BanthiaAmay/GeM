@@ -22,7 +22,7 @@ import 'widgets.dart';
 /// iOS tab bar. Dashboard, notifications and the bid feed all live
 /// inside the Home tab, and the document checklist lives inside GeM
 /// 101, rather than each being its own destination.
-enum _Tab { home, tools, gem101, financialHub, profile }
+enum _Tab { home, tools, calculators, financialHub, profile }
 
 /// Shared (tab, outlined icon, filled icon, label) definitions for both
 /// the phone bottom nav ([_HomeNav]) and the wide-layout [NavigationRail],
@@ -31,10 +31,10 @@ List<(_Tab, IconData, IconData, String)> _navItems(AppStore s) => [
   (_Tab.home, Icons.home_outlined, Icons.home, s.t('Home', 'होम')),
   (_Tab.tools, Icons.build_outlined, Icons.build, s.t('Tools', 'टूल')),
   (
-    _Tab.gem101,
-    Icons.school_outlined,
-    Icons.school,
-    s.t('GeM 101', 'GeM 101'),
+    _Tab.calculators,
+    Icons.calculate_outlined,
+    Icons.calculate,
+    s.t('Calculators', 'कैलकुलेटर'),
   ),
   (
     // Short form in the nav bar so the label never wraps next to
@@ -122,11 +122,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                   _LanguageChip(store: s),
                   const SizedBox(width: 6),
-                  AppIconButton(
-                    onPressed: () => Navigator.of(context).pushNamed('/search'),
-                    icon: Icons.search,
-                    tooltip: s.t('Search', 'खोजें'),
-                  ),
                   _NotificationBell(
                     store: s,
                     hasUnread: _searchAlerts.isNotEmpty ||
@@ -161,7 +156,7 @@ class _HomePageState extends State<HomePage> {
                           searchAlerts: _searchAlerts,
                         ),
                       _Tab.tools => _ToolsTab(store: s),
-                      _Tab.gem101 => _Gem101Tab(store: s),
+                      _Tab.calculators => _CalculatorsTab(store: s),
                       _Tab.financialHub => _FinancialHubTab(store: s),
                       _Tab.profile => _ProfileTab(store: s),
                     },
@@ -187,12 +182,9 @@ class _HomePageState extends State<HomePage> {
               ),
             );
 
-            final searchBar = _PersistentSearchBar(store: s);
-
             final mainColumn = Column(
               children: [
                 topBar,
-                searchBar,
                 const Divider(height: 1),
                 scrollArea,
                 // The bottom tab bar is a phone pattern only — wide
@@ -512,58 +504,6 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
-/// Persistent search bar that sits between the top glass bar and the tab
-/// content — always visible regardless of which tab is active or how far
-/// the user has scrolled. Tapping opens the universal search page.
-class _PersistentSearchBar extends StatelessWidget {
-  final AppStore store;
-  const _PersistentSearchBar({required this.store});
-
-  @override
-  Widget build(BuildContext context) {
-    final hint = store.t('Search bids, tools…', 'बोलियाँ, टूल खोजें…');
-    return Semantics(
-      button: true,
-      label: hint,
-      child: GestureDetector(
-        onTap: () => Navigator.pushNamed(context, '/search'),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpace.lg,
-            vertical: AppSpace.sm,
-          ),
-          child: Container(
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceMuted,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.search,
-                  size: AppIconSize.md,
-                  color: AppColors.textHint,
-                ),
-                const SizedBox(width: AppSpace.sm),
-                Expanded(
-                  child: Text(
-                    hint,
-                    style: AppText.body.copyWith(color: AppColors.textHint),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _DashboardCard extends StatelessWidget {
   final AppStore store;
   const _DashboardCard({required this.store});
@@ -718,9 +658,25 @@ class _ToolsTab extends StatelessWidget {
   }
 }
 
-class _Gem101Tab extends StatelessWidget {
+class _CalculatorsTab extends StatelessWidget {
   final AppStore store;
-  const _Gem101Tab({required this.store});
+  const _CalculatorsTab({required this.store});
+
+  // (route key, icon, title en/hi, caption en/hi) — one line per
+  // calculator. Add a new tool here and it appears in the grid; no
+  // other change is needed to surface it on this tab.
+  static const _calcs = <(String, IconData, String, String, String, String)>[
+    ('eligibility', Icons.fact_check_outlined, 'Eligibility', 'पात्रता', 'Can your business sell on GeM?', 'क्या आपका व्यवसाय GeM पर बेच सकता है?'),
+    ('revenue', Icons.trending_up, 'Revenue', 'आय', 'What could you realistically earn?', 'आप वास्तव में कितना कमा सकते हैं?'),
+    ('pricing', Icons.sell_outlined, 'Pricing & margin', 'मूल्य और मार्जिन', 'Price with confidence.', 'भरोसे के साथ मूल्य तय करें।'),
+    ('roi', Icons.bar_chart_outlined, 'ROI & payback', 'ROI और लागत वसूली', 'Is the effort worth it?', 'क्या यह प्रयास लाभदायक है?'),
+    ('workingCapital', Icons.account_balance_wallet_outlined, 'Working capital', 'कार्यशील पूँजी', 'Will you have enough cash to execute?', 'क्या पर्याप्त नकद होगा?'),
+    ('emd', Icons.verified_outlined, 'EMD', 'EMD', 'What deposit does this bid need?', 'इस बोली के लिए जमा राशि?'),
+    ('unitEconomics', Icons.pie_chart_outline, 'Unit economics', 'यूनिट अर्थशास्त्र', 'How many units before you break even?', 'लागत वसूली के लिए कितनी इकाइयाँ?'),
+    ('gstCalc', Icons.receipt_long_outlined, 'GST', 'GST', 'What GST applies to this sale?', 'इस बिक्री पर कौन सा GST?'),
+    ('netCash', Icons.account_balance_outlined, 'Net cash receivable', 'वास्तविक प्राप्त नकद', 'What actually lands in your bank?', 'वास्तव में आपके बैंक में कितना आता है?'),
+    ('raWalkaway', Icons.gavel_outlined, 'Reverse auction floor', 'रिवर्स ऑक्शन सीमा', 'What is your walk-away price?', 'आपका वॉक-अवे मूल्य क्या है?'),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -729,50 +685,37 @@ class _Gem101Tab extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _PageHeader(
-          title: s.t('GeM 101', 'GeM 101'),
+          title: s.t('Calculators', 'कैलकुलेटर'),
           subtitle: s.t(
-            'The basics of selling on the Government e Marketplace.',
-            'सरकारी ई-मार्केटप्लेस पर बिक्री की बुनियादी बातें।',
+            'Plan the money side of GeM selling, one quick tool at a time.',
+            'GeM पर बिक्री के वित्तीय पक्ष की योजना, एक-एक त्वरित टूल से।',
           ),
         ),
-        _ToolSection(
-          icon: Icons.storefront_outlined,
-          title: s.t('What is GeM?', 'GeM क्या है?'),
-          description: s.t(
-            'India\'s official online marketplace for government buyers.',
-            'सरकारी खरीदारों के लिए भारत का आधिकारिक ऑनलाइन बाज़ार।',
-          ),
-          body: s.t(
-            'Departments, PSUs, and other government bodies buy goods and services here. Sellers list products and bid for orders; the lowest eligible bid usually wins.',
-            'विभाग, PSU और अन्य सरकारी संस्थाएँ यहाँ से सामान और सेवाएँ खरीदते हैं। विक्रेता उत्पाद सूचीबद्ध करते हैं और ऑर्डर के लिए बोली लगाते हैं; आमतौर पर सबसे कम योग्य बोली जीतती है।',
-          ),
+        ToolGrid(
+          children: [
+            for (final c in _calcs)
+              AppCard(
+                padding: const EdgeInsets.all(AppSpace.lg),
+                semanticLabel: '${s.t(c.$3, c.$4)}. ${s.t(c.$5, c.$6)}',
+                onTap: () => go(context, s, c.$1),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(c.$2, size: AppIconSize.md, color: AppColors.brand),
+                    const SizedBox(height: AppSpace.md),
+                    Text(s.t(c.$3, c.$4), style: AppText.title),
+                    const SizedBox(height: AppSpace.xs),
+                    Text(
+                      s.t(c.$5, c.$6),
+                      style: AppText.caption,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ),
-        const SizedBox(height: AppSpace.lg),
-        _ToolSection(
-          icon: Icons.flag_outlined,
-          title: s.t('The nine steps to your first order', 'पहले ऑर्डर तक के नौ चरण'),
-          description: s.t(
-            'Identity, GST, Udyam, account, catalogue, deposits, bids, fulfilment, ratings.',
-            'पहचान, GST, उद्यम, खाता, सूची, जमा, बोली, पूर्ति, रेटिंग।',
-          ),
-          body: s.t(
-            'Your readiness dashboard on the Home tab tracks these in order, but you can confirm a step as done or not applicable without following the sequence strictly.',
-            'होम टैब पर आपका तैयारी डैशबोर्ड इन्हें क्रम से ट्रैक करता है, पर आप सख्त क्रम का पालन किए बिना किसी चरण को पूर्ण या लागू नहीं के रूप में पुष्टि कर सकते हैं।',
-          ),
-        ),
-        const SizedBox(height: AppSpace.lg),
-        _LearnRow(store: s),
-        const SizedBox(height: AppSpace.xxxl),
-        SectionHeader(s.t('Documentations', 'दस्तावेज़')),
-        Text(
-          s.t(
-            'What you typically need to register and start bidding.',
-            'रजिस्टर करने और बोली शुरू करने के लिए आमतौर पर जो चाहिए।',
-          ),
-          style: AppText.secondary(AppText.body),
-        ),
-        const SizedBox(height: AppSpace.md),
-        DocumentChecklistCard(store: s),
       ],
     );
   }
@@ -1176,21 +1119,6 @@ class _QuickAction extends StatelessWidget {
   );
 }
 
-class _LearnRow extends StatelessWidget {
-  final AppStore store;
-  const _LearnRow({required this.store});
-
-  @override
-  Widget build(BuildContext context) => AppCard(
-    padding: const EdgeInsets.all(AppSpace.lg),
-    child: AppListTile(
-      icon: Icons.play_circle_outline,
-      title: store.t('Learn how bidding works', 'बोली प्रक्रिया सीखें'),
-      subtitle: store.t('3 min video', '3 मिनट का वीडियो'),
-      trailing: const Icon(Icons.chevron_right, size: AppIconSize.md),
-    ),
-  );
-}
 
 class _HomeNav extends StatelessWidget {
   final AppStore store;
