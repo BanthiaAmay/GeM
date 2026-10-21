@@ -1,11 +1,11 @@
-# GeM BizReady: animation prompts
+# Bid2Scale: animation prompts
 
 Paste the **context prompt** once at the start of a session, then run the prompts one at a time in order. Test on a device after each prompt before moving on.
 
 ## 0. Context prompt (paste first)
 
 ```
-You are working in a Flutter app (GeM BizReady) at the repo root. Key files:
+You are working in a Flutter app (Bid2Scale) at the repo root. Key files:
 - lib/main.dart: SplashGate, route table (flowPages), onGenerateRoute using MaterialPageRoute
 - lib/core/theme.dart: colours and ThemeData
 - lib/features/onboarding_widgets.dart: OnboardingStepScaffold (GlassBar header with back button, logo, progress bar, section/step labels; scrolling body; GlassBar bottom Continue button), OnboardingTextField, OnboardingPickerField, OnboardingRadioOption, OnboardingCheckOption

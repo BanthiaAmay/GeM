@@ -31,9 +31,9 @@ class BrandLogo extends StatelessWidget {
   const BrandLogo({super.key, required this.variant, required this.width});
 
   static const _assetFor = {
-    BrandLogoVariant.full: 'assets/brand/gem-bizready-logo-full.png',
-    BrandLogoVariant.lockup: 'assets/brand/gem-bizready-logo-lockup.png',
-    BrandLogoVariant.mark: 'assets/brand/gem-bizready-logo-mark.png',
+    BrandLogoVariant.full: 'assets/brand/bid2scale-logo-full.png',
+    BrandLogoVariant.lockup: 'assets/brand/bid2scale-logo-lockup.png',
+    BrandLogoVariant.mark: 'assets/brand/bid2scale-logo-mark.png',
   };
 
   @override
