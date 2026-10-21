@@ -228,7 +228,7 @@ class SaathiApp extends StatelessWidget {
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: store,
     builder: (context, _) => MaterialApp(
-      title: 'GeM BizReady',
+      title: 'Bid2Scale',
       debugShowCheckedModeBanner: false,
       theme: saathiTheme(),
       locale: Locale(store.language),

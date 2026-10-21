@@ -289,8 +289,8 @@ class FlowRedirectPage extends StatelessWidget {
         'आप GeM पर पंजीकरण के लिए तैयार हैं',
       ),
       subtitle: s.t(
-        'You’ll now leave GeM BizReady and complete seller registration yourself on the official Government e-Marketplace portal.',
-        'अब आप GeM BizReady छोड़कर आधिकारिक सरकारी ई-मार्केटप्लेस पोर्टल पर स्वयं विक्रेता पंजीकरण पूरा करेंगे।',
+        'You’ll now leave Bid2Scale and complete seller registration yourself on the official Government e-Marketplace portal.',
+        'अब आप Bid2Scale छोड़कर आधिकारिक सरकारी ई-मार्केटप्लेस पोर्टल पर स्वयं विक्रेता पंजीकरण पूरा करेंगे।',
       ),
       continueLabel: s.t(
         'Open official GeM registration',
@@ -328,8 +328,8 @@ class FlowRedirectPage extends StatelessWidget {
         _CoverRow(
           asset: 'redir_return',
           text: s.t(
-            'Return to GeM BizReady whenever you need video guidance.',
-            'जब भी वीडियो मार्गदर्शन चाहिए, GeM BizReady पर लौटें।',
+            'Return to Bid2Scale whenever you need video guidance.',
+            'जब भी वीडियो मार्गदर्शन चाहिए, Bid2Scale पर लौटें।',
           ),
         ),
         AppCard(

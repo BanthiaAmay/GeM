@@ -347,7 +347,7 @@ class _HomeTab extends StatelessWidget {
                 index: 3,
                 child: _QuickAction(
                   icon: Icons.chat_bubble_outline,
-                  label: s.t('Ask\nBizReady', 'BizReady\nसे पूछें'),
+                  label: s.t('Ask\nBid2Scale', 'Bid2Scale\nसे पूछें'),
                   onTap: () => onNavigate(_Tab.tools),
                 ),
               ),
@@ -565,7 +565,7 @@ class _ToolsTab extends StatelessWidget {
         const SizedBox(height: AppSpace.lg),
         _ToolSection(
           icon: Icons.chat_bubble_outline,
-          title: s.t('Ask BizReady', 'BizReady से पूछें'),
+          title: s.t('Ask Bid2Scale', 'Bid2Scale से पूछें'),
           description: s.t(
             'Get clear answers about preparing for GeM.',
             'GeM की तैयारी के बारे में स्पष्ट जवाब पाएं।',

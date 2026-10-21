@@ -12,7 +12,7 @@ val signingFile = rootProject.file("key.properties")
 if (signingFile.exists()) { FileInputStream(signingFile).use { signingProperties.load(it) } }
 
 android {
-    namespace = "com.gembizready.app"
+    namespace = "com.bid2scale.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -23,7 +23,7 @@ android {
 
     defaultConfig {
         // Permanent Play identity. Do not change after the first Play upload.
-        applicationId = "com.gembizready.app"
+        applicationId = "com.bid2scale.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

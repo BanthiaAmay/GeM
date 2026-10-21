@@ -11,7 +11,7 @@ The second migration adds a no-argument account-deletion RPC scoped to the authe
 In **Authentication → Providers → Email**, enable email sign-ins. Configure the Magic Link email template to include the numeric token:
 
 ```html
-<h2>Your GeM BizReady sign-in code</h2>
+<h2>Your Bid2Scale sign-in code</h2>
 <p>{{ .Token }}</p>
 <p>Enter this code in the app. If you did not request it, ignore this email.</p>
 ```
@@ -33,7 +33,7 @@ No anonymous auth provider or service-role client key is required. RLS must stay
 6. In Supabase **Authentication → URL Configuration**:
    - Set **Site URL** to the production web origin, such as `https://app.example.com`.
    - Add `https://app.example.com/**` for the production web app.
-   - Add the exact Android/iOS callback `com.gembizready.app://login-callback/`.
+   - Add the exact Android/iOS callback `com.bid2scale.app://login-callback/`.
    - During local web development, add only the localhost origins/ports you actually use, such as `http://localhost:*/**`; remove broad preview patterns when they are no longer needed.
 7. Keep the Google client secret only in the Supabase dashboard. It never belongs in Flutter, `config/env.json`, or Play Console.
 
@@ -51,7 +51,7 @@ Run `flutter build apk --debug` for an evaluation build. To prepare release:
 3. Add ignored `android/key.properties` containing `storeFile`, `storePassword`, `keyAlias`, `keyPassword`.
 4. Build `flutter build appbundle --release --dart-define-from-file=config/env.json`.
 
-This repository uses the permanent application ID `com.gembizready.app`. The local release upload key is `android/upload-keystore.jks` and its ignored configuration is `android/key.properties`. Back up both files in a password manager or other secure storage before uploading the first bundle. Neither file is committed. If this checkout is moved to another machine, restore those two files before building.
+This repository uses the permanent application ID `com.bid2scale.app`. The local release upload key is `android/upload-keystore.jks` and its ignored configuration is `android/key.properties`. Back up both files in a password manager or other secure storage before uploading the first bundle. Neither file is committed. If this checkout is moved to another machine, restore those two files before building.
 
 Build and verify the signed bundle:
 
@@ -66,7 +66,7 @@ Before production submission, increment the `version:` build number in `pubspec.
 
 ## Play Console checklist
 
-1. Create the Play app as **GeM BizReady**, choose the appropriate app category and use `com.gembizready.app` as the package identity by uploading the signed AAB.
+1. Create the Play app as **Bid2Scale**, choose the appropriate app category and use `com.bid2scale.app` as the package identity by uploading the signed AAB.
 2. Complete developer identity verification and Play App Signing. New personal accounts may have device verification and closed-testing requirements.
 3. Publish the web build over HTTPS. Use `/privacy.html` as the privacy-policy URL and `/delete-account.html` as the account-deletion URL.
 4. Complete **Data safety** from actual production behavior. The current app can process an email address, Google identity metadata, business-planning answers, optional research events/referral attribution, and user-requested support data. Supabase is the app backend; Google is used only when the user selects Google sign-in.

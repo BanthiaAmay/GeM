@@ -1,4 +1,4 @@
-# GeM BizReady — Design and Architecture
+# Bid2Scale — Design and Architecture
 
 Version 1.0 · 9 September 2026
 

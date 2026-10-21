@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Which of the three approved GeM BizReady logo assets to render.
+/// Which of the three approved Bid2Scale logo assets to render.
 ///
 /// These are the fixed brand assets — the arrow mark, wordmark, and
 /// tagline are never recreated, retyped, or approximated in code.
@@ -21,7 +21,7 @@ enum BrandLogoVariant {
 }
 
 /// The one shared logo component for the whole app. Every screen
-/// that shows the GeM BizReady logo should use this widget rather
+/// that shows the Bid2Scale logo should use this widget rather
 /// than reference the image assets directly, so there is a single
 /// place controlling how the approved artwork is displayed.
 class BrandLogo extends StatelessWidget {

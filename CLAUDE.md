@@ -1,4 +1,4 @@
-# GeM BizReady — agent instructions
+# Bid2Scale — agent instructions
 
 - **UI work follows [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md).** Use `AppColors`/`AppText`/`AppSpace`/`AppRadius`
   from `lib/core/tokens.dart` and the shared widgets in `lib/features/components.dart` and

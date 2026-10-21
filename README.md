@@ -1,4 +1,4 @@
-# GeM BizReady
+# Bid2Scale
 
 Flutter application for **Android and web**: GeM education, eligibility/classification, revenue scenarios, pricing, ROI, onboarding and Supabase-backed private accounts with email-code and Google sign-in.
 
@@ -37,7 +37,7 @@ flutter build apk --debug --dart-define-from-file=config/env.json
 
 Omit the `--dart-define-from-file` option for local-only builds. Web artifacts are in `build/web`; Android evaluation APK is `build/app/outputs/flutter-apk/app-debug.apk`. Serve the web directory over HTTPS. Hash routes need no application-route rewrites. Use links such as `https://your-host/?ref=ca_pune_01#/eligibility`.
 
-Android release signing uses the ignored local upload key configuration (see [deployment guide](docs/deployment.md)). The permanent application ID is `com.gembizready.app`. Existing iOS/desktop scaffolding is retained but not in this release's tested scope.
+Android release signing uses the ignored local upload key configuration (see [deployment guide](docs/deployment.md)). The permanent application ID is `com.bid2scale.app`. Existing iOS/desktop scaffolding is retained but not in this release's tested scope.
 
 ## What is included
 - Responsive forest-green/cream UI, mobile drawer and English/Hindi toggle.

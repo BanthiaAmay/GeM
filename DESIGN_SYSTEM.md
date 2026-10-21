@@ -1,4 +1,4 @@
-# GeM BizReady — Design System
+# Bid2Scale — Design System
 
 The rules every screen follows. Code lives in `lib/core/tokens.dart` (values),
 `lib/core/theme.dart` (Material theme built from them), `lib/features/components.dart`

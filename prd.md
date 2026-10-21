@@ -1,4 +1,4 @@
-# GeM BizReady — Product Requirements
+# Bid2Scale — Product Requirements
 
 Version 1.0 · 9 September 2026 · Product owner: Amay
 

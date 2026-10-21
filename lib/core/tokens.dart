@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// GeM BizReady design tokens — the single source of truth for colour,
+/// Bid2Scale design tokens — the single source of truth for colour,
 /// type, spacing, radius, size and icon rules. Never write a raw
 /// `Color(0x…)`, `fontSize:` or pixel radius in a feature file; use these
 /// (see DESIGN_SYSTEM.md). Contrast ratios are measured against the

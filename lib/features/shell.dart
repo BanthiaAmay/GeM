@@ -221,8 +221,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                       children: [
                         Text(
                           s.t(
-                            'GeM BizReady  •  Small business. Bigger possibilities.',
-                            'GeM BizReady  •  छोटा व्यवसाय। बड़ी संभावनाएँ।',
+                            'Bid2Scale  •  Small business. Bigger possibilities.',
+                            'Bid2Scale  •  छोटा व्यवसाय। बड़ी संभावनाएँ।',
                           ),
                           style: AppText.bodySmall.copyWith(
                             fontWeight: FontWeight.w600,

@@ -119,8 +119,8 @@ class _AccountPageState extends State<AccountPage> {
       if (mounted && opened) {
         setState(() {
           notice = s.t(
-            'Finish signing in with Google, then return to GeM BizReady.',
-            'Google से साइन इन पूरा करके GeM BizReady पर लौटें।',
+            'Finish signing in with Google, then return to Bid2Scale.',
+            'Google से साइन इन पूरा करके Bid2Scale पर लौटें।',
           );
         });
       }
@@ -342,8 +342,8 @@ class _AccountPageState extends State<AccountPage> {
         const SizedBox(height: AppSpace.xxl),
         Text(
           s.t(
-            'Google or email identifies your private account. GeM BizReady never receives your Google password. Research tracking remains off unless you separately opt in.',
-            'Google या ईमेल आपके निजी खाते की पहचान करता है। GeM BizReady को आपका Google पासवर्ड नहीं मिलता। शोध ट्रैकिंग आपकी अलग सहमति के बिना बंद रहती है।',
+            'Google or email identifies your private account. Bid2Scale never receives your Google password. Research tracking remains off unless you separately opt in.',
+            'Google या ईमेल आपके निजी खाते की पहचान करता है। Bid2Scale को आपका Google पासवर्ड नहीं मिलता। शोध ट्रैकिंग आपकी अलग सहमति के बिना बंद रहती है।',
           ),
           style: AppText.caption,
         ),
@@ -459,8 +459,8 @@ class _AccountPageState extends State<AccountPage> {
                   final ok = await confirm(
                     s.t('Delete your account?', 'अपना खाता मिटाएँ?'),
                     s.t(
-                      'This permanently deletes this account and its GeM BizReady data. This cannot be undone.',
-                      'यह खाता और इसका GeM BizReady डेटा स्थायी रूप से मिट जाएगा। इसे वापस नहीं किया जा सकता।',
+                      'This permanently deletes this account and its Bid2Scale data. This cannot be undone.',
+                      'यह खाता और इसका Bid2Scale डेटा स्थायी रूप से मिट जाएगा। इसे वापस नहीं किया जा सकता।',
                     ),
                     s.t('Delete account', 'खाता मिटाएँ'),
                   );

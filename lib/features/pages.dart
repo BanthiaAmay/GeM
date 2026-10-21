@@ -720,7 +720,7 @@ class ReportPage extends StatelessWidget {
                         ),
                       ],
                       fileNameOverrides: ['gem-saathi-report.txt'],
-                      subject: 'GeM BizReady report',
+                      subject: 'Bid2Scale report',
                     ),
                   );
                   s.event('report_exported', page: 'report');

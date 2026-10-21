@@ -277,7 +277,7 @@ class AppStore extends ChangeNotifier {
       OAuthProvider.google,
       redirectTo: kIsWeb
           ? Uri.base.origin
-          : 'com.gembizready.app://login-callback/',
+          : 'com.bid2scale.app://login-callback/',
       authScreenLaunchMode: kIsWeb
           ? LaunchMode.platformDefault
           : LaunchMode.externalApplication,
@@ -492,7 +492,7 @@ class AppStore extends ChangeNotifier {
 
   String report() {
     final b = StringBuffer(
-      t('GeM BizReady • My business plan', 'GeM BizReady • मेरी व्यवसाय योजना'),
+      t('Bid2Scale • My business plan', 'Bid2Scale • मेरी व्यवसाय योजना'),
     );
     b.writeln(
       '\n${DateFormat('dd MMM yyyy').format(DateTime.now())} | $ruleVersion',
