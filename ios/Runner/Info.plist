@@ -77,5 +77,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>GeM BizReady uses your microphone for voice search only — speech is recognised on-device and the raw audio is never stored or sent anywhere.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>GeM BizReady uses on-device speech recognition to convert your spoken search query to text. No audio or transcript is sent to any server.</string>
 </dict>
 </plist>

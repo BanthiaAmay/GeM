@@ -117,18 +117,132 @@ class PriceResult {
 }
 
 class RevenueResult {
-  final double low, high, orderValue, ordersLow, ordersHigh;
-  RevenueResult(this.orderValue, this.ordersLow, this.ordersHigh)
-    : low = orderValue * ordersLow,
-      high = orderValue * ordersHigh;
-  factory RevenueResult.calculate(double value, double low, double high) {
+  /// Gross revenue at the cautious scenario.
+  final double low;
+
+  /// Gross revenue at the optimistic scenario.
+  final double high;
+
+  /// Midpoint gross revenue: midpoint order value × midpoint order count.
+  /// In the fixed-value mode this is `orderValue × (ordersLow+ordersHigh)/2`.
+  final double typical;
+
+  final double ordersLow, ordersHigh;
+
+  /// In fixed mode, the single order value for every order.
+  /// In varying mode, equals [minOrderValue] — preserved for backward
+  /// compatibility with persisted `section('revenue')` maps that read
+  /// this field.
+  final double orderValue;
+
+  /// Non-null only in the varying-order-value mode.
+  final double? minOrderValue;
+  final double? maxOrderValue;
+
+  /// True when this result was produced by [calculateVarying].
+  bool get isVaryingOrderValue => minOrderValue != null;
+
+  // ── Optional track-record reference ──────────────────────────────
+  // Stored and exposed for display; never folded into low/high/typical.
+  final int? priorOrdersCount;
+  final double? priorOrdersValue;
+
+  // ── Optional seasonality metadata ────────────────────────────────
+  // Carried through without affecting any calculation.
+  final bool hasSeasonality;
+  final List<int>? seasonalMonths;
+
+  RevenueResult._({
+    required this.low,
+    required this.high,
+    required this.typical,
+    required this.orderValue,
+    required this.ordersLow,
+    required this.ordersHigh,
+    this.minOrderValue,
+    this.maxOrderValue,
+    this.priorOrdersCount,
+    this.priorOrdersValue,
+    this.hasSeasonality = false,
+    this.seasonalMonths,
+  });
+
+  /// Fixed order value — the original factory; positional signature is
+  /// unchanged for full backward compatibility with existing call sites
+  /// and persisted data.  New parameters are optional and named.
+  factory RevenueResult.calculate(
+    double value,
+    double low,
+    double high, {
+    int? priorOrdersCount,
+    double? priorOrdersValue,
+    bool hasSeasonality = false,
+    List<int>? seasonalMonths,
+  }) {
     for (final n in [value, low, high]) {
       checkNumber(n);
     }
+    if (priorOrdersValue != null) checkNumber(priorOrdersValue);
     if (low > high) {
       throw ArgumentError('Lower order count exceeds upper count');
     }
-    return RevenueResult(value, low, high);
+    if (priorOrdersCount != null && priorOrdersCount < 0) {
+      throw ArgumentError('Prior orders count must be non-negative');
+    }
+    return RevenueResult._(
+      low: value * low,
+      high: value * high,
+      typical: value * (low + high) / 2,
+      orderValue: value,
+      ordersLow: low,
+      ordersHigh: high,
+      priorOrdersCount: priorOrdersCount,
+      priorOrdersValue: priorOrdersValue,
+      hasSeasonality: hasSeasonality,
+      seasonalMonths: seasonalMonths,
+    );
+  }
+
+  /// Varying order value — [minOrderValue] pairs with [ordersLow] and
+  /// [maxOrderValue] pairs with [ordersHigh]; [typical] uses the
+  /// midpoint of both ranges.
+  factory RevenueResult.calculateVarying({
+    required double minOrderValue,
+    required double maxOrderValue,
+    required double ordersLow,
+    required double ordersHigh,
+    int? priorOrdersCount,
+    double? priorOrdersValue,
+    bool hasSeasonality = false,
+    List<int>? seasonalMonths,
+  }) {
+    for (final n in [minOrderValue, maxOrderValue, ordersLow, ordersHigh]) {
+      checkNumber(n);
+    }
+    if (priorOrdersValue != null) checkNumber(priorOrdersValue);
+    if (ordersLow > ordersHigh) {
+      throw ArgumentError('Lower order count exceeds upper count');
+    }
+    if (minOrderValue > maxOrderValue) {
+      throw ArgumentError('Minimum order value exceeds maximum order value');
+    }
+    if (priorOrdersCount != null && priorOrdersCount < 0) {
+      throw ArgumentError('Prior orders count must be non-negative');
+    }
+    return RevenueResult._(
+      low: minOrderValue * ordersLow,
+      high: maxOrderValue * ordersHigh,
+      typical: (minOrderValue + maxOrderValue) / 2 * (ordersLow + ordersHigh) / 2,
+      orderValue: minOrderValue,
+      minOrderValue: minOrderValue,
+      maxOrderValue: maxOrderValue,
+      ordersLow: ordersLow,
+      ordersHigh: ordersHigh,
+      priorOrdersCount: priorOrdersCount,
+      priorOrdersValue: priorOrdersValue,
+      hasSeasonality: hasSeasonality,
+      seasonalMonths: seasonalMonths,
+    );
   }
 }
 
@@ -188,6 +302,202 @@ class RoiResult {
       first,
       third,
       annual > 0 ? delayMonths + setup / (annual / 12) : null,
+    );
+  }
+}
+
+class WorkingCapitalResult {
+  final double orderValue, cashOnHand, cycleDays, gap;
+  WorkingCapitalResult(this.orderValue, this.cashOnHand, this.cycleDays, this.gap);
+  factory WorkingCapitalResult.calculate(
+    double orderValue,
+    double productionDays,
+    double delayDays,
+    double cashOnHand,
+  ) {
+    for (final n in [orderValue, productionDays, delayDays, cashOnHand]) {
+      checkNumber(n);
+    }
+    return WorkingCapitalResult(
+      orderValue,
+      cashOnHand,
+      productionDays + delayDays,
+      math.max(0, orderValue - cashOnHand),
+    );
+  }
+}
+
+class EmdResult {
+  final double tenderValue, emdPercent, emdPayable;
+  final bool exempt;
+  EmdResult(this.tenderValue, this.emdPercent, this.emdPayable, this.exempt);
+  factory EmdResult.calculate(
+    double tenderValue,
+    double emdPercent,
+    bool udyamExempt,
+  ) {
+    for (final n in [tenderValue, emdPercent]) {
+      checkNumber(n);
+    }
+    return EmdResult(
+      tenderValue,
+      emdPercent,
+      udyamExempt ? 0 : tenderValue * emdPercent / 100,
+      udyamExempt,
+    );
+  }
+}
+
+class UnitEconomicsResult {
+  final double fixedCosts, variableCost, sellingPrice, contribution;
+  final double? breakEvenUnits, breakEvenRevenue;
+  UnitEconomicsResult(
+    this.fixedCosts,
+    this.variableCost,
+    this.sellingPrice,
+    this.contribution,
+    this.breakEvenUnits,
+    this.breakEvenRevenue,
+  );
+  factory UnitEconomicsResult.calculate(
+    double fixedCosts,
+    double variableCost,
+    double sellingPrice,
+  ) {
+    for (final n in [fixedCosts, variableCost, sellingPrice]) {
+      checkNumber(n);
+    }
+    final contribution = sellingPrice - variableCost;
+    final units = contribution > 0 ? fixedCosts / contribution : null;
+    return UnitEconomicsResult(
+      fixedCosts,
+      variableCost,
+      sellingPrice,
+      contribution,
+      units,
+      units == null ? null : units * sellingPrice,
+    );
+  }
+}
+
+class GstResult {
+  final double saleValue, gstRate, gstAmount, cgst, sgst, igst, total;
+  GstResult(
+    this.saleValue,
+    this.gstRate,
+    this.gstAmount,
+    this.cgst,
+    this.sgst,
+    this.igst,
+    this.total,
+  );
+  factory GstResult.calculate(
+    double saleValue,
+    double gstRate,
+    bool sameState,
+  ) {
+    for (final n in [saleValue, gstRate]) {
+      checkNumber(n);
+    }
+    final gst = saleValue * gstRate / 100;
+    return GstResult(
+      saleValue,
+      gstRate,
+      gst,
+      sameState ? gst / 2 : 0,
+      sameState ? gst / 2 : 0,
+      sameState ? 0 : gst,
+      saleValue + gst,
+    );
+  }
+}
+
+class NetCashReceivableResult {
+  final double invoiceValue, gstAmount, gstTds, incomeTaxTds, transactionFeeAmount,
+      ldDeducted, netReceivable;
+  NetCashReceivableResult(
+    this.invoiceValue,
+    this.gstAmount,
+    this.gstTds,
+    this.incomeTaxTds,
+    this.transactionFeeAmount,
+    this.ldDeducted,
+    this.netReceivable,
+  );
+
+  /// GST-TDS under s. 51 CGST Act applies at 2% (1%+1%) once the
+  /// contract's taxable value exceeds ₹2.5 lakh. Re-verify the
+  /// threshold/rate before relying on this for filing.
+  factory NetCashReceivableResult.calculate({
+    required double invoiceValue,
+    required double gstRate,
+    required double incomeTaxTdsPercent,
+    required double ldDeducted,
+  }) {
+    for (final n in [invoiceValue, gstRate, incomeTaxTdsPercent, ldDeducted]) {
+      checkNumber(n);
+    }
+    final gstAmount = invoiceValue * gstRate / 100;
+    final gstTds = invoiceValue > 250000 ? invoiceValue * 0.02 : 0.0;
+    final incomeTds = invoiceValue * incomeTaxTdsPercent / 100;
+    final fee = transactionFee(invoiceValue);
+    final net =
+        invoiceValue + gstAmount - gstTds - incomeTds - fee - ldDeducted;
+    return NetCashReceivableResult(
+      invoiceValue,
+      gstAmount,
+      gstTds,
+      incomeTds,
+      fee,
+      ldDeducted,
+      net,
+    );
+  }
+}
+
+class ReverseAuctionResult {
+  final double landedCost, minMargin, floorPrice, l1Price;
+  final bool isMse;
+
+  /// Null when no L1 price was entered (unknown).
+  final double? headroomVsL1;
+
+  /// Null unless both an L1 price and MSE status are known.
+  final bool? withinMsePreferenceBand;
+
+  ReverseAuctionResult(
+    this.landedCost,
+    this.minMargin,
+    this.floorPrice,
+    this.l1Price,
+    this.isMse,
+    this.headroomVsL1,
+    this.withinMsePreferenceBand,
+  );
+
+  /// Floor price uses the same cost/(1-margin) technique as
+  /// [PriceResult]. MSE purchase-preference band is L1 + 15%
+  /// (champions.gov.in FAQ) — re-verify against the specific tender.
+  factory ReverseAuctionResult.calculate({
+    required double landedCost,
+    required double minMargin,
+    required double l1Price,
+    required bool isMse,
+  }) {
+    for (final n in [landedCost, minMargin, l1Price]) {
+      checkNumber(n);
+    }
+    if (minMargin >= 100) throw ArgumentError('Margin must be below 100%');
+    final floor = landedCost / (1 - minMargin / 100);
+    final hasL1 = l1Price > 0;
+    return ReverseAuctionResult(
+      landedCost,
+      minMargin,
+      floor,
+      l1Price,
+      isMse,
+      hasL1 ? floor - l1Price : null,
+      hasL1 && isMse ? floor <= l1Price * 1.15 : null,
     );
   }
 }

@@ -43,6 +43,11 @@ dependencies:
   uuid: ^4.6.0
   share_plus: ^13.3.0
   flutter_launcher_icons: ^0.14.4
+  pdf: ^3.11.0
+  printing: ^5.13.1
+  image_picker: any
+  pasteboard: ^0.5.0
+  speech_to_text: ^7.5.0
 
 dev_dependencies:
   flutter_test:
@@ -95,6 +100,11 @@ flutter:
     - family: NotoSansKannada
       fonts:
         - asset: assets/fonts/NotoSansKannada.ttf
+    - family: NotoSans
+      fonts:
+        - asset: assets/fonts/NotoSans-Regular.ttf
+        - asset: assets/fonts/NotoSans-Bold.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   # assets:

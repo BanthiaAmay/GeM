@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import '../core/models.dart';
 import '../core/motion.dart';
 import '../core/theme.dart';
+import '../core/transitions.dart';
 import '../data/app_store.dart';
 import 'brand_logo.dart';
 import 'components.dart';
+import 'drawer_pages.dart';
+import 'search/search_engine.dart';
+import 'search/search_store.dart';
+import 'tools_hub/tool_card.dart';
 import 'glass.dart';
 import 'onboarding_flow_4.dart' show gemRegistrationUrl;
 import 'onboarding_widgets.dart' show StaggeredEntrance;
@@ -14,28 +19,32 @@ import 'widgets.dart';
 /// The five destinations in the persistent bottom nav. Each is its own
 /// full page body — switching tabs swaps only the middle scrollable
 /// area; the top bar and nav bar stay fixed, exactly like a native
-/// iOS tab bar. Dashboard lives inside the Home tab as its "My
-/// Dashboard" card rather than as a separate destination.
-enum _Tab { home, updates, bids, tools, profile }
+/// iOS tab bar. Dashboard, notifications and the bid feed all live
+/// inside the Home tab, and the document checklist lives inside GeM
+/// 101, rather than each being its own destination.
+enum _Tab { home, tools, calculators, financialHub, profile }
 
 /// Shared (tab, outlined icon, filled icon, label) definitions for both
 /// the phone bottom nav ([_HomeNav]) and the wide-layout [NavigationRail],
 /// so the two stay in lockstep instead of drifting apart.
 List<(_Tab, IconData, IconData, String)> _navItems(AppStore s) => [
   (_Tab.home, Icons.home_outlined, Icons.home, s.t('Home', 'होम')),
-  (
-    _Tab.updates,
-    Icons.notifications_outlined,
-    Icons.notifications,
-    s.t('Updates', 'सूचनाएं'),
-  ),
-  (
-    _Tab.bids,
-    Icons.description_outlined,
-    Icons.description,
-    s.t('Bids', 'बोलियाँ'),
-  ),
   (_Tab.tools, Icons.build_outlined, Icons.build, s.t('Tools', 'टूल')),
+  (
+    _Tab.calculators,
+    Icons.calculate_outlined,
+    Icons.calculate,
+    s.t('Calculators', 'कैलकुलेटर'),
+  ),
+  (
+    // Short form in the nav bar so the label never wraps next to
+    // "GeM 101" and "Profile" at phone width; the tab's own page
+    // header still reads the full "Financial Hub".
+    _Tab.financialHub,
+    Icons.account_balance_outlined,
+    Icons.account_balance,
+    s.t('Finance', 'वित्त'),
+  ),
   (
     _Tab.profile,
     Icons.person_outline,
@@ -59,6 +68,26 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   _Tab _tab = _Tab.home;
   void _go(_Tab tab) => setState(() => _tab = tab);
+
+  SearchStore? _searchStore;
+  List<String> _searchAlerts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initAlerts();
+  }
+
+  Future<void> _initAlerts() async {
+    final store = SearchStore(widget.store.prefs);
+    final engine = SearchEngine();
+    final alerts = await store.checkAlerts(engine);
+    if (!mounted) return;
+    setState(() {
+      _searchStore = store;
+      _searchAlerts = alerts;
+    });
+  }
 
   String get _firstName {
     final full = (widget.store.profile['fullName'] as String? ?? '').trim();
@@ -93,7 +122,12 @@ class _HomePageState extends State<HomePage> {
                   ),
                   _LanguageChip(store: s),
                   const SizedBox(width: 6),
-                  _NotificationBell(store: s, onTap: () => _go(_Tab.updates)),
+                  _NotificationBell(
+                    store: s,
+                    hasUnread: _searchAlerts.isNotEmpty ||
+                        (_searchStore?.hasUnread ?? false),
+                    onTap: () => _go(_Tab.home),
+                  ),
                   AppIconButton(
                     onPressed: () => Scaffold.of(context).openEndDrawer(),
                     icon: Icons.menu,
@@ -119,10 +153,11 @@ class _HomePageState extends State<HomePage> {
                           store: s,
                           name: _firstName,
                           onNavigate: _go,
+                          searchAlerts: _searchAlerts,
                         ),
-                      _Tab.updates => _UpdatesTab(store: s, onNavigate: _go),
-                      _Tab.bids => _BidsTab(store: s),
                       _Tab.tools => _ToolsTab(store: s),
+                      _Tab.calculators => _CalculatorsTab(store: s),
+                      _Tab.financialHub => _FinancialHubTab(store: s),
                       _Tab.profile => _ProfileTab(store: s),
                     },
                   );
@@ -150,12 +185,18 @@ class _HomePageState extends State<HomePage> {
             final mainColumn = Column(
               children: [
                 topBar,
+                const Divider(height: 1),
                 scrollArea,
                 // The bottom tab bar is a phone pattern only — wide
                 // layouts get a NavigationRail on the side instead.
                 if (!isWide)
                   GlassBar.bottom(
-                    padding: const EdgeInsets.fromLTRB(AppSpace.xs, 10, AppSpace.xs, 10),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpace.sm,
+                      AppSpace.md,
+                      AppSpace.sm,
+                      AppSpace.md,
+                    ),
                     child: _HomeNav(store: s, current: _tab, onSelect: _go),
                   ),
               ],
@@ -210,11 +251,20 @@ class _HomeDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = store;
+    void openDrawerPage(Widget Function(BuildContext) builder) {
+      Navigator.of(context).pop();
+      Navigator.of(context).push(
+        SoftRoute(
+          settings: const RouteSettings(),
+          builder: builder,
+        ),
+      );
+    }
+
     return Drawer(
       backgroundColor: AppColors.surface,
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
           children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(
@@ -224,6 +274,54 @@ class _HomeDrawer extends StatelessWidget {
                 AppSpace.lg,
               ),
               child: BrandLogo(variant: BrandLogoVariant.lockup, width: 150),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(
+                Icons.description_outlined,
+                color: AppColors.brand,
+              ),
+              title: Text(s.t('Documentations', 'दस्तावेज़')),
+              onTap: () => openDrawerPage(
+                (_) => DocumentationsPage(store: s),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.fact_check_outlined,
+                color: AppColors.brand,
+              ),
+              title: Text(
+                s.t('Bid Preparation Assistance', 'बोली तैयारी सहायता'),
+              ),
+              onTap: () => openDrawerPage(
+                (_) => BidPreparationAssistancePage(store: s),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.sync_outlined, color: AppColors.brand),
+              title: Text(s.t('Bid Cycle', 'बोली चक्र')),
+              onTap: () => openDrawerPage((_) => BidCyclePage(store: s)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.task_alt_outlined, color: AppColors.brand),
+              title: Text(s.t('Execution', 'निष्पादन')),
+              onTap: () => openDrawerPage((_) => ExecutionPage(store: s)),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.trending_up_outlined,
+                color: AppColors.brand,
+              ),
+              title: Text(s.t('Earnings Dynamics', 'कमाई गतिशीलता')),
+              onTap: () => openDrawerPage(
+                (_) => EarningsDynamicsPage(store: s),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.payments_outlined, color: AppColors.brand),
+              title: Text(s.t('Financing', 'वित्तपोषण')),
+              onTap: () => openDrawerPage((_) => FinancingPage(store: s)),
             ),
             const Divider(),
             ListTile(
@@ -287,10 +385,12 @@ class _HomeTab extends StatelessWidget {
   final AppStore store;
   final String name;
   final ValueChanged<_Tab> onNavigate;
+  final List<String> searchAlerts;
   const _HomeTab({
     required this.store,
     required this.name,
     required this.onNavigate,
+    this.searchAlerts = const [],
   });
 
   @override
@@ -322,10 +422,39 @@ class _HomeTab extends StatelessWidget {
           ),
           style: AppText.secondary(AppText.body),
         ),
-        const SizedBox(height: AppSpace.xxl),
+        const SizedBox(height: AppSpace.lg),
         StaggeredEntrance(
           index: 1,
-          child: _FeaturedBid(store: s, onTap: () => onNavigate(_Tab.bids)),
+          child: _NotificationsSection(store: s, searchAlerts: searchAlerts),
+        ),
+        const SizedBox(height: AppSpace.xxxl),
+        SectionHeader(s.t('Bids for you', 'आपके लिए बोलियाँ')),
+        StaggeredEntrance(
+          index: 2,
+          child: _FeaturedBid(
+            store: s,
+            onTap: () => openLink(context, s, gemSource),
+          ),
+        ),
+        const SizedBox(height: AppSpace.lg),
+        Text(
+          s.t(
+            'This is a sample opportunity for preview. Confirm eligibility, specifications, and closing dates on the official GeM portal.',
+            'यह एक नमूना अवसर है। पात्रता, विनिर्देश और अंतिम तिथियाँ आधिकारिक GeM पोर्टल पर देखें।',
+          ),
+          style: AppText.caption,
+        ),
+        const SizedBox(height: AppSpace.md),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: AppButton(
+            label: s.t('Open official GeM portal', 'आधिकारिक GeM पोर्टल खोलें'),
+            onPressed: () => openLink(context, s, gemSource),
+            variant: AppButtonVariant.tertiary,
+            trailingIcon: Icons.open_in_new,
+            expand: false,
+            haptic: false,
+          ),
         ),
         const SizedBox(height: AppSpace.xxxl),
         SectionHeader(s.t('Quick actions', 'त्वरित कार्य')),
@@ -333,18 +462,18 @@ class _HomeTab extends StatelessWidget {
           children: [
             Expanded(
               child: StaggeredEntrance(
-                index: 2,
+                index: 3,
                 child: _QuickAction(
                   icon: Icons.bar_chart_outlined,
                   label: s.t('ROI\ncalculator', 'ROI\nकैलकुलेटर'),
-                  onTap: () => onNavigate(_Tab.tools),
+                  onTap: () => onNavigate(_Tab.financialHub),
                 ),
               ),
             ),
             const SizedBox(width: AppSpace.md),
             Expanded(
               child: StaggeredEntrance(
-                index: 3,
+                index: 4,
                 child: _QuickAction(
                   icon: Icons.chat_bubble_outline,
                   label: s.t('Ask\nBid2Scale', 'Bid2Scale\nसे पूछें'),
@@ -356,7 +485,7 @@ class _HomeTab extends StatelessWidget {
         ),
         const SizedBox(height: AppSpace.md),
         StaggeredEntrance(
-          index: 4,
+          index: 5,
           child: AppCard(
             padding: const EdgeInsets.all(AppSpace.lg),
             onTap: () => Navigator.of(context).pushNamed('/insights'),
@@ -446,10 +575,17 @@ class _DashboardCard extends StatelessWidget {
   }
 }
 
-class _UpdatesTab extends StatelessWidget {
+/// The notification list folded into the Home tab's scroll (previously
+/// its own "Updates" destination). Rows are informational only — the
+/// matching bid is already shown in the "Bids for you" section right
+/// below on the same page, so there is nowhere else for a tap to go.
+class _NotificationsSection extends StatelessWidget {
   final AppStore store;
-  final ValueChanged<_Tab> onNavigate;
-  const _UpdatesTab({required this.store, required this.onNavigate});
+  final List<String> searchAlerts;
+  const _NotificationsSection({
+    required this.store,
+    this.searchAlerts = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -457,24 +593,27 @@ class _UpdatesTab extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _PageHeader(
-          title: s.t('Notifications', 'सूचनाएं'),
-          subtitle: s.t(
-            'Two new bid opportunities match your business profile.',
-            'आपकी व्यवसाय प्रोफ़ाइल से मेल खाने वाले दो नए बोली अवसर।',
+        SectionHeader(s.t('Notifications', 'सूचनाएं')),
+        // Dynamic saved-search alerts take priority when present.
+        if (searchAlerts.isNotEmpty) ...[
+          for (var i = 0; i < searchAlerts.length; i++) ...[
+            if (i > 0) const SizedBox(height: AppSpace.md),
+            _NotificationRow(
+              title: searchAlerts[i],
+              subtitle: s.t('New bid match', 'नया बोली मैच'),
+            ),
+          ],
+        ] else ...[
+          _NotificationRow(
+            title: s.t('Office stationery supplies', 'ऑफिस स्टेशनरी सामग्री'),
+            subtitle: s.t('New bid match', 'नया बोली मैच'),
           ),
-        ),
-        _NotificationRow(
-          title: s.t('Office stationery supplies', 'ऑफिस स्टेशनरी सामग्री'),
-          subtitle: s.t('New bid match', 'नया बोली मैच'),
-          onTap: () => onNavigate(_Tab.bids),
-        ),
-        const SizedBox(height: AppSpace.md),
-        _NotificationRow(
-          title: s.t('IT hardware procurement', 'IT हार्डवेयर खरीद'),
-          subtitle: s.t('New bid match', 'नया बोली मैच'),
-          onTap: () => onNavigate(_Tab.bids),
-        ),
+          const SizedBox(height: AppSpace.md),
+          _NotificationRow(
+            title: s.t('IT hardware procurement', 'IT हार्डवेयर खरीद'),
+            subtitle: s.t('New bid match', 'नया बोली मैच'),
+          ),
+        ],
       ],
     );
   }
@@ -483,60 +622,17 @@ class _UpdatesTab extends StatelessWidget {
 class _NotificationRow extends StatelessWidget {
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
-  const _NotificationRow({
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
+  const _NotificationRow({required this.title, required this.subtitle});
 
   @override
   Widget build(BuildContext context) => AppCard(
     padding: const EdgeInsets.all(AppSpace.lg),
-    onTap: onTap,
     child: AppListTile(
       icon: Icons.notifications_outlined,
       title: title,
       subtitle: subtitle,
     ),
   );
-}
-
-class _BidsTab extends StatelessWidget {
-  final AppStore store;
-  const _BidsTab({required this.store});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = store;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _PageHeader(title: s.t('Bids for you', 'आपके लिए बोलियाँ')),
-        _FeaturedBid(store: s, onTap: () {}),
-        const SizedBox(height: AppSpace.lg),
-        Text(
-          s.t(
-            'This is a sample opportunity for preview. Confirm eligibility, specifications, and closing dates on the official GeM portal.',
-            'यह एक नमूना अवसर है। पात्रता, विनिर्देश और अंतिम तिथियाँ आधिकारिक GeM पोर्टल पर देखें।',
-          ),
-          style: AppText.caption,
-        ),
-        const SizedBox(height: AppSpace.md),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: AppButton(
-            label: s.t('Open official GeM portal', 'आधिकारिक GeM पोर्टल खोलें'),
-            onPressed: () => openLink(context, s, gemSource),
-            variant: AppButtonVariant.tertiary,
-            trailingIcon: Icons.open_in_new,
-            expand: false,
-            haptic: false,
-          ),
-        ),
-      ],
-    );
-  }
 }
 
 class _ToolsTab extends StatelessWidget {
@@ -549,7 +645,99 @@ class _ToolsTab extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _PageHeader(title: s.t('Tools', 'टूल')),
+        _PageHeader(
+          title: s.t('Tools', 'टूल'),
+          subtitle: s.t(
+            'Find and prepare the documents your tender requires.',
+            'अपनी निविदा के लिए आवश्यक दस्तावेज़ खोजें और तैयार करें।',
+          ),
+        ),
+        ToolsHub(store: s),
+      ],
+    );
+  }
+}
+
+class _CalculatorsTab extends StatelessWidget {
+  final AppStore store;
+  const _CalculatorsTab({required this.store});
+
+  // (route key, icon, title en/hi, caption en/hi) — one line per
+  // calculator. Add a new tool here and it appears in the grid; no
+  // other change is needed to surface it on this tab.
+  static const _calcs = <(String, IconData, String, String, String, String)>[
+    ('eligibility', Icons.fact_check_outlined, 'Eligibility', 'पात्रता', 'Can your business sell on GeM?', 'क्या आपका व्यवसाय GeM पर बेच सकता है?'),
+    ('revenue', Icons.trending_up, 'Revenue', 'आय', 'What could you realistically earn?', 'आप वास्तव में कितना कमा सकते हैं?'),
+    ('pricing', Icons.sell_outlined, 'Pricing & margin', 'मूल्य और मार्जिन', 'Price with confidence.', 'भरोसे के साथ मूल्य तय करें।'),
+    ('roi', Icons.bar_chart_outlined, 'ROI & payback', 'ROI और लागत वसूली', 'Is the effort worth it?', 'क्या यह प्रयास लाभदायक है?'),
+    ('workingCapital', Icons.account_balance_wallet_outlined, 'Working capital', 'कार्यशील पूँजी', 'Will you have enough cash to execute?', 'क्या पर्याप्त नकद होगा?'),
+    ('emd', Icons.verified_outlined, 'EMD', 'EMD', 'What deposit does this bid need?', 'इस बोली के लिए जमा राशि?'),
+    ('unitEconomics', Icons.pie_chart_outline, 'Unit economics', 'यूनिट अर्थशास्त्र', 'How many units before you break even?', 'लागत वसूली के लिए कितनी इकाइयाँ?'),
+    ('gstCalc', Icons.receipt_long_outlined, 'GST', 'GST', 'What GST applies to this sale?', 'इस बिक्री पर कौन सा GST?'),
+    ('netCash', Icons.account_balance_outlined, 'Net cash receivable', 'वास्तविक प्राप्त नकद', 'What actually lands in your bank?', 'वास्तव में आपके बैंक में कितना आता है?'),
+    ('raWalkaway', Icons.gavel_outlined, 'Reverse auction floor', 'रिवर्स ऑक्शन सीमा', 'What is your walk-away price?', 'आपका वॉक-अवे मूल्य क्या है?'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final s = store;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _PageHeader(
+          title: s.t('Calculators', 'कैलकुलेटर'),
+          subtitle: s.t(
+            'Plan the money side of GeM selling, one quick tool at a time.',
+            'GeM पर बिक्री के वित्तीय पक्ष की योजना, एक-एक त्वरित टूल से।',
+          ),
+        ),
+        ToolGrid(
+          children: [
+            for (final c in _calcs)
+              AppCard(
+                padding: const EdgeInsets.all(AppSpace.lg),
+                semanticLabel: '${s.t(c.$3, c.$4)}. ${s.t(c.$5, c.$6)}',
+                onTap: () => go(context, s, c.$1),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(c.$2, size: AppIconSize.md, color: AppColors.brand),
+                    const SizedBox(height: AppSpace.md),
+                    Text(s.t(c.$3, c.$4), style: AppText.title),
+                    const SizedBox(height: AppSpace.xs),
+                    Text(
+                      s.t(c.$5, c.$6),
+                      style: AppText.caption,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _FinancialHubTab extends StatelessWidget {
+  final AppStore store;
+  const _FinancialHubTab({required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = store;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _PageHeader(
+          title: s.t('Financial Hub', 'वित्तीय केंद्र'),
+          subtitle: s.t(
+            'Plan the money side of a bid before you commit to it.',
+            'प्रतिबद्ध होने से पहले बोली के वित्तीय पक्ष की योजना बनाएं।',
+          ),
+        ),
         _ToolSection(
           icon: Icons.bar_chart_outlined,
           title: s.t('ROI calculator', 'ROI कैलकुलेटर'),
@@ -587,9 +775,8 @@ class _ToolsTab extends StatelessWidget {
               'रुझान, श्रेणियाँ और बोली उपयुक्तता',
             ),
           ),
+          style: AppText.caption,
         ),
-        const SizedBox(height: AppSpace.lg),
-        _LearnRow(store: s),
       ],
     );
   }
@@ -831,8 +1018,13 @@ void _showLanguageSheet(BuildContext context, AppStore store) {
 
 class _NotificationBell extends StatelessWidget {
   final AppStore store;
+  final bool hasUnread;
   final VoidCallback onTap;
-  const _NotificationBell({required this.store, required this.onTap});
+  const _NotificationBell({
+    required this.store,
+    required this.onTap,
+    this.hasUnread = true,
+  });
 
   @override
   Widget build(BuildContext context) => IconButton(
@@ -842,18 +1034,19 @@ class _NotificationBell extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         const Icon(Icons.notifications_outlined),
-        Positioned(
-          right: -1,
-          top: -1,
-          child: Container(
-            width: 8,
-            height: 8,
-            decoration: const BoxDecoration(
-              color: AppColors.brand,
-              shape: BoxShape.circle,
+        if (hasUnread)
+          Positioned(
+            right: -1,
+            top: -1,
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: AppColors.brand,
+                shape: BoxShape.circle,
+              ),
             ),
           ),
-        ),
       ],
     ),
   );
@@ -945,21 +1138,6 @@ class _QuickAction extends StatelessWidget {
   );
 }
 
-class _LearnRow extends StatelessWidget {
-  final AppStore store;
-  const _LearnRow({required this.store});
-
-  @override
-  Widget build(BuildContext context) => AppCard(
-    padding: const EdgeInsets.all(AppSpace.lg),
-    child: AppListTile(
-      icon: Icons.play_circle_outline,
-      title: store.t('Learn how bidding works', 'बोली प्रक्रिया सीखें'),
-      subtitle: store.t('3 min video', '3 मिनट का वीडियो'),
-      trailing: const Icon(Icons.chevron_right, size: AppIconSize.md),
-    ),
-  );
-}
 
 class _HomeNav extends StatelessWidget {
   final AppStore store;
@@ -1001,17 +1179,18 @@ class _HomeNav extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               AnimatedScale(
-                                scale: tab == current ? 1.15 : 1.0,
+                                scale: tab == current ? 1.08 : 1.0,
                                 duration: Motion.of(context, Motion.fast),
                                 curve: Motion.enter,
                                 child: Icon(
                                   tab == current ? filledIcon : outlinedIcon,
+                                  size: AppIconSize.md,
                                   color: tab == current
                                       ? AppColors.brand
                                       : AppColors.textSecondary,
                                 ),
                               ),
-                              const SizedBox(height: 3),
+                              const SizedBox(height: AppSpace.xs),
                               Text(
                                 label,
                                 style: AppText.label.copyWith(

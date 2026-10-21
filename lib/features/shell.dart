@@ -26,7 +26,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     s.event('page_view', page: widget.page);
-    if (['eligibility', 'revenue', 'pricing', 'roi'].contains(widget.page)) {
+    if ([
+      'eligibility', 'revenue', 'pricing', 'roi',
+      'workingCapital', 'emd', 'unitEconomics', 'gstCalc',
+      'netCash', 'raWalkaway',
+    ].contains(widget.page)) {
       s.event('tool_started', page: widget.page);
     }
     heartbeat = Timer.periodic(const Duration(seconds: 30), (_) {
