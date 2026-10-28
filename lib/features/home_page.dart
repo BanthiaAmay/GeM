@@ -392,6 +392,17 @@ class _HomeDrawer extends StatelessWidget {
             ),
             const Divider(),
             ListTile(
+              leading: const Icon(
+                Icons.person_outline,
+                color: AppColors.brand,
+              ),
+              title: Text(s.t('Account', 'खाता')),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushNamed('/account');
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.gavel_outlined, color: AppColors.brand),
               title: Text(s.t('Live GeM bids', 'लाइव GeM बोलियाँ')),
               onTap: () {
@@ -1080,6 +1091,163 @@ class _ProfileTab extends StatelessWidget {
           onPressed: () => _confirmStartOver(context, s),
           variant: AppButtonVariant.secondary,
         ),
+        const SizedBox(height: AppSpace.xxxl),
+        _AccountSection(store: s),
+      ],
+    );
+  }
+}
+
+/// Who is signed in, plus sign out and permanent account deletion. Both
+/// actions confirm first, then return to the sign-in screen.
+class _AccountSection extends StatefulWidget {
+  final AppStore store;
+  const _AccountSection({required this.store});
+  @override
+  State<_AccountSection> createState() => _AccountSectionState();
+}
+
+class _AccountSectionState extends State<_AccountSection> {
+  bool busy = false;
+  String? error;
+  AppStore get s => widget.store;
+
+  Future<bool> _confirm(String title, String body, String action) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(title),
+          content: Text(body),
+          actionsPadding: const EdgeInsets.fromLTRB(
+            AppSpace.xl,
+            0,
+            AppSpace.xl,
+            AppSpace.lg,
+          ),
+          actions: [
+            AppButton(
+              label: s.t('Cancel', 'रद्द करें'),
+              onPressed: () => Navigator.of(context).pop(false),
+              variant: AppButtonVariant.secondary,
+              size: AppButtonSize.sm,
+              expand: false,
+              haptic: false,
+            ),
+            AppButton(
+              label: action,
+              danger: true,
+              size: AppButtonSize.sm,
+              expand: false,
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+
+  Future<void> _run(Future<void> Function() action) async {
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      await action();
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/onboarding-auth', (route) => false);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => error = s.t(
+            'That didn’t work. Check your connection and try again.',
+            'यह नहीं हुआ। इंटरनेट जाँचकर फिर कोशिश करें।',
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final email = s.currentUser?.email ?? '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(s.t('Account', 'खाता')),
+        AppCard(
+          padding: const EdgeInsets.all(AppSpace.lg),
+          onTap: () => Navigator.of(context).pushNamed('/account'),
+          child: AppListTile(
+            icon: Icons.person_outline,
+            title: s.signedIn
+                ? (email.isEmpty ? s.t('Signed in', 'साइन इन') : email)
+                : s.t('Not signed in', 'साइन इन नहीं है'),
+            subtitle: s.t(
+              'Account, sync and privacy settings',
+              'खाता, सिंक और गोपनीयता सेटिंग',
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpace.lg),
+        if (s.signedIn) ...[
+          AppButton(
+            label: s.t('Sign out', 'साइन आउट करें'),
+            icon: Icons.logout,
+            variant: AppButtonVariant.secondary,
+            loading: busy,
+            onPressed: busy
+                ? null
+                : () async {
+                    if (await _confirm(
+                      s.t('Sign out?', 'साइन आउट करें?'),
+                      s.t(
+                        'Your work stays saved to your account. Sign back in any time with a code sent to your email.',
+                        'आपका काम खाते में सहेजा रहेगा। ईमेल पर आए कोड से कभी भी फिर साइन इन करें।',
+                      ),
+                      s.t('Sign out', 'साइन आउट करें'),
+                    )) {
+                      await _run(s.signOut);
+                    }
+                  },
+          ),
+          const SizedBox(height: AppSpace.md),
+          AppButton(
+            label: s.t('Delete my account', 'मेरा खाता मिटाएँ'),
+            icon: Icons.delete_outline,
+            variant: AppButtonVariant.secondary,
+            danger: true,
+            onPressed: busy
+                ? null
+                : () async {
+                    if (await _confirm(
+                      s.t('Delete your account?', 'अपना खाता मिटाएँ?'),
+                      s.t(
+                        'This permanently deletes your account and all your Bid2Scale data: business answers, bid alerts, notification settings and saved progress. This cannot be undone.',
+                        'इससे आपका खाता और Bid2Scale का सारा डेटा स्थायी रूप से मिट जाएगा: व्यवसाय के उत्तर, बोली अलर्ट, सूचना सेटिंग और सहेजी प्रगति। इसे वापस नहीं किया जा सकता।',
+                      ),
+                      s.t('Delete account', 'खाता मिटाएँ'),
+                    )) {
+                      await _run(s.deleteAccount);
+                    }
+                  },
+          ),
+        ] else
+          AppButton(
+            label: s.t('Sign in or create account', 'साइन इन करें या खाता बनाएँ'),
+            icon: Icons.login,
+            onPressed: () => Navigator.of(context).pushNamed('/auth'),
+          ),
+        if (error != null) ...[
+          const SizedBox(height: AppSpace.md),
+          Text(
+            error!,
+            style: AppText.bodySmall.copyWith(color: AppColors.danger),
+          ),
+        ],
       ],
     );
   }
