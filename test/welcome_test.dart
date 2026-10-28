@@ -20,7 +20,10 @@ void main() {
       for (final lang in supportedLanguages) {
         s.setLanguage(lang[0]);
         await tester.pumpWidget(
-          MaterialApp(theme: saathiTheme(), home: WelcomePage(store: s)),
+          MaterialApp(
+            theme: saathiTheme(),
+            home: WelcomePage(store: s),
+          ),
         );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull, reason: '${lang[0]} $size');

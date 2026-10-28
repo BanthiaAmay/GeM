@@ -60,6 +60,130 @@ void main() {
     expect(RevenueResult.calculate(1000, 0, 4).low, 0);
     expect(() => RevenueResult.calculate(1000, 5, 4), throwsArgumentError);
   });
+  test('zero order value is valid and produces zero revenue range', () {
+    // Constraint 6: zero order value must be treated as valid, not an error.
+    final r = RevenueResult.calculate(0, 2, 6);
+    expect(r.low, 0);
+    expect(r.high, 0);
+    expect(r.orderValue, 0);
+  });
+  test('midpoint and monthly figures derive correctly from RevenueResult', () {
+    final r = RevenueResult.calculate(50000, 4, 12);
+    // low = 50 000 × 4 = 200 000; high = 50 000 × 12 = 600 000
+    expect(r.low, 200000);
+    expect(r.high, 600000);
+    // midpoint orders = (4 + 12) / 2 = 8 → mid = 50 000 × 8 = 400 000
+    final mid = r.orderValue * (r.ordersLow + r.ordersHigh) / 2;
+    expect(mid, 400000);
+    // monthly low = 200 000 / 12 ≈ 16 666.67
+    expect(r.low / 12, closeTo(16666.67, 0.01));
+  });
+  // ── Phase 1 model extension ───────────────────────────────────────────
+  test('typical is a first-class field on fixed-value RevenueResult', () {
+    final r = RevenueResult.calculate(50000, 4, 12);
+    // midpoint orders = (4+12)/2 = 8 → typical = 50 000×8 = 400 000
+    expect(r.typical, 400000);
+    expect(r.isVaryingOrderValue, isFalse);
+    expect(r.minOrderValue, isNull);
+    expect(r.maxOrderValue, isNull);
+  });
+  test('calculateVarying produces correct low, high and typical', () {
+    // low = 10 000×3 = 30 000; high = 20 000×9 = 180 000
+    // midValue = (10 000+20 000)/2 = 15 000; midOrders = (3+9)/2 = 6
+    // typical = 15 000×6 = 90 000
+    final r = RevenueResult.calculateVarying(
+      minOrderValue: 10000,
+      maxOrderValue: 20000,
+      ordersLow: 3,
+      ordersHigh: 9,
+    );
+    expect(r.low, 30000);
+    expect(r.high, 180000);
+    expect(r.typical, 90000);
+    expect(r.isVaryingOrderValue, isTrue);
+    expect(r.minOrderValue, 10000);
+    expect(r.maxOrderValue, 20000);
+    // orderValue preserved for backward compat with persisted maps
+    expect(r.orderValue, 10000);
+  });
+  test('calculateVarying rejects minOrderValue exceeding maxOrderValue', () {
+    expect(
+      () => RevenueResult.calculateVarying(
+        minOrderValue: 20000,
+        maxOrderValue: 10000,
+        ordersLow: 2,
+        ordersHigh: 8,
+      ),
+      throwsArgumentError,
+    );
+    // min == max is the degenerate single-value case — must not throw
+    expect(
+      () => RevenueResult.calculateVarying(
+        minOrderValue: 15000,
+        maxOrderValue: 15000,
+        ordersLow: 2,
+        ordersHigh: 8,
+      ),
+      returnsNormally,
+    );
+  });
+  test('calculateVarying accepts zero order values and zero order counts', () {
+    final r = RevenueResult.calculateVarying(
+      minOrderValue: 0,
+      maxOrderValue: 5000,
+      ordersLow: 0,
+      ordersHigh: 4,
+    );
+    expect(r.low, 0);
+    expect(r.high, 20000);
+    expect(r.isVaryingOrderValue, isTrue);
+  });
+  test('prior-orders fields are stored but never alter revenue range', () {
+    final r = RevenueResult.calculate(
+      50000,
+      3,
+      9,
+      priorOrdersCount: 12,
+      priorOrdersValue: 45000,
+    );
+    expect(r.priorOrdersCount, 12);
+    expect(r.priorOrdersValue, 45000);
+    expect(r.low, 150000);
+    expect(r.high, 450000);
+    // Same invariant via varying path
+    final rv = RevenueResult.calculateVarying(
+      minOrderValue: 40000,
+      maxOrderValue: 60000,
+      ordersLow: 3,
+      ordersHigh: 9,
+      priorOrdersCount: 12,
+      priorOrdersValue: 45000,
+    );
+    expect(rv.priorOrdersCount, 12);
+    expect(rv.priorOrdersValue, 45000);
+    expect(rv.low, 120000);
+    expect(rv.high, 540000);
+  });
+  test(
+    'seasonality flag and months are stored without affecting calculation',
+    () {
+      final r = RevenueResult.calculate(
+        50000,
+        2,
+        8,
+        hasSeasonality: true,
+        seasonalMonths: [10, 11, 12],
+      );
+      expect(r.hasSeasonality, isTrue);
+      expect(r.seasonalMonths, [10, 11, 12]);
+      expect(r.low, 100000);
+      expect(r.high, 400000);
+      // Default: no seasonality metadata
+      final plain = RevenueResult.calculate(50000, 2, 8);
+      expect(plain.hasSeasonality, isFalse);
+      expect(plain.seasonalMonths, isNull);
+    },
+  );
   test('ROI subtracts costs and uses delay only once', () {
     final r = RoiResult.calculate(
       orderValue: 100000,

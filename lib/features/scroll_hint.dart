@@ -24,7 +24,17 @@ class ScrollMoreHint extends StatefulWidget {
   /// Off where floating chrome already shows there is more below (the
   /// home tab capsule): the fade would wash out content above it.
   final bool enabled;
-  const ScrollMoreHint({super.key, required this.builder, this.enabled = true});
+
+  /// When provided, this controller is used instead of the widget's own.
+  /// The caller is responsible for disposing it.
+  final ScrollController? controller;
+
+  const ScrollMoreHint({
+    super.key,
+    required this.builder,
+    this.enabled = true,
+    this.controller,
+  });
 
   /// Widget tests set this to true before pumping a screen that uses
   /// [ScrollMoreHint], since `pumpAndSettle()` can never settle while
@@ -38,7 +48,8 @@ class ScrollMoreHint extends StatefulWidget {
 
 class _ScrollMoreHintState extends State<ScrollMoreHint>
     with SingleTickerProviderStateMixin {
-  final _controller = ScrollController();
+  late final ScrollController _controller;
+  late final bool _ownsController;
 
   /// 0–1: how much of the fade + chevron shows. Follows the scroll
   /// position continuously (no threshold pop) and lives in a notifier so
@@ -57,6 +68,13 @@ class _ScrollMoreHintState extends State<ScrollMoreHint>
   @override
   void initState() {
     super.initState();
+    if (widget.controller != null) {
+      _controller = widget.controller!;
+      _ownsController = false;
+    } else {
+      _controller = ScrollController();
+      _ownsController = true;
+    }
     _controller.addListener(_check);
     WidgetsBinding.instance.addPostFrameCallback((_) => _check());
   }
@@ -113,7 +131,7 @@ class _ScrollMoreHintState extends State<ScrollMoreHint>
   @override
   void dispose() {
     _controller.removeListener(_check);
-    _controller.dispose();
+    if (_ownsController) _controller.dispose();
     _visibility.dispose();
     _bob.dispose();
     super.dispose();

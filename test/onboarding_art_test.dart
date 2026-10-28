@@ -25,14 +25,15 @@ void main() {
     tester.view.physicalSize = const Size(390, 1600);
     tester.view.devicePixelRatio = 1;
     await tester.pumpWidget(MaterialApp(theme: saathiTheme(), home: page));
-    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 300)));
+    await tester.runAsync(
+      () => Future.delayed(const Duration(milliseconds: 300)),
+    );
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
   }
 
-  int artImages(WidgetTester tester) => tester
-      .widgetList<Image>(find.byType(Image))
-      .where((i) {
+  int artImages(WidgetTester tester) =>
+      tester.widgetList<Image>(find.byType(Image)).where((i) {
         final p = i.image;
         final name = p is AssetImage
             ? p.assetName
@@ -41,10 +42,11 @@ void main() {
             : '';
         return name.startsWith('assets/illustrations/') ||
             name.startsWith('assets/icons/');
-      })
-      .length;
+      }).length;
 
-  testWidgets('every onboarding screen loads its mockup artwork', (tester) async {
+  testWidgets('every onboarding screen loads its mockup artwork', (
+    tester,
+  ) async {
     final s = await store();
     // screen -> minimum number of mockup images it must show
     final pages = <String, (Widget, int)>{

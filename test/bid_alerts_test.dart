@@ -180,7 +180,12 @@ void main() {
     expect(find.text('No bids yet'), findsOneWidget);
 
     store.setProfile('bidKeywords', ['Manpower']);
-    await show(tester, Scaffold(body: BidFeed(key: UniqueKey(), store: store)));
+    await show(
+      tester,
+      Scaffold(
+        body: BidFeed(key: UniqueKey(), store: store),
+      ),
+    );
     expect(find.text('No matching open bids yet'), findsOneWidget);
   });
 

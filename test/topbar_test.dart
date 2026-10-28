@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gem/features/alerts_page.dart';
 import 'package:gem/features/brand_logo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:gem/core/models.dart';
@@ -53,6 +54,8 @@ void main() {
       MaterialApp(
         theme: saathiTheme(),
         home: HomePage(store: s),
+        // The bell opens the bid-alert inbox, as in the real app.
+        routes: {'/alerts': (_) => AlertsPage(store: s)},
       ),
     );
     await tester.pumpAndSettle();
@@ -68,6 +71,8 @@ void main() {
     await tester.tap(find.byTooltip('Notifications'));
     await tester.pumpAndSettle();
     expect(find.text('Opportunities, on your terms.'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Menu'));
     await tester.pumpAndSettle();

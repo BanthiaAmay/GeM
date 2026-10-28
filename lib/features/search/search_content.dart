@@ -1,0 +1,570 @@
+/// Static content definitions for the universal search index.
+///
+/// Lessons → GeM 101 modules (derived from the 9-step path in core/models.dart).
+/// Finance → Financial Hub products shown in the Finance tab and Financing drawer.
+/// Calculators → ROI and price calculators.
+/// Categories → product categories from core/models.dart.
+/// FAQs → common questions surfaced by the search engine.
+///
+/// All routes must be registered in main.dart. Lessons and Finance items
+/// use 'home' because their content lives inside the Home page's tab system.
+library;
+
+import 'search_models.dart';
+
+// ── GeM 101 lesson modules ──────────────────────────────────────────────────
+
+/// Indexed as [SearchType.lesson]. Route 'home' navigates to the GeM 101 tab.
+const kLessons = <SearchItem>[
+  SearchItem(
+    id: 'gem101-m1',
+    type: SearchType.lesson,
+    titleEn: 'Identity & bank details',
+    titleHi: 'पहचान और बैंक विवरण',
+    subtitleEn: 'PAN, authorised-person details and business bank account.',
+    subtitleHi: 'PAN, अधिकृत व्यक्ति और व्यवसाय बैंक खाते की जानकारी।',
+    keywords: [
+      'identity',
+      'pan',
+      'bank',
+      'details',
+      'account',
+      'authorised',
+      'kyc',
+    ],
+    route: 'home',
+    actionEn: 'Learn',
+    actionHi: 'सीखें',
+  ),
+  SearchItem(
+    id: 'gem101-m2',
+    type: SearchType.lesson,
+    titleEn: 'GST applicability',
+    titleHi: 'GST की आवश्यकता जाँचें',
+    subtitleEn:
+        'Confirm GST obligations and applicable exemptions before registering.',
+    subtitleHi: 'पंजीकरण से पहले GST आवश्यकता और छूट की पुष्टि करें।',
+    keywords: ['gst', 'tax', 'registration', 'exemption', 'filing', 'bharna'],
+    route: 'home',
+    actionEn: 'Learn',
+    actionHi: 'सीखें',
+  ),
+  SearchItem(
+    id: 'gem101-m3',
+    type: SearchType.lesson,
+    titleEn: 'Bank guarantee, bid deposits & EMD',
+    titleHi: 'बैंक गारंटी, बोली जमा और EMD',
+    subtitleEn:
+        'Understand bid security, bank guarantee (BG) and earnest money deposit requirements.',
+    subtitleHi:
+        'बोली सुरक्षा, बैंक गारंटी और अर्नेस्ट मनी डिपोजिट की आवश्यकताएँ समझें।',
+    keywords: [
+      'bank',
+      'guarantee',
+      'bg',
+      'deposit',
+      'emd',
+      'earnest',
+      'money',
+      'security',
+      'bid',
+      'caution',
+    ],
+    route: 'home',
+    actionEn: 'Learn',
+    actionHi: 'सीखें',
+  ),
+  SearchItem(
+    id: 'gem101-m4',
+    type: SearchType.lesson,
+    titleEn: 'MSME / Udyam benefits',
+    titleHi: 'MSME / उद्यम लाभ',
+    subtitleEn:
+        'Udyam registration, MSME classification and GeM relaxations for MSEs.',
+    subtitleHi: 'उद्यम पंजीकरण, MSME वर्गीकरण और MSE के लिए GeM छूट।',
+    keywords: [
+      'msme',
+      'udyam',
+      'registration',
+      'relaxation',
+      'exemption',
+      'mse',
+      'micro',
+      'small',
+    ],
+    route: 'home',
+    actionEn: 'Learn',
+    actionHi: 'सीखें',
+  ),
+  SearchItem(
+    id: 'gem101-m5',
+    type: SearchType.lesson,
+    titleEn: 'Create GeM seller account',
+    titleHi: 'GeM विक्रेता खाता बनाएँ',
+    subtitleEn:
+        'Register on the official GeM portal with authorised-person details.',
+    subtitleHi:
+        'अधिकृत व्यक्ति की जानकारी से आधिकारिक GeM पोर्टल पर पंजीकरण करें।',
+    keywords: [
+      'gem',
+      'account',
+      'seller',
+      'registration',
+      'portal',
+      'login',
+      'otp',
+    ],
+    route: 'home',
+    actionEn: 'Learn',
+    actionHi: 'सीखें',
+  ),
+  SearchItem(
+    id: 'gem101-m6',
+    type: SearchType.lesson,
+    titleEn: 'Publish your catalogue',
+    titleHi: 'अपनी कैटलॉग प्रकाशित करें',
+    subtitleEn:
+        'List products: category, specifications, photos and delivery area.',
+    subtitleHi:
+        'उत्पाद सूचीबद्ध करें: श्रेणी, विनिर्देश, फोटो और डिलिवरी क्षेत्र।',
+    keywords: [
+      'catalogue',
+      'listing',
+      'product',
+      'category',
+      'specification',
+      'photo',
+    ],
+    route: 'home',
+    actionEn: 'Learn',
+    actionHi: 'सीखें',
+  ),
+  SearchItem(
+    id: 'gem101-m7',
+    type: SearchType.lesson,
+    titleEn: 'Participate in a suitable bid',
+    titleHi: 'उपयुक्त बोली में भाग लें',
+    subtitleEn:
+        'Read buyer terms, delivery deadlines and confirm fulfilment capacity.',
+    subtitleHi: 'खरीदार की शर्तें और डिलिवरी नियम पढ़कर क्षमता की पुष्टि करें।',
+    keywords: [
+      'bid',
+      'tender',
+      'participate',
+      'bidding',
+      'gem',
+      'terms',
+      'deadline',
+    ],
+    route: 'home',
+    actionEn: 'Learn',
+    actionHi: 'सीखें',
+  ),
+  SearchItem(
+    id: 'gem101-m8',
+    type: SearchType.lesson,
+    titleEn: 'Fulfil your first order',
+    titleHi: 'पहला ऑर्डर पूरा करें',
+    subtitleEn: 'Track order acceptance, raise invoices, confirm delivery.',
+    subtitleHi:
+        'ऑर्डर स्वीकृति ट्रैक करें, चालान बनाएँ, डिलिवरी की पुष्टि करें।',
+    keywords: [
+      'order',
+      'fulfil',
+      'delivery',
+      'invoice',
+      'payment',
+      'consignee',
+    ],
+    route: 'home',
+    actionEn: 'Learn',
+    actionHi: 'सीखें',
+  ),
+  SearchItem(
+    id: 'gem101-m9',
+    type: SearchType.lesson,
+    titleEn: 'Build your seller rating',
+    titleHi: 'विक्रेता रेटिंग बनाएँ',
+    subtitleEn:
+        'Deliver consistently, resolve issues and monitor your seller dashboard.',
+    subtitleHi: 'समय पर आपूर्ति करें, समस्याएँ सुलझाएँ और डैशबोर्ड देखें।',
+    keywords: [
+      'rating',
+      'review',
+      'seller',
+      'performance',
+      'delivery',
+      'dashboard',
+    ],
+    route: 'home',
+    actionEn: 'Learn',
+    actionHi: 'सीखें',
+  ),
+];
+
+// ── Financial Hub products ──────────────────────────────────────────────────
+
+/// Indexed as [SearchType.finance]. Route 'home' opens the Finance tab.
+const kFinanceItems = <SearchItem>[
+  SearchItem(
+    id: 'fin-bg',
+    type: SearchType.finance,
+    titleEn: 'Bank Guarantee (BG)',
+    titleHi: 'बैंक गारंटी (BG)',
+    subtitleEn:
+        'A bank-issued guarantee required by some GeM tenders in lieu of a cash deposit.',
+    subtitleHi: 'कुछ GeM निविदाओं में नकद जमा के बदले बैंक द्वारा जारी गारंटी।',
+    keywords: [
+      'bank',
+      'guarantee',
+      'bg',
+      'deposit',
+      'security',
+      'bid',
+      'finance',
+      'tender',
+    ],
+    route: 'home',
+    actionEn: 'Learn more',
+    actionHi: 'अधिक जानें',
+  ),
+  SearchItem(
+    id: 'fin-wc',
+    type: SearchType.finance,
+    titleEn: 'Working capital finance',
+    titleHi: 'कार्यशील पूंजी वित्त',
+    subtitleEn:
+        'Bridge the gap between order fulfilment and GeM payment release.',
+    subtitleHi: 'ऑर्डर पूर्ति और GeM भुगतान के बीच के अंतर को पाटें।',
+    keywords: [
+      'working',
+      'capital',
+      'finance',
+      'loan',
+      'credit',
+      'cash',
+      'gap',
+    ],
+    route: 'home',
+    actionEn: 'Learn more',
+    actionHi: 'अधिक जानें',
+  ),
+  SearchItem(
+    id: 'fin-inv',
+    type: SearchType.finance,
+    titleEn: 'Invoice financing',
+    titleHi: 'इनवॉयस वित्तपोषण',
+    subtitleEn:
+        'Get cash against your raised invoices before GeM releases payment.',
+    subtitleHi: 'GeM भुगतान से पहले चालान के बदले नकद प्राप्त करें।',
+    keywords: [
+      'invoice',
+      'financing',
+      'finance',
+      'credit',
+      'payment',
+      'working',
+      'capital',
+      'early',
+    ],
+    route: 'home',
+    actionEn: 'Learn more',
+    actionHi: 'अधिक जानें',
+  ),
+  SearchItem(
+    id: 'fin-cgtmse',
+    type: SearchType.finance,
+    titleEn: 'CGTMSE collateral-free credit',
+    titleHi: 'CGTMSE गारंटी-मुक्त ऋण',
+    subtitleEn:
+        'Government credit guarantee scheme for MSEs — verify eligibility with your bank.',
+    subtitleHi:
+        'MSE के लिए सरकारी ऋण गारंटी योजना — पात्रता बैंक से सत्यापित करें।',
+    keywords: [
+      'cgtmse',
+      'credit',
+      'guarantee',
+      'scheme',
+      'msme',
+      'collateral',
+      'loan',
+      'government',
+    ],
+    route: 'home',
+    actionEn: 'Learn more',
+    actionHi: 'अधिक जानें',
+  ),
+  SearchItem(
+    id: 'fin-emd',
+    type: SearchType.finance,
+    titleEn: 'EMD & deposit requirements',
+    titleHi: 'EMD और जमा आवश्यकताएँ',
+    subtitleEn:
+        'Earnest Money Deposit and bid security — check current rules on the GeM portal.',
+    subtitleHi:
+        'अर्नेस्ट मनी डिपोजिट और बोली सुरक्षा — GeM पोर्टल पर नियम देखें।',
+    keywords: [
+      'emd',
+      'earnest',
+      'money',
+      'deposit',
+      'bid',
+      'security',
+      'bank',
+      'guarantee',
+      'caution',
+    ],
+    route: 'home',
+    actionEn: 'Learn more',
+    actionHi: 'अधिक जानें',
+  ),
+];
+
+// ── Calculators ─────────────────────────────────────────────────────────────
+
+/// Indexed as [SearchType.calculator].
+const kCalculators = <SearchItem>[
+  SearchItem(
+    id: 'calc-roi',
+    type: SearchType.calculator,
+    titleEn: 'ROI calculator',
+    titleHi: 'ROI कैलकुलेटर',
+    subtitleEn:
+        'Estimate costs, working capital and return before committing to a bid.',
+    subtitleHi: 'बोली से पहले लागत, कार्यशील पूंजी और रिटर्न का अनुमान लगाएँ।',
+    keywords: [
+      'roi',
+      'return',
+      'investment',
+      'profit',
+      'calculator',
+      'finance',
+      'cost',
+      'margin',
+      'revenue',
+    ],
+    route: 'home',
+    actionEn: 'Open',
+    actionHi: 'खोलें',
+  ),
+  SearchItem(
+    id: 'calc-price',
+    type: SearchType.calculator,
+    titleEn: 'Price & margin calculator',
+    titleHi: 'मूल्य और मार्जिन कैलकुलेटर',
+    subtitleEn: 'Work out your GeM offer price and competitive margin.',
+    subtitleHi: 'GeM ऑफर मूल्य और प्रतिस्पर्धी मार्जिन निकालें।',
+    keywords: [
+      'price',
+      'margin',
+      'cost',
+      'calculator',
+      'profit',
+      'bid',
+      'competitive',
+    ],
+    route: 'insights-fit',
+    actionEn: 'Open',
+    actionHi: 'खोलें',
+  ),
+];
+
+// ── Product categories ───────────────────────────────────────────────────────
+
+/// Indexed as [SearchType.category]. Each entry represents a GeM product
+/// category. HSN codes are included as keywords to support code-based lookup
+/// (e.g. "9405" → IT / lighting category).
+const kCategories = <SearchItem>[
+  SearchItem(
+    id: 'cat-office',
+    type: SearchType.category,
+    titleEn: 'Office supplies',
+    titleHi: 'कार्यालय सामग्री',
+    subtitleEn: 'Stationery, paper, pens, files and office consumables.',
+    subtitleHi: 'स्टेशनरी, कागज, कलम, फ़ाइलें और कार्यालय उपभोग्य।',
+    keywords: [
+      'office',
+      'stationery',
+      'supplies',
+      'paper',
+      'pen',
+      'notebook',
+      '4820',
+      '9608',
+    ],
+    route: 'home',
+    actionEn: 'Browse bids',
+    actionHi: 'बोलियाँ देखें',
+  ),
+  SearchItem(
+    id: 'cat-furniture',
+    type: SearchType.category,
+    titleEn: 'Furniture',
+    titleHi: 'फर्नीचर',
+    subtitleEn: 'Office and school furniture — desks, chairs, storage.',
+    subtitleHi: 'कार्यालय और विद्यालय फर्नीचर — डेस्क, कुर्सियाँ, भंडारण।',
+    keywords: [
+      'furniture',
+      'chair',
+      'desk',
+      'table',
+      'school',
+      'office',
+      '9403',
+      '9401',
+    ],
+    route: 'home',
+    actionEn: 'Browse bids',
+    actionHi: 'बोलियाँ देखें',
+  ),
+  SearchItem(
+    id: 'cat-it',
+    type: SearchType.category,
+    titleEn: 'IT equipment & services',
+    titleHi: 'आईटी उपकरण और सेवाएँ',
+    subtitleEn:
+        'Computers, laptops, printers, LED lighting and IT peripherals.',
+    subtitleHi: 'कंप्यूटर, लैपटॉप, प्रिंटर, LED लाइटिंग और IT उपकरण।',
+    keywords: [
+      'it',
+      'computer',
+      'laptop',
+      'printer',
+      'led',
+      'lighting',
+      'hardware',
+      '9405',
+      '9405.40',
+      '8471',
+      '8473',
+    ],
+    route: 'home',
+    actionEn: 'Browse bids',
+    actionHi: 'बोलियाँ देखें',
+  ),
+  SearchItem(
+    id: 'cat-cleaning',
+    type: SearchType.category,
+    titleEn: 'Cleaning & housekeeping',
+    titleHi: 'सफाई और हाउसकीपिंग',
+    subtitleEn: 'Disinfectants, cleaning agents, mops and hygiene products.',
+    subtitleHi: 'कीटाणुनाशक, सफाई एजेंट, पोंछे और स्वच्छता उत्पाद।',
+    keywords: [
+      'cleaning',
+      'housekeeping',
+      'sanitiser',
+      'disinfectant',
+      'hygiene',
+      'mop',
+      '3401',
+      '3402',
+    ],
+    route: 'home',
+    actionEn: 'Browse bids',
+    actionHi: 'बोलियाँ देखें',
+  ),
+  SearchItem(
+    id: 'cat-other',
+    type: SearchType.category,
+    titleEn: 'Other / help me find it',
+    titleHi: 'अन्य / श्रेणी ढूँढने में मदद',
+    subtitleEn:
+        'PPE, safety equipment and miscellaneous government procurement.',
+    subtitleHi: 'PPE, सुरक्षा उपकरण और विविध सरकारी खरीद।',
+    keywords: [
+      'other',
+      'ppe',
+      'mask',
+      'safety',
+      'miscellaneous',
+      '3808',
+      '6217',
+    ],
+    route: 'home',
+    actionEn: 'Browse bids',
+    actionHi: 'बोलियाँ देखें',
+  ),
+];
+
+// ── FAQs ────────────────────────────────────────────────────────────────────
+
+/// Indexed as [SearchType.faq]. Surfaces when the query looks like a question.
+const kFaqs = <SearchItem>[
+  SearchItem(
+    id: 'faq-gst',
+    type: SearchType.faq,
+    titleEn: 'Do I need GST to sell on GeM?',
+    titleHi: 'क्या GeM पर बेचने के लिए GST ज़रूरी है?',
+    subtitleEn:
+        'GST applicability depends on your turnover and category. Check the GeM 101 module.',
+    subtitleHi: 'GST आवश्यकता आपके टर्नओवर और श्रेणी पर निर्भर करती है।',
+    keywords: [
+      'gst',
+      'tax',
+      'registration',
+      'seller',
+      'gem',
+      'exemption',
+      'required',
+    ],
+    route: 'home',
+    actionEn: 'Learn',
+    actionHi: 'सीखें',
+  ),
+  SearchItem(
+    id: 'faq-msme',
+    type: SearchType.faq,
+    titleEn: 'What MSME benefits apply on GeM?',
+    titleHi: 'GeM पर कौन से MSME लाभ मिलते हैं?',
+    subtitleEn:
+        'EMD exemption, turnover relaxation and startup benefits for registered MSEs.',
+    subtitleHi: 'पंजीकृत MSE को EMD छूट, टर्नओवर छूट और स्टार्टअप लाभ।',
+    keywords: [
+      'msme',
+      'benefit',
+      'exemption',
+      'emd',
+      'turnover',
+      'udyam',
+      'startup',
+    ],
+    route: 'home',
+    actionEn: 'Learn',
+    actionHi: 'सीखें',
+  ),
+  SearchItem(
+    id: 'faq-payment',
+    type: SearchType.faq,
+    titleEn: 'When does GeM release payment?',
+    titleHi: 'GeM भुगतान कब जारी करता है?',
+    subtitleEn:
+        'Payment is released after delivery confirmation and inspection — not on order date.',
+    subtitleHi: 'भुगतान डिलिवरी की पुष्टि और निरीक्षण के बाद जारी होता है।',
+    keywords: ['payment', 'release', 'delivery', 'invoice', 'timing', 'when'],
+    route: 'home',
+    actionEn: 'Learn',
+    actionHi: 'सीखें',
+  ),
+  SearchItem(
+    id: 'faq-bg',
+    type: SearchType.faq,
+    titleEn: 'What is a bank guarantee on GeM?',
+    titleHi: 'GeM पर बैंक गारंटी क्या है?',
+    subtitleEn:
+        'A BG is a bank-issued financial commitment required by some tenders instead of a cash deposit.',
+    subtitleHi:
+        'BG एक बैंक द्वारा जारी वित्तीय प्रतिबद्धता है जो कुछ निविदाओं में नकद जमा के बदले माँगी जाती है।',
+    keywords: [
+      'bank',
+      'guarantee',
+      'bg',
+      'security',
+      'deposit',
+      'tender',
+      'what',
+    ],
+    route: 'home',
+    actionEn: 'Learn',
+    actionHi: 'सीखें',
+  ),
+];

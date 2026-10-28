@@ -20,7 +20,10 @@ void main() {
   ) async {
     final s = await store();
     await tester.pumpWidget(
-      MaterialApp(theme: saathiTheme(), home: LanguagePage(store: s)),
+      MaterialApp(
+        theme: saathiTheme(),
+        home: LanguagePage(store: s),
+      ),
     );
     await tester.pump();
     // The tour visits every other language before English (last in
@@ -42,7 +45,10 @@ void main() {
   ) async {
     final s = await store();
     await tester.pumpWidget(
-      MaterialApp(theme: saathiTheme(), home: LanguagePage(store: s)),
+      MaterialApp(
+        theme: saathiTheme(),
+        home: LanguagePage(store: s),
+      ),
     );
     await tester.pump();
     expect(find.text('Skip'), findsOneWidget);
@@ -60,7 +66,10 @@ void main() {
     final s = await store();
     await s.markGreetingIntroSeen();
     await tester.pumpWidget(
-      MaterialApp(theme: saathiTheme(), home: LanguagePage(store: s)),
+      MaterialApp(
+        theme: saathiTheme(),
+        home: LanguagePage(store: s),
+      ),
     );
     await tester.pump();
     expect(find.text('Skip'), findsNothing);
@@ -77,7 +86,10 @@ void main() {
     await tester.pumpWidget(
       MediaQuery(
         data: const MediaQueryData(disableAnimations: true),
-        child: MaterialApp(theme: saathiTheme(), home: LanguagePage(store: s)),
+        child: MaterialApp(
+          theme: saathiTheme(),
+          home: LanguagePage(store: s),
+        ),
       ),
     );
     await tester.pump();
@@ -94,7 +106,10 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      MaterialApp(theme: saathiTheme(), home: LanguagePage(store: s)),
+      MaterialApp(
+        theme: saathiTheme(),
+        home: LanguagePage(store: s),
+      ),
     );
     await tester.pump();
     expect(find.text('Skip'), findsOneWidget);
@@ -113,15 +128,19 @@ void main() {
     final handle = tester.ensureSemantics();
     final s = await store();
     await tester.pumpWidget(
-      MaterialApp(theme: saathiTheme(), home: LanguagePage(store: s)),
+      MaterialApp(
+        theme: saathiTheme(),
+        home: LanguagePage(store: s),
+      ),
     );
     await tester.pump();
     // Sample several points across the tour; the accessible label for the
     // greeting must always already read the *final* (English) greeting.
     for (var i = 0; i < 6; i++) {
       await tester.pump(const Duration(milliseconds: 250));
-      // ignore: deprecated_member_use
-      final tree = tester.binding.pipelineOwner.semanticsOwner!.rootSemanticsNode!;
+      final tree =
+          // ignore: deprecated_member_use
+          tester.binding.pipelineOwner.semanticsOwner!.rootSemanticsNode!;
       var found = false;
       void visit(SemanticsNode n) {
         if ((n.label).contains('Hello.')) found = true;
@@ -130,6 +149,7 @@ void main() {
           return true;
         });
       }
+
       visit(tree);
       expect(found, isTrue, reason: 'frame $i');
     }

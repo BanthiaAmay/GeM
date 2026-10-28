@@ -34,7 +34,10 @@ void main() {
     await tester.pumpWidget(
       RepaintBoundary(
         key: key,
-        child: MaterialApp(theme: theme, home: FlowOtpPage(store: s)),
+        child: MaterialApp(
+          theme: theme,
+          home: FlowOtpPage(store: s),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -53,7 +56,12 @@ void main() {
     });
 
     // Scan the whole OTP row (all six boxes) for any red pixel.
-    final row = Rect.fromLTRB(0, box.top - 4, image.width.toDouble(), box.bottom + 4);
+    final row = Rect.fromLTRB(
+      0,
+      box.top - 4,
+      image.width.toDouble(),
+      box.bottom + 4,
+    );
     var red0 = 0;
     for (var y = row.top.floor(); y < row.bottom.ceil(); y++) {
       for (var x = 0; x < image.width; x++) {
@@ -65,7 +73,11 @@ void main() {
         }
       }
     }
-    expect(red0, 0, reason: 'themed TextField fill/border leaked over the boxes');
+    expect(
+      red0,
+      0,
+      reason: 'themed TextField fill/border leaked over the boxes',
+    );
 
     // ...and the input is still there to take focus and text.
     expect(find.byType(TextField), findsOneWidget);

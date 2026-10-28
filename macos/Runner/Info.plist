@@ -28,5 +28,9 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>GeM BizReady uses your microphone for voice search only.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>GeM BizReady uses speech recognition to convert your spoken search query to text.</string>
 </dict>
 </plist>

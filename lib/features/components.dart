@@ -1590,3 +1590,173 @@ class ReassuranceNote extends StatelessWidget {
     ),
   );
 }
+
+// ─────────────────────────── Search field ───────────────────────────
+
+/// Shared search / filter input used by the universal search page and the
+/// Tools hub filter. Styled to spec: grey fill, rounded, no border, leading
+/// search icon, trailing clear × when text is present, optional mic for
+/// Phase-3 voice input.
+class AppSearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final FocusNode? focusNode;
+  final bool autofocus;
+
+  /// Show a trailing mic icon (voice search).
+  final bool showMic;
+  final VoidCallback? onMic;
+
+  /// True while speech recognition is active — shows a pulsing mic.
+  final bool isListening;
+  final TextInputAction textInputAction;
+
+  const AppSearchField({
+    super.key,
+    required this.controller,
+    required this.hint,
+    required this.onChanged,
+    this.onSubmitted,
+    this.focusNode,
+    this.autofocus = false,
+    this.showMic = false,
+    this.onMic,
+    this.isListening = false,
+    this.textInputAction = TextInputAction.search,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceMuted,
+        borderRadius: AppRadius.input,
+      ),
+      child: Row(
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpace.md),
+            child: Icon(
+              Icons.search,
+              size: AppIconSize.md,
+              color: AppColors.textHint,
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              autofocus: autofocus,
+              onChanged: onChanged,
+              onSubmitted: onSubmitted,
+              textInputAction: textInputAction,
+              style: AppText.body,
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: AppText.body.copyWith(color: AppColors.textHint),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: AppSpace.md,
+                ),
+              ),
+            ),
+          ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (_, v, _) {
+              if (v.text.isNotEmpty) {
+                return IconButton(
+                  icon: const Icon(
+                    Icons.close,
+                    size: AppIconSize.md - 4,
+                    color: AppColors.textHint,
+                  ),
+                  tooltip: 'Clear',
+                  onPressed: () {
+                    controller.clear();
+                    onChanged('');
+                  },
+                );
+              }
+              if (showMic) {
+                return _PulsingMicButton(
+                  isListening: isListening,
+                  onTap: onMic,
+                );
+              }
+              return const SizedBox(width: AppSpace.lg);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Pulsing mic button for voice search ───────────────────────────────────────
+
+class _PulsingMicButton extends StatefulWidget {
+  final bool isListening;
+  final VoidCallback? onTap;
+
+  const _PulsingMicButton({required this.isListening, this.onTap});
+
+  @override
+  State<_PulsingMicButton> createState() => _PulsingMicButtonState();
+}
+
+class _PulsingMicButtonState extends State<_PulsingMicButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: Motion.emphasis);
+    _scale = Tween<double>(
+      begin: 0.85,
+      end: 1.15,
+    ).chain(CurveTween(curve: Motion.standard)).animate(_ctrl);
+    if (widget.isListening) _startPulse();
+  }
+
+  @override
+  void didUpdateWidget(_PulsingMicButton old) {
+    super.didUpdateWidget(old);
+    if (widget.isListening && !old.isListening) {
+      _startPulse();
+    } else if (!widget.isListening && old.isListening) {
+      _ctrl.stop();
+      _ctrl.reset();
+    }
+  }
+
+  void _startPulse() => _ctrl.repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduced = Motion.reduced(context);
+    final icon = Icon(
+      widget.isListening ? Icons.mic : Icons.mic_none,
+      size: AppIconSize.md - 4,
+      color: widget.isListening ? AppColors.brand : AppColors.textHint,
+    );
+    final btn = IconButton(
+      icon: icon,
+      tooltip: widget.isListening ? 'Listening…' : 'Voice search',
+      onPressed: widget.onTap,
+    );
+    if (reduced || !widget.isListening) return btn;
+    return ScaleTransition(scale: _scale, child: btn);
+  }
+}
