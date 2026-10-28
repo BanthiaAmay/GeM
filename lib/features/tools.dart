@@ -250,7 +250,10 @@ class _ToolPageState extends State<ToolPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.lightbulb_outline, color: AppColors.brand),
+                      const Icon(
+                        Icons.lightbulb_outline,
+                        color: AppColors.brand,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         t(
@@ -698,10 +701,7 @@ class _ToolPageState extends State<ToolPage> {
                   value: (r['low'] as num).toDouble(),
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
-                Text(
-                  ' – ',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
+                Text(' – ', style: Theme.of(context).textTheme.headlineMedium),
                 AnimatedMoney(
                   value: (r['high'] as num).toDouble(),
                   style: Theme.of(context).textTheme.headlineMedium,

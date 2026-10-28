@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/motion.dart';
@@ -303,7 +305,7 @@ enum AppCardTone {
   brand,
 }
 
-/// The card surface: radius 16, hairline border, no shadow. Tappable when
+/// The card surface: radius 16, hairline border, soft resting shadow. Tappable when
 /// [onTap] is set (ripple + press feedback).
 class AppCard extends StatelessWidget {
   final Widget child;
@@ -336,6 +338,7 @@ class AppCard extends StatelessWidget {
         border: tone == AppCardTone.outlined
             ? Border.all(color: AppColors.border)
             : null,
+        boxShadow: tone == AppCardTone.outlined ? AppShadow.card : null,
       ),
       child: Padding(padding: padding, child: child),
     );
@@ -345,11 +348,7 @@ class AppCard extends StatelessWidget {
         type: MaterialType.transparency,
         child: onTap == null
             ? card
-            : InkWell(
-                borderRadius: r,
-                onTap: onTap,
-                child: card,
-              ),
+            : InkWell(borderRadius: r, onTap: onTap, child: card),
       ),
     );
     return semanticLabel == null
@@ -363,12 +362,7 @@ class SectionHeader extends StatelessWidget {
   final String title;
   final String? actionLabel;
   final VoidCallback? onAction;
-  const SectionHeader(
-    this.title, {
-    super.key,
-    this.actionLabel,
-    this.onAction,
-  });
+  const SectionHeader(this.title, {super.key, this.actionLabel, this.onAction});
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -376,10 +370,7 @@ class SectionHeader extends StatelessWidget {
     child: Row(
       children: [
         Expanded(
-          child: Semantics(
-            header: true,
-            child: Text(title, style: AppText.h3),
-          ),
+          child: Semantics(header: true, child: Text(title, style: AppText.h3)),
         ),
         if (actionLabel != null)
           AppButton(
@@ -579,7 +570,11 @@ class AppListTile extends StatelessWidget {
               child: SizedBox(
                 width: 40,
                 height: 40,
-                child: Icon(icon, size: AppIconSize.md - 4, color: AppColors.brand),
+                child: DepthIcon(
+                  icon,
+                  size: AppIconSize.md - 4,
+                  color: AppColors.brand,
+                ),
               ),
             ),
             const SizedBox(width: AppSpace.md),
@@ -589,8 +584,7 @@ class AppListTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: AppText.body),
-                if (subtitle != null)
-                  Text(subtitle!, style: AppText.caption),
+                if (subtitle != null) Text(subtitle!, style: AppText.caption),
               ],
             ),
           ),
@@ -732,9 +726,7 @@ class AppProgressBar extends StatelessWidget {
       width: double.infinity,
       child: Stack(
         children: [
-          const Positioned.fill(
-            child: ColoredBox(color: AppColors.chartTrack),
-          ),
+          const Positioned.fill(child: ColoredBox(color: AppColors.chartTrack)),
           FractionallySizedBox(
             alignment: Alignment.centerLeft,
             widthFactor: v.clamp(0.0, 1.0),
@@ -937,9 +929,7 @@ class AppChoiceChips<T> extends StatelessWidget {
                         duration: Motion.of(context, Motion.fast),
                         height: AppSize.buttonSm,
                         decoration: ShapeDecoration(
-                          color: v == value
-                              ? AppColors.ink
-                              : AppColors.surface,
+                          color: v == value ? AppColors.ink : AppColors.surface,
                           shape: StadiumBorder(
                             side: BorderSide(
                               color: v == value
@@ -1028,7 +1018,10 @@ class AppDropdownChip<T> extends StatelessWidget {
           widthFactor: 1,
           child: Container(
             height: AppSize.buttonSm,
-            padding: const EdgeInsets.only(left: AppSpace.lg, right: AppSpace.md),
+            padding: const EdgeInsets.only(
+              left: AppSpace.lg,
+              right: AppSpace.md,
+            ),
             decoration: const ShapeDecoration(
               shape: StadiumBorder(
                 side: BorderSide(color: AppColors.borderStrong, width: 1.4),
@@ -1047,6 +1040,524 @@ class AppDropdownChip<T> extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─────────────────────────── Keywords ───────────────────────────
+
+/// Free-text tags ("What do you sell?"): an input with an Add button, added
+/// tags as removable ink pills, and outlined suggestion pills that add on
+/// tap. Commas split entries; case-insensitive duplicates are ignored.
+class AppKeywordField extends StatefulWidget {
+  final List<String> values;
+  final ValueChanged<List<String>> onChanged;
+  final List<String> suggestions;
+  final String label;
+  final String hint;
+  final String addLabel;
+
+  /// Accessible label for a tag's remove action; `{keyword}` is replaced.
+  final String removeLabel;
+  final String suggestionsLabel;
+  final String limitMessage;
+  final int max;
+  final int maxLength;
+  const AppKeywordField({
+    super.key,
+    required this.values,
+    required this.onChanged,
+    required this.label,
+    required this.hint,
+    required this.addLabel,
+    required this.removeLabel,
+    required this.suggestionsLabel,
+    required this.limitMessage,
+    this.suggestions = const [],
+    this.max = 10,
+    this.maxLength = 80,
+  });
+
+  @override
+  State<AppKeywordField> createState() => _AppKeywordFieldState();
+}
+
+class _AppKeywordFieldState extends State<AppKeywordField> {
+  final _controller = TextEditingController();
+
+  bool _has(String value) =>
+      widget.values.any((v) => v.toLowerCase() == value.toLowerCase());
+
+  void _add(String raw) {
+    final next = [...widget.values];
+    for (final part in raw.split(',')) {
+      final value = part.trim();
+      if (value.isEmpty || value.length > widget.maxLength) continue;
+      if (next.length >= widget.max) break;
+      if (!next.any((v) => v.toLowerCase() == value.toLowerCase())) {
+        next.add(value);
+      }
+    }
+    _controller.clear();
+    if (next.length != widget.values.length) {
+      HapticFeedback.selectionClick();
+      widget.onChanged(next);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget _pill({
+    required String label,
+    required IconData icon,
+    required bool filled,
+    required String semantics,
+    required VoidCallback onTap,
+  }) => Semantics(
+    button: true,
+    label: semantics,
+    child: ExcludeSemantics(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: AppSize.tap),
+        child: Center(
+          widthFactor: 1,
+          child: Material(
+            color: filled ? AppColors.ink : AppColors.surface,
+            shape: StadiumBorder(
+              side: BorderSide(
+                color: filled ? AppColors.ink : AppColors.borderStrong,
+                width: 1.4,
+              ),
+            ),
+            child: InkWell(
+              customBorder: const StadiumBorder(),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpace.lg,
+                  AppSpace.sm,
+                  AppSpace.md,
+                  AppSpace.sm,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        label,
+                        style: AppText.label.copyWith(
+                          fontSize: 13,
+                          color: filled ? AppColors.surface : AppColors.ink,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpace.xs),
+                    Icon(
+                      icon,
+                      size: AppIconSize.sm,
+                      color: filled ? AppColors.surface : AppColors.ink,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final full = widget.values.length >= widget.max;
+    final suggestions = widget.suggestions.where((s) => !_has(s)).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(widget.label, style: AppText.secondary(AppText.bodySmall)),
+        const SizedBox(height: AppSpace.sm),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                enabled: !full,
+                style: AppText.input,
+                textInputAction: TextInputAction.done,
+                textCapitalization: TextCapitalization.sentences,
+                maxLength: widget.maxLength,
+                buildCounter:
+                    (
+                      _, {
+                      required currentLength,
+                      required isFocused,
+                      maxLength,
+                    }) => null,
+                decoration: InputDecoration(hintText: widget.hint),
+                onSubmitted: _add,
+              ),
+            ),
+            const SizedBox(width: AppSpace.sm),
+            AppIconButton(
+              icon: Icons.add,
+              tooltip: widget.addLabel,
+              tonal: true,
+              onPressed: full ? null : () => _add(_controller.text),
+            ),
+          ],
+        ),
+        if (widget.values.isNotEmpty) ...[
+          const SizedBox(height: AppSpace.md),
+          Wrap(
+            spacing: AppSpace.sm,
+            children: [
+              for (final value in widget.values)
+                _pill(
+                  label: value,
+                  icon: Icons.close,
+                  filled: true,
+                  semantics: widget.removeLabel.replaceAll('{keyword}', value),
+                  onTap: () => widget.onChanged(
+                    widget.values.where((v) => v != value).toList(),
+                  ),
+                ),
+            ],
+          ),
+        ],
+        if (full) ...[
+          const SizedBox(height: AppSpace.sm),
+          Text(widget.limitMessage, style: AppText.caption),
+        ] else if (suggestions.isNotEmpty) ...[
+          const SizedBox(height: AppSpace.lg),
+          Text(widget.suggestionsLabel, style: AppText.caption),
+          const SizedBox(height: AppSpace.xs),
+          Wrap(
+            spacing: AppSpace.sm,
+            children: [
+              for (final suggestion in suggestions)
+                _pill(
+                  label: suggestion,
+                  icon: Icons.add,
+                  filled: false,
+                  semantics: '${widget.addLabel}: $suggestion',
+                  onTap: () => _add(suggestion),
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Multi-select pills: picked = ink fill with a check, unpicked = outlined.
+/// Wraps onto new lines; every pill keeps a 48px tap height.
+class AppToggleChips extends StatelessWidget {
+  final List<String> options;
+  final Set<String> selected;
+  final ValueChanged<String> onToggle;
+  final String semanticLabel;
+  const AppToggleChips({
+    super.key,
+    required this.options,
+    required this.selected,
+    required this.onToggle,
+    required this.semanticLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    container: true,
+    label: semanticLabel,
+    child: Wrap(
+      spacing: AppSpace.sm,
+      children: [
+        for (final option in options)
+          Semantics(
+            button: true,
+            selected: selected.contains(option),
+            label: option,
+            child: ExcludeSemantics(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: AppSize.tap),
+                child: Center(
+                  widthFactor: 1,
+                  child: AnimatedContainer(
+                    duration: Motion.of(context, Motion.fast),
+                    height: AppSize.buttonSm - 4,
+                    decoration: ShapeDecoration(
+                      color: selected.contains(option)
+                          ? AppColors.ink
+                          : AppColors.surface,
+                      shape: StadiumBorder(
+                        side: BorderSide(
+                          color: selected.contains(option)
+                              ? AppColors.ink
+                              : AppColors.borderStrong,
+                          width: 1.4,
+                        ),
+                      ),
+                    ),
+                    child: InkWell(
+                      customBorder: const StadiumBorder(),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        onToggle(option);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpace.md,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (selected.contains(option)) ...[
+                              const Icon(
+                                Icons.check,
+                                size: AppIconSize.sm - 2,
+                                color: AppColors.surface,
+                              ),
+                              const SizedBox(width: AppSpace.xs),
+                            ],
+                            Text(
+                              option,
+                              style: AppText.label.copyWith(
+                                fontSize: 13,
+                                color: selected.contains(option)
+                                    ? AppColors.surface
+                                    : AppColors.ink,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
+// ─────────────────────────── Depth ───────────────────────────
+
+/// Animated depth for artwork (logos, illustrations, icon PNGs): a soft
+/// shadow cut to the artwork's own silhouette, a short rise-in that tips up
+/// out of a 3D tilt, and a tilt toward the finger while it is pressed.
+///
+/// The child is painted twice (once blurred, as its shadow), so pass plain
+/// artwork only — never text, a Hero or a keyed widget. Reduced motion keeps
+/// the shadow and drops all movement.
+class Depth extends StatefulWidget {
+  final Widget child;
+
+  /// Shadow distance at rest, in logical pixels; also sets its softness.
+  final double lift;
+
+  /// Strongest press tilt in radians; 0 turns the press tilt off.
+  final double tilt;
+  final bool entrance;
+
+  /// Wait before the rise-in starts, for staggered groups.
+  final Duration delay;
+  const Depth({
+    super.key,
+    required this.child,
+    this.lift = 6,
+    this.tilt = 0.18,
+    this.entrance = true,
+    this.delay = Duration.zero,
+  });
+
+  @override
+  State<Depth> createState() => _DepthState();
+}
+
+class _DepthState extends State<Depth> with SingleTickerProviderStateMixin {
+  late final AnimationController _rise = AnimationController(
+    vsync: this,
+    duration: widget.delay + Motion.emphasis,
+  );
+  late final Animation<double> _risen = CurvedAnimation(
+    parent: _rise,
+    curve: Interval(
+      widget.delay.inMilliseconds /
+          (widget.delay + Motion.emphasis).inMilliseconds,
+      1,
+      curve: Motion.enter,
+    ),
+  );
+
+  /// Where the finger is, from -1 to 1 across each axis; zero when lifted.
+  Offset _press = Offset.zero;
+  bool _reduced = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduced = Motion.reduced(context);
+    if (_rise.isAnimating || _rise.isCompleted) return;
+    if (!widget.entrance || _reduced) {
+      _rise.value = 1;
+    } else {
+      _rise.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _rise.dispose();
+    super.dispose();
+  }
+
+  void _track(PointerEvent event) {
+    final size = context.size;
+    if (_reduced || widget.tilt == 0 || size == null || size.isEmpty) return;
+    setState(
+      () => _press = Offset(
+        (event.localPosition.dx / size.width * 2 - 1).clamp(-1.0, 1.0),
+        (event.localPosition.dy / size.height * 2 - 1).clamp(-1.0, 1.0),
+      ),
+    );
+  }
+
+  void _release(PointerEvent _) {
+    if (_press != Offset.zero) setState(() => _press = Offset.zero);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lift = widget.lift;
+    final shadow = IgnorePointer(
+      child: ExcludeSemantics(
+        child: ImageFiltered(
+          imageFilter: ui.ImageFilter.blur(
+            sigmaX: lift * 0.8,
+            sigmaY: lift * 0.8,
+          ),
+          child: ColorFiltered(
+            colorFilter: const ColorFilter.mode(
+              AppColors.depthShadow,
+              BlendMode.srcIn,
+            ),
+            child: widget.child,
+          ),
+        ),
+      ),
+    );
+    return Listener(
+      onPointerDown: _track,
+      onPointerMove: _track,
+      onPointerUp: _release,
+      onPointerCancel: _release,
+      child: RepaintBoundary(
+        child: TweenAnimationBuilder<Offset>(
+          tween: Tween(end: _press),
+          duration: Motion.of(
+            context,
+            _press == Offset.zero ? Motion.normal : Motion.fast,
+          ),
+          curve: Motion.enter,
+          builder: (context, press, _) => AnimatedBuilder(
+            animation: _risen,
+            builder: (context, _) {
+              final risen = _risen.value;
+              final pushed = 1 - 0.35 * math.min(press.distance, 1);
+              return Opacity(
+                opacity: risen.clamp(0.0, 1.0),
+                child: Transform.translate(
+                  offset: Offset(0, (1 - risen) * lift * 2.5),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // The shadow stays on the ground: it grows as the art
+                      // rises and shortens while the art is pushed down.
+                      Transform.translate(
+                        offset: Offset(
+                          -press.dx * lift * 0.4,
+                          lift * (0.3 + 0.7 * risen) * pushed,
+                        ),
+                        child: shadow,
+                      ),
+                      Transform(
+                        alignment: Alignment.center,
+                        transform: Matrix4.identity()
+                          ..setEntry(3, 2, 0.0015)
+                          ..rotateX(press.dy * widget.tilt - (1 - risen) * 0.55)
+                          ..rotateY(-press.dx * widget.tilt),
+                        child: widget.child,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// [Depth] for a Material icon: the glyph casts its own soft shadow (no
+/// second copy), rises in on first show, and pops up with a quick 3D tip
+/// whenever [lifted] turns on (e.g. the selected tab).
+class DepthIcon extends StatelessWidget {
+  final IconData? icon;
+  final double? size;
+  final Color? color;
+  final bool lifted;
+  const DepthIcon(
+    this.icon, {
+    super.key,
+    this.size,
+    this.color,
+    this.lifted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween(begin: 0, end: 1),
+    duration: Motion.of(context, Motion.slow),
+    curve: Motion.enter,
+    builder: (context, risen, _) => TweenAnimationBuilder<double>(
+      tween: Tween(end: lifted ? 1 : 0),
+      duration: Motion.of(context, Motion.normal),
+      curve: Motion.enter,
+      builder: (context, up, _) {
+        final height = (1.2 + 2.8 * up) * risen;
+        // A tip that peaks mid-way through rising or lifting, flat at rest.
+        final tip =
+            math.sin(risen * math.pi) * 0.5 + math.sin(up * math.pi) * 0.45;
+        return Transform(
+          alignment: Alignment.center,
+          transform: Matrix4.identity()
+            ..setEntry(3, 2, 0.002)
+            ..rotateX(-tip),
+          child: Transform.translate(
+            offset: Offset(0, -1.5 * up),
+            child: Icon(
+              icon,
+              size: size,
+              color: color,
+              shadows: [
+                Shadow(
+                  color: AppColors.depthShadow,
+                  blurRadius: 2 + 3 * up,
+                  offset: Offset(0, height),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ),
+  );
 }
 
 // ─────────────────────────── Reassurance ───────────────────────────

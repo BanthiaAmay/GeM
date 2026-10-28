@@ -352,11 +352,7 @@ class ValueBars extends StatelessWidget {
     final maxAxis = hi <= 0 ? 0.0 : niceCeil(hi * 1.05);
     final minAxis = lo >= 0 ? 0.0 : -niceCeil(-lo * 1.05);
     final min = minAxis, max = maxAxis == 0 ? 1.0 : maxAxis;
-    final ticks = <double>[
-      if (min < 0) min,
-      0,
-      if (max > 0) max,
-    ];
+    final ticks = <double>[if (min < 0) min, 0, if (max > 0) max];
     return Semantics(
       container: true,
       label: [for (final i in items) '${i.label} ${money(i.value)}'].join(', '),
@@ -372,9 +368,7 @@ class ValueBars extends StatelessWidget {
                     Text(
                       money(i.value),
                       style: AppText.title.copyWith(
-                        color: i.value < 0
-                            ? AppColors.danger
-                            : AppColors.ink,
+                        color: i.value < 0 ? AppColors.danger : AppColors.ink,
                       ),
                     ),
                   ],

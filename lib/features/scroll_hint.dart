@@ -20,7 +20,11 @@ import '../core/tokens.dart';
 class ScrollMoreHint extends StatefulWidget {
   final Widget Function(BuildContext context, ScrollController controller)
   builder;
-  const ScrollMoreHint({super.key, required this.builder});
+
+  /// Off where floating chrome already shows there is more below (the
+  /// home tab capsule): the fade would wash out content above it.
+  final bool enabled;
+  const ScrollMoreHint({super.key, required this.builder, this.enabled = true});
 
   /// Widget tests set this to true before pumping a screen that uses
   /// [ScrollMoreHint], since `pumpAndSettle()` can never settle while
@@ -35,6 +39,7 @@ class ScrollMoreHint extends StatefulWidget {
 class _ScrollMoreHintState extends State<ScrollMoreHint>
     with SingleTickerProviderStateMixin {
   final _controller = ScrollController();
+
   /// 0–1: how much of the fade + chevron shows. Follows the scroll
   /// position continuously (no threshold pop) and lives in a notifier so
   /// updating it never rebuilds the scrolling content.
@@ -131,62 +136,63 @@ class _ScrollMoreHintState extends State<ScrollMoreHint>
   Widget build(BuildContext context) => Stack(
     children: [
       widget.builder(context, _controller),
-      Positioned(
-        left: 0,
-        right: 0,
-        bottom: 0,
-        child: ValueListenableBuilder<double>(
-          valueListenable: _visibility,
-          builder: (context, v, child) => IgnorePointer(
-            ignoring: v < 0.5,
-            child: Opacity(opacity: v, child: child),
-          ),
-          child: RepaintBoundary(
-            child: SizedBox(
-              height: 96,
-              child: Stack(
-                alignment: Alignment.bottomCenter,
-                children: [
-                  // Pointer-transparent: the fade must never block taps on
-                  // the content underneath — only the chevron is tappable.
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(gradient: _fade),
+      if (widget.enabled)
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: ValueListenableBuilder<double>(
+            valueListenable: _visibility,
+            builder: (context, v, child) => IgnorePointer(
+              ignoring: v < 0.5,
+              child: Opacity(opacity: v, child: child),
+            ),
+            child: RepaintBoundary(
+              child: SizedBox(
+                height: 96,
+                child: Stack(
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    // Pointer-transparent: the fade must never block taps on
+                    // the content underneath — only the chevron is tappable.
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(gradient: _fade),
+                        ),
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpace.xs),
-                    child: Semantics(
-                      button: true,
-                      label: 'Scroll down',
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: _scrollMore,
-                        child: Padding(
-                          padding: const EdgeInsets.all(9),
-                          child: AnimatedBuilder(
-                            animation: _bobCurve,
-                            builder: (context, _) => Transform.translate(
-                              offset: Offset(0, 4 * _bobCurve.value),
-                              child: const Icon(
-                                Icons.keyboard_arrow_down,
-                                size: 26,
-                                color: AppColors.textSecondary,
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpace.xs),
+                      child: Semantics(
+                        button: true,
+                        label: 'Scroll down',
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: _scrollMore,
+                          child: Padding(
+                            padding: const EdgeInsets.all(9),
+                            child: AnimatedBuilder(
+                              animation: _bobCurve,
+                              builder: (context, _) => Transform.translate(
+                                offset: Offset(0, 4 * _bobCurve.value),
+                                child: const Icon(
+                                  Icons.keyboard_arrow_down,
+                                  size: 26,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
     ],
   );
 }

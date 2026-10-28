@@ -4,6 +4,8 @@ import '../core/motion.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
 import 'brand_logo.dart';
+import 'alerts_page.dart';
+import 'bid_feed.dart';
 import 'components.dart';
 import 'glass.dart';
 import 'onboarding_flow_4.dart' show gemRegistrationUrl;
@@ -56,9 +58,79 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+/// Header row height below the status bar: one row of 48pt tap targets.
+const _headerHeight = 48.0;
+
+/// Room left under the content so its end scrolls clear of the nav capsule.
+const _navClearance = 104.0;
+
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   _Tab _tab = _Tab.home;
-  void _go(_Tab tab) => setState(() => _tab = tab);
+  void _go(_Tab tab) {
+    _showHeader();
+    setState(() => _tab = tab);
+  }
+
+  /// How far the header row has slid up under the status bar: 0 shows it,
+  /// [_headerHeight] hides it. Scrolling down tucks it away so content gets
+  /// the room; any scroll up brings it straight back.
+  final _headerShift = ValueNotifier<double>(0);
+  late final _snap = AnimationController(vsync: this);
+  double _snapFrom = 0, _snapTo = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _snap.addListener(
+      () => _headerShift.value =
+          _snapFrom +
+          (_snapTo - _snapFrom) * Motion.enter.transform(_snap.value),
+    );
+  }
+
+  @override
+  void dispose() {
+    _snap.dispose();
+    _headerShift.dispose();
+    super.dispose();
+  }
+
+  void _snapHeader(double to) {
+    if (_headerShift.value == to) return;
+    _snapFrom = _headerShift.value;
+    _snapTo = to;
+    _snap
+      ..duration = Motion.of(context, Motion.fast)
+      ..forward(from: 0);
+  }
+
+  void _showHeader() {
+    _snap.stop();
+    _headerShift.value = 0;
+  }
+
+  bool _onScroll(ScrollNotification n) {
+    if (n.depth != 0 || n.metrics.axis != Axis.vertical) return false;
+    if (n is ScrollUpdateNotification) {
+      _snap.stop();
+      _headerShift.value = n.metrics.pixels <= 0
+          ? 0
+          : (_headerShift.value + (n.scrollDelta ?? 0)).clamp(
+              0.0,
+              _headerHeight,
+            );
+    } else if (n is ScrollEndNotification) {
+      // Settle fully shown or fully hidden, never half-way.
+      _snapHeader(
+        _headerShift.value > _headerHeight / 2 &&
+                n.metrics.pixels > _headerHeight
+            ? _headerHeight
+            : 0,
+      );
+    }
+    return false;
+  }
 
   String get _firstName {
     final full = (widget.store.profile['fullName'] as String? ?? '').trim();
@@ -69,42 +141,75 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final s = widget.store;
+    final insets = MediaQuery.paddingOf(context);
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.canvas,
       endDrawer: _HomeDrawer(store: s),
+      // Bars float over the content, so only the sides are inset here; the
+      // header pads itself below the status bar and the nav above the home
+      // indicator, while scrolling content passes (blurred) behind both.
       body: SafeArea(
+        top: false,
+        bottom: false,
         child: LayoutBuilder(
           builder: (context, constraints) {
             final isWide = constraints.maxWidth > AppSize.wide;
 
-            final topBar = GlassBar.top(
-              padding: const EdgeInsets.fromLTRB(AppSpace.lg, 10, AppSpace.lg, 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: const BrandLogo(
-                        variant: BrandLogoVariant.lockup,
-                        width: 96,
+            final headerRow = Row(
+              children: [
+                // The lockup is nearly square, so it is sized to fill the
+                // 48pt row (68 x 48) rather than by a wider width.
+                const Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: BrandLogo(
+                      variant: BrandLogoVariant.lockup,
+                      width: 68,
+                    ),
+                  ),
+                ),
+                _LanguageChip(store: s),
+                const SizedBox(width: 6),
+                _NotificationBell(store: s, onTap: () => _go(_Tab.updates)),
+                AppIconButton(
+                  onPressed: () => Scaffold.of(context).openEndDrawer(),
+                  icon: Icons.menu,
+                  tooltip: s.t('Menu', 'मेनू'),
+                ),
+              ],
+            );
+            // The glass always covers the status bar; the row below it
+            // shrinks away as the header tucks under while scrolling.
+            final topBar = ValueListenableBuilder<double>(
+              valueListenable: _headerShift,
+              child: headerRow,
+              builder: (context, shift, row) => GlassBar.top(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpace.lg,
+                  insets.top,
+                  AppSpace.md,
+                  0,
+                ),
+                child: SizedBox(
+                  height: _headerHeight - shift,
+                  child: ClipRect(
+                    child: OverflowBox(
+                      alignment: Alignment.bottomCenter,
+                      minHeight: _headerHeight,
+                      maxHeight: _headerHeight,
+                      child: Opacity(
+                        opacity: (1 - shift / _headerHeight).clamp(0.0, 1.0),
+                        child: row,
                       ),
                     ),
                   ),
-                  _LanguageChip(store: s),
-                  const SizedBox(width: 6),
-                  _NotificationBell(store: s, onTap: () => _go(_Tab.updates)),
-                  AppIconButton(
-                    onPressed: () => Scaffold.of(context).openEndDrawer(),
-                    icon: Icons.menu,
-                    tooltip: s.t('Menu', 'मेनू'),
-                  ),
-                ],
+                ),
               ),
             );
 
             final scrollArea = Expanded(
               child: ScrollMoreHint(
+                enabled: isWide,
                 builder: (context, scrollController) {
                   // RepaintBoundary carries the tab's ValueKey itself
                   // (replacing a separate KeyedSubtree) so each tab's
@@ -116,47 +221,66 @@ class _HomePageState extends State<HomePage> {
                     key: ValueKey(_tab),
                     child: switch (_tab) {
                       _Tab.home => _HomeTab(
-                          store: s,
-                          name: _firstName,
-                          onNavigate: _go,
-                        ),
-                      _Tab.updates => _UpdatesTab(store: s, onNavigate: _go),
-                      _Tab.bids => _BidsTab(store: s),
+                        store: s,
+                        name: _firstName,
+                        onNavigate: _go,
+                      ),
+                      _Tab.updates => AlertsBody(
+                        key: ValueKey(s.currentUser?.id),
+                        store: s,
+                      ),
+                      _Tab.bids => BidFeed(store: s),
                       _Tab.tools => _ToolsTab(store: s),
                       _Tab.profile => _ProfileTab(store: s),
                     },
                   );
-                  return SingleChildScrollView(
-                    controller: scrollController,
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpace.xl,
-                      AppSpace.xl,
-                      AppSpace.xl,
-                      60,
-                    ),
-                    child: AnimatedSwitcher(
-                      duration: Motion.of(context, Motion.normal),
-                      switchInCurve: Motion.enter,
-                      switchOutCurve: Motion.exit,
-                      transitionBuilder: (child, animation) =>
-                          FadeTransition(opacity: animation, child: child),
-                      child: currentBody,
+                  return NotificationListener<ScrollNotification>(
+                    onNotification: _onScroll,
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpace.xl,
+                        insets.top + _headerHeight + AppSpace.md,
+                        AppSpace.xl,
+                        isWide ? 60 : insets.bottom + _navClearance,
+                      ),
+                      child: AnimatedSwitcher(
+                        duration: Motion.of(context, Motion.normal),
+                        switchInCurve: Motion.enter,
+                        switchOutCurve: Motion.exit,
+                        transitionBuilder: (child, animation) =>
+                            FadeTransition(opacity: animation, child: child),
+                        child: currentBody,
+                      ),
                     ),
                   );
                 },
               ),
             );
 
-            final mainColumn = Column(
+            final mainColumn = Stack(
               children: [
-                topBar,
-                scrollArea,
-                // The bottom tab bar is a phone pattern only — wide
+                Positioned.fill(child: Column(children: [scrollArea])),
+                Positioned(top: 0, left: 0, right: 0, child: topBar),
+                // The floating tab capsule is a phone pattern only — wide
                 // layouts get a NavigationRail on the side instead.
                 if (!isWide)
-                  GlassBar.bottom(
-                    padding: const EdgeInsets.fromLTRB(AppSpace.xs, 10, AppSpace.xs, 10),
-                    child: _HomeNav(store: s, current: _tab, onSelect: _go),
+                  Positioned(
+                    left: AppSpace.lg,
+                    right: AppSpace.lg,
+                    bottom: insets.bottom + AppSpace.md,
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 520),
+                        child: GlassCapsule(
+                          child: _HomeNav(
+                            store: s,
+                            current: _tab,
+                            onSelect: _go,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
               ],
             );
@@ -247,9 +371,7 @@ class _HomeDrawer extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.restart_alt, color: AppColors.brand),
-              title: Text(
-                s.t('Start onboarding again', 'फिर से शुरुआत करें'),
-              ),
+              title: Text(s.t('Start onboarding again', 'फिर से शुरुआत करें')),
               onTap: () {
                 Navigator.of(context).pop();
                 _confirmStartOver(context, s);
@@ -306,19 +428,15 @@ class _HomeTab extends StatelessWidget {
           child: Text(
             name.isEmpty
                 ? s.t('Hello.', 'नमस्ते.')
-                : s.t(
-                    'Hello, {name}',
-                    'नमस्ते, {name}',
-                    vars: {'name': name},
-                  ),
+                : s.t('Hello, {name}', 'नमस्ते, {name}', vars: {'name': name}),
             style: AppText.h1,
           ),
         ),
         const SizedBox(height: AppSpace.sm),
         Text(
           s.t(
-            '2 new opportunities match your business',
-            'आपके व्यवसाय से मेल खाने वाले 2 नए अवसर',
+            'Your GeM guide, bid feed and alerts in one place.',
+            'आपकी GeM गाइड, बोली सूची और अलर्ट एक ही जगह।',
           ),
           style: AppText.secondary(AppText.body),
         ),
@@ -446,99 +564,6 @@ class _DashboardCard extends StatelessWidget {
   }
 }
 
-class _UpdatesTab extends StatelessWidget {
-  final AppStore store;
-  final ValueChanged<_Tab> onNavigate;
-  const _UpdatesTab({required this.store, required this.onNavigate});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = store;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _PageHeader(
-          title: s.t('Notifications', 'सूचनाएं'),
-          subtitle: s.t(
-            'Two new bid opportunities match your business profile.',
-            'आपकी व्यवसाय प्रोफ़ाइल से मेल खाने वाले दो नए बोली अवसर।',
-          ),
-        ),
-        _NotificationRow(
-          title: s.t('Office stationery supplies', 'ऑफिस स्टेशनरी सामग्री'),
-          subtitle: s.t('New bid match', 'नया बोली मैच'),
-          onTap: () => onNavigate(_Tab.bids),
-        ),
-        const SizedBox(height: AppSpace.md),
-        _NotificationRow(
-          title: s.t('IT hardware procurement', 'IT हार्डवेयर खरीद'),
-          subtitle: s.t('New bid match', 'नया बोली मैच'),
-          onTap: () => onNavigate(_Tab.bids),
-        ),
-      ],
-    );
-  }
-}
-
-class _NotificationRow extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  const _NotificationRow({
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) => AppCard(
-    padding: const EdgeInsets.all(AppSpace.lg),
-    onTap: onTap,
-    child: AppListTile(
-      icon: Icons.notifications_outlined,
-      title: title,
-      subtitle: subtitle,
-    ),
-  );
-}
-
-class _BidsTab extends StatelessWidget {
-  final AppStore store;
-  const _BidsTab({required this.store});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = store;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _PageHeader(title: s.t('Bids for you', 'आपके लिए बोलियाँ')),
-        _FeaturedBid(store: s, onTap: () {}),
-        const SizedBox(height: AppSpace.lg),
-        Text(
-          s.t(
-            'This is a sample opportunity for preview. Confirm eligibility, specifications, and closing dates on the official GeM portal.',
-            'यह एक नमूना अवसर है। पात्रता, विनिर्देश और अंतिम तिथियाँ आधिकारिक GeM पोर्टल पर देखें।',
-          ),
-          style: AppText.caption,
-        ),
-        const SizedBox(height: AppSpace.md),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: AppButton(
-            label: s.t('Open official GeM portal', 'आधिकारिक GeM पोर्टल खोलें'),
-            onPressed: () => openLink(context, s, gemSource),
-            variant: AppButtonVariant.tertiary,
-            trailingIcon: Icons.open_in_new,
-            expand: false,
-            haptic: false,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _ToolsTab extends StatelessWidget {
   final AppStore store;
   const _ToolsTab({required this.store});
@@ -643,7 +668,10 @@ class _ProfileTab extends StatelessWidget {
       (s.t('Business name', 'व्यवसाय का नाम'), field('businessName')),
       (
         s.t('Location', 'स्थान'),
-        [field('district'), field('state')].where((v) => v.isNotEmpty).join(', '),
+        [
+          field('district'),
+          field('state'),
+        ].where((v) => v.isNotEmpty).join(', '),
       ),
       (s.t('Sector', 'क्षेत्र'), field('sector')),
       (s.t('Role', 'भूमिका'), field('role')),
@@ -669,11 +697,10 @@ class _ProfileTab extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  supportedLanguages
-                      .firstWhere(
-                        (lang) => lang[0] == s.language,
-                        orElse: () => supportedLanguages[0],
-                      )[1],
+                  supportedLanguages.firstWhere(
+                    (lang) => lang[0] == s.language,
+                    orElse: () => supportedLanguages[0],
+                  )[1],
                   style: AppText.caption,
                 ),
                 const SizedBox(width: AppSpace.xs),
@@ -683,6 +710,12 @@ class _ProfileTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpace.xxxl),
+        AppButton(
+          label: s.t('GeM registration guide', 'GeM पंजीकरण गाइड'),
+          onPressed: () => Navigator.pushNamed(context, '/gem-guide'),
+          variant: AppButtonVariant.secondary,
+        ),
+        const SizedBox(height: AppSpace.md),
         AppButton(
           label: s.t('Start onboarding again', 'फिर से शुरुआत करें'),
           onPressed: () => _confirmStartOver(context, s),
@@ -842,18 +875,19 @@ class _NotificationBell extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         const Icon(Icons.notifications_outlined),
-        Positioned(
-          right: -1,
-          top: -1,
-          child: Container(
-            width: 8,
-            height: 8,
-            decoration: const BoxDecoration(
-              color: AppColors.brand,
-              shape: BoxShape.circle,
+        if (store.unreadAlerts > 0)
+          Positioned(
+            right: -1,
+            top: -1,
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: AppColors.brand,
+                shape: BoxShape.circle,
+              ),
             ),
           ),
-        ),
       ],
     ),
   );
@@ -874,7 +908,7 @@ class _FeaturedBid extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            s.t('Bids for you', 'आपके लिए बोलियाँ').toUpperCase(),
+            s.t('Your next opportunity', 'आपका अगला अवसर').toUpperCase(),
             style: AppText.overline.copyWith(color: AppColors.brand),
           ),
           const SizedBox(height: AppSpace.md),
@@ -884,7 +918,10 @@ class _FeaturedBid extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    s.t('Office stationery\nsupplies', 'ऑफिस स्टेशनरी\nसामग्री'),
+                    s.t(
+                      'Find bids for\nyour business.',
+                      'अपने व्यवसाय के लिए\nबोलियाँ खोजें।',
+                    ),
                     style: AppText.h2,
                   ),
                 ),
@@ -893,23 +930,16 @@ class _FeaturedBid extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpace.md + 2),
-          Wrap(
-            spacing: AppSpace.sm,
-            runSpacing: AppSpace.sm,
-            children: [
-              StatusChip(
-                s.t('Department of Education', 'शिक्षा विभाग'),
-                icon: Icons.apartment_outlined,
-              ),
-              StatusChip(
-                s.t('Closes 25 Sep 2026', '25 सितंबर 2026 को बंद'),
-                icon: Icons.calendar_today_outlined,
-              ),
-            ],
+          Text(
+            s.t(
+              'Browse collected bids or choose the products and delivery states you want alerts for.',
+              'एकत्रित बोलियाँ देखें या अलर्ट के लिए उत्पाद और वितरण राज्य चुनें।',
+            ),
+            style: AppText.body,
           ),
           const SizedBox(height: AppSpace.lg),
           AppButton(
-            label: s.t('View bid', 'बोली देखें'),
+            label: s.t('Browse bids', 'बोलियाँ देखें'),
             onPressed: onTap,
           ),
         ],
@@ -937,7 +967,7 @@ class _QuickAction extends StatelessWidget {
     ),
     child: Column(
       children: [
-        Icon(icon, size: AppIconSize.lg - 4, color: AppColors.brand),
+        DepthIcon(icon, size: AppIconSize.lg - 4, color: AppColors.brand),
         const SizedBox(height: AppSpace.sm),
         Text(label, textAlign: TextAlign.center, style: AppText.bodySmall),
       ],
@@ -989,7 +1019,7 @@ class _HomeNav extends StatelessWidget {
                   label: label,
                   child: InkWell(
                     onTap: () => onSelect(tab),
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(
                         minHeight: AppSize.tap,
@@ -1000,12 +1030,26 @@ class _HomeNav extends StatelessWidget {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              AnimatedScale(
-                                scale: tab == current ? 1.15 : 1.0,
+                              AnimatedContainer(
                                 duration: Motion.of(context, Motion.fast),
                                 curve: Motion.enter,
-                                child: Icon(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpace.md,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: tab == current
+                                      ? AppColors.brandTint
+                                      : AppColors.brandTint.withValues(
+                                          alpha: 0,
+                                        ),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.pill,
+                                  ),
+                                ),
+                                child: DepthIcon(
                                   tab == current ? filledIcon : outlinedIcon,
+                                  lifted: tab == current,
                                   color: tab == current
                                       ? AppColors.brand
                                       : AppColors.textSecondary,

@@ -5,10 +5,19 @@ import '../core/theme.dart';
 import '../data/app_store.dart';
 import 'brand_logo.dart';
 import 'components.dart';
+import 'contact_fields.dart';
+import '../core/phone.dart';
 
 class AccountPage extends StatefulWidget {
   final AppStore store;
-  const AccountPage({super.key, required this.store});
+  final bool entry;
+  final String? continueTo;
+  const AccountPage({
+    super.key,
+    required this.store,
+    this.entry = false,
+    this.continueTo,
+  });
 
   @override
   State<AccountPage> createState() => _AccountPageState();
@@ -17,8 +26,12 @@ class AccountPage extends StatefulWidget {
 class _AccountPageState extends State<AccountPage> {
   final email = TextEditingController();
   final code = TextEditingController();
+  final phone = TextEditingController();
   final form = GlobalKey<FormState>();
+  late bool signUp = widget.entry;
+  bool whatsapp = false;
   bool codeSent = false;
+  bool navigating = false;
   bool busy = false;
   String? error;
   String? notice;
@@ -26,13 +39,45 @@ class _AccountPageState extends State<AccountPage> {
   AppStore get s => widget.store;
 
   @override
+  void initState() {
+    super.initState();
+    phone.text = s.alertPreferences['whatsapp_number'] as String? ?? '';
+    whatsapp = s.alertPreferences['whatsapp_opt_in'] == true;
+    s.addListener(onStoreChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) => onStoreChanged());
+  }
+
+  void onStoreChanged() {
+    if (!mounted) return;
+    setState(() {});
+    if (s.signedIn && !busy && !navigating && widget.continueTo != null) {
+      navigating = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
+          Navigator.pushReplacementNamed(context, widget.continueTo!);
+        } else {
+          navigating = false;
+        }
+      });
+    }
+  }
+
+  @override
   void dispose() {
     email.dispose();
     code.dispose();
+    phone.dispose();
+    s.removeListener(onStoreChanged);
     super.dispose();
   }
 
   String friendlyError(Object value) {
+    if (s.signedIn) {
+      return s.t(
+        'You are signed in, but your details could not be saved. Check your connection and try again.',
+        'साइन इन हो गया, लेकिन विवरण सहेजे नहीं गए। इंटरनेट जाँचकर फिर कोशिश करें।',
+      );
+    }
     if (value is AuthException) {
       if (value.statusCode == '429') {
         return s.t(
@@ -50,6 +95,12 @@ class _AccountPageState extends State<AccountPage> {
         return s.t(
           'The code or sign-in response was not valid. Please try again.',
           'कोड या साइन-इन उत्तर सही नहीं था। फिर कोशिश करें।',
+        );
+      }
+      if (value.message.toLowerCase().contains('signup')) {
+        return s.t(
+          'This email may need an account. Choose Sign up to continue.',
+          'इस ईमेल के लिए खाता बनाना पड़ सकता है। जारी रखने के लिए साइन अप चुनें।',
         );
       }
     }
@@ -71,19 +122,20 @@ class _AccountPageState extends State<AccountPage> {
       if (mounted) setState(() => error = friendlyError(e));
     } finally {
       if (mounted) setState(() => busy = false);
+      if (mounted) onStoreChanged();
     }
   }
 
   Future<void> sendCode() async {
     if (!form.currentState!.validate()) return;
     await run(() async {
-      await s.sendOtp(email.text);
+      await s.sendOtp(email.text, shouldCreateUser: signUp);
       if (mounted) {
         setState(() {
           codeSent = true;
           notice = s.t(
-            'A six-digit code was sent to ${email.text.trim()}.',
-            '${email.text.trim()} पर छह अंकों का कोड भेजा गया है।',
+            'Check ${email.text.trim()} for your sign-in code. If it does not arrive, check spam or choose Sign up.',
+            '${email.text.trim()} पर साइन-इन कोड देखें। न मिले तो स्पैम जाँचें या साइन अप चुनें।',
           );
         });
       }
@@ -91,41 +143,53 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   Future<void> verifyCode() async {
-    if (code.text.trim().length != 6) {
+    if (!RegExp(r'^\d{6,10}$').hasMatch(code.text.trim())) {
       setState(() {
         error = s.t(
-          'Enter the six-digit code from your email.',
-          'ईमेल से मिला छह अंकों का कोड डालें।',
+          'Enter the full code from your email (6–10 digits).',
+          'ईमेल से मिला पूरा कोड डालें (6–10 अंक)।',
         );
       });
       return;
     }
     await run(() async {
       await s.verifyOtp(email.text, code.text);
+      var contactSaved = true;
+      if (signUp && normalizeWhatsapp(phone.text) != null) {
+        final number = normalizeWhatsapp(phone.text)!;
+        s.setProfile('mobile', number.substring(3));
+        s.setProfile('whatsappNumber', number);
+        s.setProfile('whatsappOptIn', whatsapp);
+        try {
+          await saveContact();
+        } catch (_) {
+          // Email authentication is complete even if alert setup is unavailable.
+          contactSaved = false;
+        }
+      }
       if (mounted) {
         setState(() {
-          notice = s.t(
-            'Signed in. Your saved work is now connected to this account.',
-            'साइन इन हो गया। आपका सहेजा काम अब इस खाते से जुड़ा है।',
-          );
+          notice = contactSaved
+              ? s.t(
+                  'Signed in. Your saved work is now connected to this account.',
+                  'साइन इन हो गया। आपका सहेजा काम अब इस खाते से जुड़ा है।',
+                )
+              : s.t(
+                  'Signed in. You can finish WhatsApp alert setup in Updates.',
+                  'साइन इन हो गया। WhatsApp अलर्ट सेटअप सूचनाओं में पूरा कर सकते हैं।',
+                );
         });
       }
     });
   }
 
-  Future<void> google() async {
-    await run(() async {
-      final opened = await s.signInWithGoogle();
-      if (mounted && opened) {
-        setState(() {
-          notice = s.t(
-            'Finish signing in with Google, then return to Bid2Scale.',
-            'Google से साइन इन पूरा करके Bid2Scale पर लौटें।',
-          );
-        });
-      }
-    });
-  }
+  Future<void> saveContact() => s.saveAlertPreferences(
+    phone: phone.text,
+    whatsapp: whatsapp,
+    inApp: s.alertPreferences['in_app_enabled'] != false,
+    keywords: List<String>.from(s.alertPreferences['keywords'] ?? []),
+    states: List<String>.from(s.alertPreferences['states'] ?? []),
+  );
 
   Future<bool> confirm(String title, String body, String action) async {
     return await showDialog<bool>(
@@ -140,7 +204,9 @@ class _AccountPageState extends State<AccountPage> {
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
-                style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.danger,
+                ),
                 child: Text(action),
               ),
             ],
@@ -153,10 +219,17 @@ class _AccountPageState extends State<AccountPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const BrandLogo(variant: BrandLogoVariant.lockup, width: 130),
+        toolbarHeight: 72,
+        centerTitle: true,
+        title: const SizedBox(
+          height: 60,
+          child: BrandLogo(variant: BrandLogoVariant.lockup, width: 85),
+        ),
         leading: IconButton(
           tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-          onPressed: () => Navigator.maybePop(context),
+          onPressed: () => Navigator.of(context).canPop()
+              ? Navigator.pop(context)
+              : Navigator.pushReplacementNamed(context, '/welcome'),
           icon: const Icon(Icons.arrow_back),
         ),
       ),
@@ -225,8 +298,7 @@ class _AccountPageState extends State<AccountPage> {
           ),
         ),
       ],
-      if (error != null || notice != null)
-        const SizedBox(height: AppSpace.xl),
+      if (error != null || notice != null) const SizedBox(height: AppSpace.xl),
     ],
   );
 
@@ -234,12 +306,46 @@ class _AccountPageState extends State<AccountPage> {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       heading(
-        s.t('Save your progress', 'अपनी प्रगति सहेजें'),
+        widget.entry
+            ? (signUp
+                  ? s.t(
+                      'Your next chapter\nstarts on GeM.',
+                      'आपकी नई शुरुआत\nGeM पर।',
+                    )
+                  : s.t('Welcome back.', 'फिर से स्वागत है।'))
+            : s.t('Save your progress', 'अपनी प्रगति सहेजें'),
         s.t(
-          'Sign in to restore your tools and readiness plan on another device. You can keep using the app without an account.',
-          'दूसरे डिवाइस पर अपने टूल और तैयारी योजना पाने के लिए साइन इन करें। आप बिना खाते के भी ऐप इस्तेमाल कर सकते हैं।',
+          'Get GeM-ready. Find bids that fit your business.',
+          'GeM की तैयारी करें। अपने व्यवसाय के लिए सही बोलियाँ खोजें।',
         ),
       ),
+      if (!codeSent) ...[
+        SizedBox(
+          width: double.infinity,
+          child: SegmentedButton<bool>(
+            direction: MediaQuery.textScalerOf(context).scale(14) > 22
+                ? Axis.vertical
+                : Axis.horizontal,
+            segments: [
+              ButtonSegment(
+                value: true,
+                label: Text(s.t('Sign up', 'साइन अप')),
+              ),
+              ButtonSegment(value: false, label: Text(s.t('Log in', 'लॉग इन'))),
+            ],
+            selected: {signUp},
+            showSelectedIcon: false,
+            onSelectionChanged: busy
+                ? null
+                : (value) => setState(() {
+                    signUp = value.first;
+                    error = null;
+                    notice = null;
+                  }),
+          ),
+        ),
+        const SizedBox(height: AppSpace.xxl),
+      ],
       if (!s.configured)
         StateView(
           kind: StateKind.error,
@@ -251,47 +357,50 @@ class _AccountPageState extends State<AccountPage> {
         )
       else ...[
         feedback(),
-        AppButton(
-          label: s.t('Continue with Google', 'Google से जारी रखें'),
-          onPressed: busy ? null : google,
-          icon: Icons.account_circle_outlined,
-          variant: AppButtonVariant.secondary,
-          loading: busy && !codeSent,
-        ),
-        const SizedBox(height: AppSpace.xl),
-        Row(
-          children: [
-            const Expanded(child: Divider()),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpace.md),
-              child: Text(s.t('or use email', 'या ईमेल इस्तेमाल करें'), style: AppText.caption),
-            ),
-            const Expanded(child: Divider()),
-          ],
-        ),
-        const SizedBox(height: AppSpace.xl),
+        if (s.authError != null) Text(s.authError!, style: AppText.body),
         Form(
           key: form,
-          child: TextFormField(
-            controller: email,
-            enabled: !busy && !codeSent,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: codeSent ? TextInputAction.next : TextInputAction.done,
-            autofillHints: const [AutofillHints.email],
-            decoration: InputDecoration(
-              labelText: s.t('Email address', 'ईमेल पता'),
-              hintText: 'name@business.com',
+          child: AutofillGroup(
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: email,
+                  enabled: !busy && !codeSent,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: signUp
+                      ? TextInputAction.next
+                      : TextInputAction.done,
+                  autofillHints: const [AutofillHints.email],
+                  decoration: InputDecoration(
+                    labelText: s.t('Email address', 'ईमेल पता'),
+                    hintText: 'name@business.com',
+                  ),
+                  validator: (value) {
+                    final v = value?.trim() ?? '';
+                    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v)) {
+                      return s.t(
+                        'Enter a valid email address',
+                        'सही ईमेल पता डालें',
+                      );
+                    }
+                    return null;
+                  },
+                  onFieldSubmitted: (_) {
+                    if (!codeSent) sendCode();
+                  },
+                ),
+                if (signUp && !codeSent) ...[
+                  const SizedBox(height: AppSpace.lg),
+                  ContactFields(
+                    store: s,
+                    phone: phone,
+                    optedIn: whatsapp,
+                    enabled: !busy,
+                    onOptIn: (v) => setState(() => whatsapp = v),
+                  ),
+                ],
+              ],
             ),
-            validator: (value) {
-              final v = value?.trim() ?? '';
-              if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v)) {
-                return s.t('Enter a valid email address', 'सही ईमेल पता डालें');
-              }
-              return null;
-            },
-            onFieldSubmitted: (_) {
-              if (!codeSent) sendCode();
-            },
           ),
         ),
         if (codeSent) ...[
@@ -305,15 +414,20 @@ class _AccountPageState extends State<AccountPage> {
             autofillHints: const [AutofillHints.oneTimeCode],
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(6),
+              LengthLimitingTextInputFormatter(10),
             ],
             decoration: InputDecoration(
-              labelText: s.t('Six-digit code', 'छह अंकों का कोड'),
+              labelText: s.t('Email verification code', 'ईमेल सत्यापन कोड'),
               hintText: '123456',
             ),
             onSubmitted: (_) => verifyCode(),
           ),
           const SizedBox(height: AppSpace.lg),
+          AppButton(
+            label: s.t('Resend code', 'कोड फिर भेजें'),
+            onPressed: busy ? null : sendCode,
+            variant: AppButtonVariant.tertiary,
+          ),
           AppButton(
             label: s.t('Verify and sign in', 'पुष्टि करके साइन इन करें'),
             onPressed: busy ? null : verifyCode,
@@ -335,19 +449,27 @@ class _AccountPageState extends State<AccountPage> {
           const SizedBox(height: AppSpace.lg),
           AppButton(
             label: s.t('Email me a code', 'मुझे ईमेल कोड भेजें'),
-            onPressed: busy ? null : sendCode,
+            onPressed: busy || s.emailAvailable == false ? null : sendCode,
             loading: busy,
           ),
         ],
         const SizedBox(height: AppSpace.xxl),
         Text(
           s.t(
-            'Google or email identifies your private account. Bid2Scale never receives your Google password. Research tracking remains off unless you separately opt in.',
-            'Google या ईमेल आपके निजी खाते की पहचान करता है। Bid2Scale को आपका Google पासवर्ड नहीं मिलता। शोध ट्रैकिंग आपकी अलग सहमति के बिना बंद रहती है।',
+            'Sign in with a code sent to your email. Research tracking stays off unless you separately opt in.',
+            'ईमेल पर भेजे गए कोड से साइन इन करें। शोध ट्रैकिंग आपकी अलग सहमति के बिना बंद रहती है।',
           ),
           style: AppText.caption,
         ),
       ],
+      const SizedBox(height: AppSpace.xxl),
+      Text(
+        s.t(
+          'Your Bid2Scale account is separate from your official GeM seller account.',
+          'आपका Bid2Scale खाता आधिकारिक GeM विक्रेता खाते से अलग है।',
+        ),
+        style: AppText.caption,
+      ),
     ],
   );
 
@@ -388,7 +510,10 @@ class _AccountPageState extends State<AccountPage> {
                       style: AppText.title,
                     ),
                     if (emailAddress.isNotEmpty)
-                      Text(emailAddress, style: AppText.secondary(AppText.bodySmall)),
+                      Text(
+                        emailAddress,
+                        style: AppText.secondary(AppText.bodySmall),
+                      ),
                   ],
                 ),
               ),
@@ -396,11 +521,29 @@ class _AccountPageState extends State<AccountPage> {
                 s.status == 'offline'
                     ? s.t('Saved locally', 'स्थानीय रूप से सहेजा')
                     : s.t('Private sync', 'निजी सिंक'),
-                tone: s.status == 'offline' ? StatusTone.warning : StatusTone.success,
-                icon: s.status == 'offline' ? Icons.cloud_off_outlined : Icons.cloud_done_outlined,
+                tone: s.status == 'offline'
+                    ? StatusTone.warning
+                    : StatusTone.success,
+                icon: s.status == 'offline'
+                    ? Icons.cloud_off_outlined
+                    : Icons.cloud_done_outlined,
               ),
             ],
           ),
+        ),
+        const SizedBox(height: AppSpace.xxl),
+        AppButton(
+          label: s.t('GeM registration guide', 'GeM पंजीकरण गाइड'),
+          icon: Icons.assignment_outlined,
+          onPressed: () => Navigator.pushNamed(context, '/gem-guide'),
+          variant: AppButtonVariant.secondary,
+        ),
+        const SizedBox(height: AppSpace.md),
+        AppButton(
+          label: s.t('Bid alerts & WhatsApp', 'बोली अलर्ट और WhatsApp'),
+          icon: Icons.notifications_outlined,
+          onPressed: () => Navigator.pushNamed(context, '/alerts'),
+          variant: AppButtonVariant.secondary,
         ),
         const SizedBox(height: AppSpace.xxl),
         AppButton(

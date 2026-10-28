@@ -13,7 +13,8 @@ class FlowAuthorisedPage extends StatefulWidget {
 }
 
 class _FlowAuthorisedPageState extends State<FlowAuthorisedPage> {
-  late String selected = widget.store.profile['authorisedReady'] as String? ?? '';
+  late String selected =
+      widget.store.profile['authorisedReady'] as String? ?? '';
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +87,10 @@ class _FlowPrivacyPageState extends State<FlowPrivacyPage> {
     return OnboardingStepScaffold(
       store: s,
       onBack: () => Navigator.of(context).pop(),
-      headline: s.t('Your information stays yours', 'आपकी जानकारी आपकी ही रहती है'),
+      headline: s.t(
+        'Your information stays yours',
+        'आपकी जानकारी आपकी ही रहती है',
+      ),
       subtitle: s.t(
         'We’ll use your answers to tailor a readiness guide.',
         'हम आपके उत्तरों से एक तैयारी गाइड बनाएँगे।',
@@ -223,10 +227,7 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
         ),
         OnboardingCheckOption(
           iconAsset: 'rec_registration',
-          label: s.t(
-            'Business registration details',
-            'व्यवसाय पंजीकरण विवरण',
-          ),
+          label: s.t('Business registration details', 'व्यवसाय पंजीकरण विवरण'),
           sublabel: s.t(
             'CIN, LLPIN, deed or equivalent',
             'CIN, LLPIN, डीड या समान',

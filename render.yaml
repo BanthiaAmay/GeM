@@ -1,0 +1,36 @@
+# Render Blueprint for the bid-alerts worker (scripts/bid_worker.py).
+# Every 15 minutes: collect new GeM bids, match them to users, then send app
+# notifications, email digests and WhatsApp digests. Channels whose keys are
+# not set are skipped. Secrets are entered in the Render dashboard (sync: false).
+services:
+  - type: cron
+    name: bid2scale-bid-alerts
+    runtime: python
+    region: singapore          # Render's nearest region to India
+    plan: starter
+    schedule: "*/15 * * * *"   # UTC; 15-minute steps are the same in IST
+    buildCommand: pip install -r scripts/requirements-worker.txt
+    # One grouped push per user per run; email at most every 12 h and
+    # WhatsApp every 24 h (lower these flags to send more often).
+    startCommand: >-
+      python scripts/bid_worker.py run
+      --min-gap-minutes 15 --email-gap-hours 12 --whatsapp-gap-hours 24
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: FCM_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_TEMPLATE
+        sync: false

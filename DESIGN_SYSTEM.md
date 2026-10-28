@@ -12,7 +12,17 @@ If none fits, add one to the system first.
 ## Character
 Calm, precise, text-first — near-black ink on white, one green for "good", one red for
 "urgent". Bordered white cards, tinted status chips, pill buttons, thin line icons.
-No shadows, gradients or decoration; blur only in `GlassBar`.
+Depth comes from two soft shadows only (`AppShadow.card` on outlined cards resting on the
+`canvas` page colour, `AppShadow.floating` on floating chrome); no gradients or decoration.
+Blur only in floating chrome: `GlassBar` (headers) and `GlassCapsule` (the phone tab bar,
+which floats above the home indicator with content scrolling blurred behind it).
+Home's header is one 48pt row under the status bar that tucks away while scrolling down
+and returns on any scroll up; Home shows no scroll-more fade, since the capsule already
+signals more content. Artwork and icons get animated depth: `Depth` (logos, illustrations,
+icon PNGs — a silhouette shadow, a rise-in out of a 3D tilt, a tilt toward the finger while
+pressed; pass plain artwork only, as it is painted twice) and `DepthIcon` (Material icons —
+glyph shadow, rise-in, a 3D pop when `lifted`, e.g. the selected tab). Both use `Motion`
+tokens and keep only the shadow under reduced motion.
 
 ## Colour (`AppColors`)
 | Token | Hex | Use | Contrast |
@@ -79,6 +89,8 @@ action) · `StatusChip` (success/danger/warning/info/neutral) · `StatusItem` (d
 attention / pending check line) · `KeyValueRow` + `DividedList` · `AppListTile` ·
 `StateView` (loading / empty / error) · `AppProgressBar` · `AppProgressRing` ·
 `SheetHandle` · `AppSegmentedControl` · `AppChoiceChips` · `AppDropdownChip` ·
+`Depth` · `DepthIcon` · `AppKeywordField` (free-text tags: input + Add, removable ink pills, outlined
+tap-to-add suggestions; used for "What do you sell?") ·
 `ReassuranceNote` (muted green panel, brand-tint background + 3px brand left border, no
 radius — a short line reassuring the user a screen is optional/preparation-only, not a
 form or eligibility decision; used throughout onboarding wherever that reassurance

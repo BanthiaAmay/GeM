@@ -27,6 +27,7 @@ String money(num value) => NumberFormat.currency(
   symbol: '₹',
   decimalDigits: 0,
 ).format(value);
+
 /// Resolves an (English, Hindi) pair authored at the call site to the
 /// current language. English and Hindi are exactly what was authored
 /// there; every other language is looked up in the central

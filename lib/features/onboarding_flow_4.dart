@@ -182,10 +182,7 @@ class FlowVideoPage extends StatelessWidget {
             children: [
               const OnboardingArt('video', topGap: 0),
               const SizedBox(height: 16),
-              Text(
-                s.t('VIDEO GUIDE', 'वीडियो गाइड'),
-                style: AppText.overline,
-              ),
+              Text(s.t('VIDEO GUIDE', 'वीडियो गाइड'), style: AppText.overline),
               const SizedBox(height: 6),
               Text(
                 s.t('Video coming soon', 'वीडियो शीघ्र आ रहा है'),
@@ -211,7 +208,10 @@ class FlowVideoPage extends StatelessWidget {
         const SizedBox(height: 16),
         _CoverRow(
           asset: 'video_seller',
-          text: s.t('Choose the right seller type', 'सही विक्रेता प्रकार चुनें'),
+          text: s.t(
+            'Choose the right seller type',
+            'सही विक्रेता प्रकार चुनें',
+          ),
         ),
         _CoverRow(
           asset: 'video_details',
@@ -256,9 +256,7 @@ class _CoverRow extends StatelessWidget {
       children: [
         OnboardingIcon(icon: null, asset: asset, slot: 46),
         const SizedBox(width: 14),
-        Expanded(
-          child: Text(text, style: AppText.body),
-        ),
+        Expanded(child: Text(text, style: AppText.body)),
       ],
     ),
   );
@@ -306,10 +304,7 @@ class FlowRedirectPage extends StatelessWidget {
           child: const OnboardingArt('redirect', topGap: 0),
         ),
         const SizedBox(height: 24),
-        Text(
-          s.t('Your next step', 'आपका अगला कदम'),
-          style: AppText.h3,
-        ),
+        Text(s.t('Your next step', 'आपका अगला कदम'), style: AppText.h3),
         const SizedBox(height: 16),
         _CoverRow(
           asset: 'redir_open',
@@ -381,4 +376,5 @@ class FlowRedirectPage extends StatelessWidget {
   }
 }
 
-const gemRegistrationUrl = 'https://mkp.gem.gov.in/registration/signup#!/seller';
+const gemRegistrationUrl =
+    'https://mkp.gem.gov.in/registration/signup#!/seller';

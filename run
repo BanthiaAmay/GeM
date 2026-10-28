@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+# `./run` = `flutter run` with the Supabase settings from config/env.json.
+# Extra arguments pass through, e.g. `./run -d "iPhone 17 Pro"` or `./run --release`.
+cd "$(dirname "$0")" || exit 1
+if [ ! -f config/env.json ]; then
+  echo "config/env.json is missing. Copy config/env.example.json and fill in SUPABASE_URL and SUPABASE_ANON_KEY." >&2
+  exit 1
+fi
+exec flutter run --dart-define-from-file=config/env.json "$@"

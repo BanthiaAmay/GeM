@@ -69,6 +69,28 @@ abstract final class AppColors {
 
   /// Frosted glass bar tint and hairline (see GlassBar).
   static const glassHairline = Color(0x14000000);
+
+  /// Floating glass (bottom nav capsule): translucent fill and a light rim.
+  static const glassFill = Color(0x9EFFFFFF);
+  static const glassRim = Color(0xB3FFFFFF);
+
+  /// Page canvas behind cards: a hair off white so cards lift off it.
+  static const canvas = Color(0xFFF6F7F5);
+
+  /// Silhouette shadow cast by artwork and icons (see Depth, DepthIcon).
+  static const depthShadow = Color(0x42101C15);
+}
+
+/// Soft, low-contrast elevation. Cards rest; floating chrome hovers.
+abstract final class AppShadow {
+  static const card = [
+    BoxShadow(color: Color(0x0D101C15), blurRadius: 18, offset: Offset(0, 6)),
+    BoxShadow(color: Color(0x08101C15), blurRadius: 3, offset: Offset(0, 1)),
+  ];
+  static const floating = [
+    BoxShadow(color: Color(0x1F101C15), blurRadius: 32, offset: Offset(0, 12)),
+    BoxShadow(color: Color(0x0F101C15), blurRadius: 6, offset: Offset(0, 2)),
+  ];
 }
 
 /// 4-pt spacing scale. Use these for every gap, padding and margin.
@@ -307,4 +329,3 @@ abstract final class AppChart {
 /// Marker shapes paired with [AppChart.series] so colour is never the only
 /// way to tell series apart.
 enum ChartShape { circle, square, diamond, triangle, cross }
-

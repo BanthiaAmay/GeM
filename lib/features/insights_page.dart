@@ -338,7 +338,10 @@ class InsightsPage extends StatelessWidget {
               AppProgressBar(
                 value: done / tools.length,
                 color: AppColors.brand,
-                semanticLabel: s.t('Calculators completed', 'पूरे किए गए कैलकुलेटर'),
+                semanticLabel: s.t(
+                  'Calculators completed',
+                  'पूरे किए गए कैलकुलेटर',
+                ),
               ),
               const SizedBox(height: AppSpace.sm),
               Text(
@@ -358,7 +361,8 @@ class InsightsPage extends StatelessWidget {
                 icon: Icons.show_chart,
                 title: s.t('Bid trends', 'बोली रुझान'),
                 subtitle: s.t('New matches over time', 'समय के साथ नए मेल'),
-                onTap: () => Navigator.of(context).pushNamed('/insights-trends'),
+                onTap: () =>
+                    Navigator.of(context).pushNamed('/insights-trends'),
               ),
               AppListTile(
                 icon: Icons.pie_chart_outline,
@@ -457,8 +461,7 @@ class InsightsTrendsPage extends StatelessWidget {
           value: days,
           onChanged: s.setInsightsDays,
           options: [
-            for (final (v, label) in _rangeOptions(s))
-              (v, '${v}D', label),
+            for (final (v, label) in _rangeOptions(s)) (v, '${v}D', label),
           ],
         ),
         const SizedBox(height: AppSpace.md),
@@ -485,8 +488,12 @@ class InsightsTrendsPage extends StatelessWidget {
           ),
           data: [
             for (final k in buckets)
-              LineDatum(_dm(k.start), k.count.toDouble(), detail(k),
-                  previous: k.previous.toDouble()),
+              LineDatum(
+                _dm(k.start),
+                k.count.toDouble(),
+                detail(k),
+                previous: k.previous.toDouble(),
+              ),
           ],
         ),
         const SizedBox(height: AppSpace.sm),

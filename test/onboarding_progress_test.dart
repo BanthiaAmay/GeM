@@ -1,7 +1,7 @@
+import 'support/authenticated_journey_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:gem/data/app_store.dart';
 import 'package:gem/features/scroll_hint.dart';
 import 'package:gem/main.dart';
 
@@ -18,7 +18,9 @@ void main() {
     'progress heading tracks the real step/section/total, forward, back and localized',
     (tester) async {
       SharedPreferences.setMockInitialValues({});
-      final s = AppStore(await SharedPreferences.getInstance());
+      final s = AuthenticatedJourneyStore(
+        await SharedPreferences.getInstance(),
+      );
       await tester.pumpWidget(SaathiApp(store: s, ready: s.initialize()));
       await tester.pump(const Duration(seconds: 2));
       await tester.pumpAndSettle();
@@ -45,28 +47,20 @@ void main() {
 
       // 1. Full name — Getting started, 1 of 4.
       expect(find.text('What is your full name?'), findsOneWidget);
-      expectHeading('Getting started', 'GETTING STARTED · 1 OF 4');
+      expectHeading('Getting started', 'GETTING STARTED · 1 OF 3');
       await tester.enterText(find.byType(TextField).first, 'Vijay Kumar');
       await tester.pumpAndSettle();
       await continueTap();
 
       // 2. Mobile number — Getting started, 2 of 4.
-      expectHeading('Getting started', 'GETTING STARTED · 2 OF 4');
+      expectHeading('Getting started', 'GETTING STARTED · 2 OF 3');
       await tester.enterText(find.byType(TextField).first, '9876543210');
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Send demo code'));
-      await tester.tap(find.text('Send demo code'));
-      await tester.pumpAndSettle();
-
-      // 3. OTP — Getting started, 3 of 4.
-      expectHeading('Getting started', 'GETTING STARTED · 3 OF 4');
-      await tester.ensureVisible(find.text('Use demo code'));
-      await tester.tap(find.text('Use demo code'));
-      await tester.pumpAndSettle(); // auto-continues once all 6 digits fill
+      await continueTap();
 
       // 4. Location — Getting started, 4 of 4.
       expect(find.text('Where is your business based?'), findsOneWidget);
-      expectHeading('Getting started', 'GETTING STARTED · 4 OF 4');
+      expectHeading('Getting started', 'GETTING STARTED · 3 OF 3');
       await tester.tap(find.text('Choose state'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Andhra Pradesh').last);
@@ -75,46 +69,64 @@ void main() {
       await tester.pumpAndSettle();
       await continueTap();
 
-      // 5. Business name — Your business, 1 of 5 (Getting started complete
+      // 5. Business name — Your business, 1 of 6 (Getting started complete
       // checkpoint fires and settles in between; pumpAndSettle waits it out).
       expect(find.text('What is your business called?'), findsOneWidget);
-      expectHeading('Your business', 'YOUR BUSINESS · 1 OF 5');
+      expectHeading('Your business', 'YOUR BUSINESS · 1 OF 6');
 
       // Back across the section boundary: must revert to step 4/4 of
       // "Getting started", not stay stuck on "Your business".
       await tester.pageBack();
       await tester.pumpAndSettle();
       expect(find.text('Where is your business based?'), findsOneWidget);
-      expectHeading('Getting started', 'GETTING STARTED · 4 OF 4');
+      expectHeading('Getting started', 'GETTING STARTED · 3 OF 3');
 
       // Forward again — this route was never disposed (maintainState),
       // so the state/district picked earlier are still filled in.
       await continueTap();
-      expectHeading('Your business', 'YOUR BUSINESS · 1 OF 5');
+      expectHeading('Your business', 'YOUR BUSINESS · 1 OF 6');
       await tester.enterText(find.byType(TextField).first, 'Asha Textiles');
       await tester.pumpAndSettle();
       await continueTap();
 
-      // 6. Business form — Your business, 2 of 5.
-      expectHeading('Your business', 'YOUR BUSINESS · 2 OF 5');
+      // 6. Business form — Your business, 2 of 6.
+      expectHeading('Your business', 'YOUR BUSINESS · 2 OF 6');
       await tester.tap(find.text('Proprietorship'));
       await tester.pumpAndSettle();
       await continueTap();
 
-      // 7. Sector — 3 of 5.
-      expectHeading('Your business', 'YOUR BUSINESS · 3 OF 5');
+      // 7. Sector — 3 of 6.
+      expectHeading('Your business', 'YOUR BUSINESS · 3 OF 6');
       await tester.tap(find.text('Manufacturing'));
       await tester.pumpAndSettle();
       await continueTap();
 
-      // 8. Role — 4 of 5.
-      expectHeading('Your business', 'YOUR BUSINESS · 4 OF 5');
+      // 7a. What it supplies — 4 of 6. "Asha Textiles" pre-ticks textiles;
+      // ticking Furniture adds all its words, one per group in turn.
+      expect(find.text('What does your business supply?'), findsOneWidget);
+      expectHeading('Your business', 'YOUR BUSINESS · 4 OF 6');
+      await tester.ensureVisible(find.text('Furniture'));
+      await tester.tap(find.text('Furniture'));
+      await tester.pumpAndSettle();
+      await continueTap();
+      expect(s.bidKeywords, [
+        'Furniture',
+        'Uniform',
+        'Office chair',
+        'Bedsheet',
+        'Table',
+        'Towel',
+        'Steel almirah',
+      ]);
+
+      // 8. Role — 5 of 6.
+      expectHeading('Your business', 'YOUR BUSINESS · 5 OF 6');
       await tester.tap(find.text('Owner / Proprietor'));
       await tester.pumpAndSettle();
       await continueTap();
 
-      // 9. Authorised person — 5 of 5 (last of the section).
-      expectHeading('Your business', 'YOUR BUSINESS · 5 OF 5');
+      // 9. Authorised person — 6 of 6 (last of the section).
+      expectHeading('Your business', 'YOUR BUSINESS · 6 OF 6');
       await tester.tap(find.text('Yes'));
       await tester.pumpAndSettle();
       await continueTap();
@@ -176,10 +188,7 @@ void main() {
       await continueTap();
 
       // 14. Video guide — Next step, 1 of 2.
-      expect(
-        find.text('How to register your business on GeM'),
-        findsOneWidget,
-      );
+      expect(find.text('How to register your business on GeM'), findsOneWidget);
       expectHeading('Next step', 'NEXT STEP · 1 OF 2');
       await tester.ensureVisible(find.text('Continue without video'));
       await tester.tap(find.text('Continue without video'));

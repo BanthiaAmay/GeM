@@ -19,7 +19,10 @@ const fadeOnlyTransition = #fadeOnlyTransition;
 /// collapses under a test's reduced-motion setup.
 bool get _reducedPlatform =>
     Motion.debugReducedOverride ??
-    WidgetsBinding.instance.platformDispatcher.accessibilityFeatures
+    WidgetsBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
         .disableAnimations;
 
 /// The app's default page transition: quiet and editorial. The

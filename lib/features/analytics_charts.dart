@@ -85,7 +85,9 @@ void _paintMarker(
     case ChartShape.circle:
       path.addOval(Rect.fromCircle(center: p, radius: r));
     case ChartShape.square:
-      path.addRect(Rect.fromCenter(center: p, width: size * 0.9, height: size * 0.9));
+      path.addRect(
+        Rect.fromCenter(center: p, width: size * 0.9, height: size * 0.9),
+      );
     case ChartShape.diamond:
       path
         ..moveTo(p.dx, p.dy - r * 1.2)
@@ -103,7 +105,9 @@ void _paintMarker(
       final w = r * 0.55;
       path
         ..addRect(Rect.fromCenter(center: p, width: size * 1.05, height: w * 2))
-        ..addRect(Rect.fromCenter(center: p, width: w * 2, height: size * 1.05));
+        ..addRect(
+          Rect.fromCenter(center: p, width: w * 2, height: size * 1.05),
+        );
   }
   c.drawPath(path, fill);
   if (outline != null) c.drawPath(path, outline);
@@ -111,7 +115,12 @@ void _paintMarker(
 
 Rect _plotArea(Size size, {EdgeInsets? insets}) {
   final i = insets ?? AppChart.plotInsets;
-  return Rect.fromLTRB(i.left, i.top, size.width - i.right, size.height - i.bottom);
+  return Rect.fromLTRB(
+    i.left,
+    i.top,
+    size.width - i.right,
+    size.height - i.bottom,
+  );
 }
 
 void _paintYGrid(
@@ -128,13 +137,7 @@ void _paintYGrid(
   for (final t in ticks) {
     final y = area.bottom - (t - yMin) / (yMax - yMin) * area.height;
     c.drawLine(Offset(area.left, y), Offset(area.right, y), grid);
-    _label(
-      c,
-      format(t),
-      Offset(area.left - 8, y),
-      anchorX: 1,
-      anchorY: 0.5,
-    );
+    _label(c, format(t), Offset(area.left - 8, y), anchorX: 1, anchorY: 0.5);
   }
   c.drawLine(
     Offset(area.left, area.bottom),
@@ -151,7 +154,11 @@ class _Tooltip extends StatelessWidget {
   final String text;
   final Offset anchor;
   final Size bounds;
-  const _Tooltip({required this.text, required this.anchor, required this.bounds});
+  const _Tooltip({
+    required this.text,
+    required this.anchor,
+    required this.bounds,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +172,9 @@ class _Tooltip extends StatelessWidget {
       math.max(0.0, bounds.width - 8),
     );
     final height = lines.length * 16.0 + 14;
-    final left = (anchor.dx - width / 2).clamp(0.0, math.max(0.0, bounds.width - width)).toDouble();
+    final left = (anchor.dx - width / 2)
+        .clamp(0.0, math.max(0.0, bounds.width - width))
+        .toDouble();
     var top = anchor.dy - height - 12;
     if (top < 0) top = anchor.dy + 14;
     return Positioned(
@@ -260,9 +269,11 @@ class _ChartSurfaceState extends State<_ChartSurface> {
     final cur = _active == null ? -1 : order.indexOf(_active!);
     final k = event.logicalKey;
     int? next;
-    if (k == LogicalKeyboardKey.arrowRight || k == LogicalKeyboardKey.arrowDown) {
+    if (k == LogicalKeyboardKey.arrowRight ||
+        k == LogicalKeyboardKey.arrowDown) {
       next = order[(cur + 1) % order.length];
-    } else if (k == LogicalKeyboardKey.arrowLeft || k == LogicalKeyboardKey.arrowUp) {
+    } else if (k == LogicalKeyboardKey.arrowLeft ||
+        k == LogicalKeyboardKey.arrowUp) {
       next = order[cur <= 0 ? order.length - 1 : cur - 1];
     } else if (k == LogicalKeyboardKey.home) {
       next = order.first;
@@ -300,7 +311,8 @@ class _ChartSurfaceState extends State<_ChartSurface> {
                   onKeyEvent: _key,
                   onFocusChange: (f) => setState(() => _focused = f),
                   child: MouseRegion(
-                    onHover: (e) => _set(hover: widget.nearest(e.localPosition, size)),
+                    onHover: (e) =>
+                        _set(hover: widget.nearest(e.localPosition, size)),
                     onExit: (_) => _set(),
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
@@ -364,9 +376,7 @@ class _ChartSurfaceState extends State<_ChartSurface> {
               active != null && active < widget.count
                   ? widget.readout(active)
                   : widget.hint,
-              style: active != null
-                  ? AppText.bodyStrong
-                  : AppText.caption,
+              style: active != null ? AppText.bodyStrong : AppText.caption,
             ),
           ),
         ),
@@ -411,7 +421,14 @@ class _SwatchPainter extends CustomPainter {
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
-    _paintMarker(canvas, size.center(Offset.zero), 12, shape, fill, outline: line);
+    _paintMarker(
+      canvas,
+      size.center(Offset.zero),
+      12,
+      shape,
+      fill,
+      outline: line,
+    );
   }
 
   @override
@@ -528,7 +545,10 @@ class _BarPainter extends CustomPainter {
         data[i].label,
         Offset(cx, a.bottom + 8),
         style: i == active
-            ? AppText.tick.copyWith(color: AppColors.ink, fontWeight: FontWeight.w700)
+            ? AppText.tick.copyWith(
+                color: AppColors.ink,
+                fontWeight: FontWeight.w700,
+              )
             : AppText.tick,
       );
     }
@@ -611,7 +631,14 @@ class _LinePainter extends CustomPainter {
   final double t;
   final int? active;
   final bool hasPrev;
-  const _LinePainter(this.data, this.ticks, this.yMax, this.t, this.active, this.hasPrev);
+  const _LinePainter(
+    this.data,
+    this.ticks,
+    this.yMax,
+    this.t,
+    this.active,
+    this.hasPrev,
+  );
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -685,7 +712,10 @@ class _LinePainter extends CustomPainter {
         data[i].label,
         Offset(pts[i].dx, a.bottom + 8),
         style: on
-            ? AppText.tick.copyWith(color: AppColors.ink, fontWeight: FontWeight.w700)
+            ? AppText.tick.copyWith(
+                color: AppColors.ink,
+                fontWeight: FontWeight.w700,
+              )
             : AppText.tick,
       );
     }
@@ -717,13 +747,20 @@ class _LineKey extends StatelessWidget {
   final Color color;
   final String label;
   final bool dashed;
-  const _LineKey({required this.color, required this.label, required this.dashed});
+  const _LineKey({
+    required this.color,
+    required this.label,
+    required this.dashed,
+  });
 
   @override
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      CustomPaint(size: const Size(28, 10), painter: _KeyPainter(color, dashed)),
+      CustomPaint(
+        size: const Size(28, 10),
+        painter: _KeyPainter(color, dashed),
+      ),
       const SizedBox(width: AppSpace.sm),
       Text(label, style: AppText.caption),
     ],
@@ -746,7 +783,11 @@ class _KeyPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), p);
     } else {
       for (var x = 0.0; x < size.width; x += 9) {
-        canvas.drawLine(Offset(x, y), Offset(math.min(x + 5, size.width), y), p);
+        canvas.drawLine(
+          Offset(x, y),
+          Offset(math.min(x + 5, size.width), y),
+          p,
+        );
       }
     }
   }
@@ -834,9 +875,7 @@ class _AppPieChartState extends State<AppPieChart> {
           count: vis.length,
           horizontalScrub: false,
           semanticLabel:
-              '${widget.semanticLabel}: ${[
-                for (final i in vis) widget.detail(widget.data[i], allPct[i]!),
-              ].join('; ')}',
+              '${widget.semanticLabel}: ${[for (final i in vis) widget.detail(widget.data[i], allPct[i]!)].join('; ')}',
           hint: widget.hint,
           onActive: (a) => setState(() => _active = a == null ? null : vis[a]),
           nearest: (p, size) {
@@ -970,7 +1009,9 @@ class _LegendRow extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSpace.sm),
                 Icon(
-                  hidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  hidden
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
                   size: AppIconSize.sm + 2,
                   color: AppColors.textSecondary,
                 ),
@@ -1028,10 +1069,7 @@ class _PiePainter extends CustomPainter {
           canvas,
           '${pcts[k]}%',
           center + Offset(math.cos(mid), math.sin(mid)) * (r * 0.62),
-          style: AppText.label.copyWith(
-            fontSize: 14,
-            color: AppColors.surface,
-          ),
+          style: AppText.label.copyWith(fontSize: 14, color: AppColors.surface),
           anchorY: 0.5,
         );
       }
@@ -1158,7 +1196,8 @@ class AppScatterChart extends StatelessWidget {
                 children: [
                   ChartSwatch(
                     color: AppChart.series[g.series % AppChart.series.length],
-                    shape: ChartShape.values[g.series % ChartShape.values.length],
+                    shape:
+                        ChartShape.values[g.series % ChartShape.values.length],
                   ),
                   const SizedBox(width: AppSpace.xs + 2),
                   Flexible(child: Text(g.label, style: AppText.caption)),

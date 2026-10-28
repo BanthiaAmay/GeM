@@ -52,9 +52,11 @@ class _GemCheckPageState extends State<GemCheckPage> {
                     tooltip: s.t('Back', 'वापस'),
                   ),
                   const Expanded(
-                    child: BrandLogo(
-                      variant: BrandLogoVariant.lockup,
-                      width: 150,
+                    child: Center(
+                      child: BrandLogo(
+                        variant: BrandLogoVariant.lockup,
+                        width: 150,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 48),
@@ -172,12 +174,7 @@ class _CheckOption extends StatelessWidget {
         children: [
           OnboardingIcon(icon: null, asset: asset, slot: slot),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: AppText.h3,
-            ),
-          ),
+          Expanded(child: Text(label, style: AppText.h3)),
           Icon(
             trailingIcon,
             size: 24,

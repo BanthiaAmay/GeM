@@ -18,6 +18,7 @@ jobs:
       - run: flutter analyze
       - run: flutter test
       - run: python3 -m unittest discover -s research -p 'test_*.py'
+      - run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - run: flutter build web --release
       - run: flutter build apk --debug
       - uses: actions/upload-artifact@v4
@@ -49,3 +50,14 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/rls.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610130001_account_deletion.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/account_deletion.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610220001_bid_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bid_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610220002_push_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bid_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/push_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610280001_email_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bid_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/push_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/email_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610280002_whatsapp_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/whatsapp_alerts.sql

@@ -1,3 +1,4 @@
+import 'support/authenticated_journey_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,7 +25,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     SharedPreferences.setMockInitialValues({});
-    final s = AppStore(await SharedPreferences.getInstance());
+    final s = AuthenticatedJourneyStore(await SharedPreferences.getInstance());
     await tester.pumpWidget(SaathiApp(store: s, ready: s.initialize()));
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
@@ -40,8 +41,7 @@ void main() {
     await tap(tester, find.text('Continue'));
     await tester.enterText(find.byType(TextField).first, '9876543210');
     await tester.pumpAndSettle();
-    await tap(tester, find.text('Send demo code'));
-    await tap(tester, find.text('Use demo code'));
+    await tap(tester, find.text('Continue'));
     await tap(tester, find.text('Choose state'));
     await tap(tester, find.text('Andhra Pradesh').last);
     await tester.enterText(find.byType(TextField).last, 'Pune');
@@ -53,6 +53,9 @@ void main() {
     await tap(tester, find.text('Proprietorship'));
     await tap(tester, find.text('Continue'));
     await tap(tester, find.text('Manufacturing'));
+    await tap(tester, find.text('Continue'));
+    // "What do you sell?" comes pre-filled from "Asha Textiles".
+    expect(find.text('Uniform'), findsWidgets);
     await tap(tester, find.text('Continue'));
     await tap(tester, find.text('Owner / Proprietor'));
     await tap(tester, find.text('Continue'));

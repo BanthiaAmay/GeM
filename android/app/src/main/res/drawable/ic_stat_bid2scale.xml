@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simplified Bid2Scale mark for the status bar: a rounded square with the
+     rising arrow cut out. Status-bar icons must be one flat colour. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M5,2H19A3,3 0,0 1,22 5V19A3,3 0,0 1,19 22H5A3,3 0,0 1,2 19V5A3,3 0,0 1,5 2Z
+            M3.2,19.6C6.5,15.5 9.5,11.8 12.9,9L10.8,6.4L19.6,4.4L17.6,13.2L15,11.1C11.6,13.9 7.6,17.6 4.6,21Z" />
+</vector>

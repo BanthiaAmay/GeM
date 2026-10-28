@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gem/features/brand_logo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:gem/core/models.dart';
 import 'package:gem/core/theme.dart';
@@ -29,7 +30,10 @@ void main() {
       for (final lang in supportedLanguages) {
         s.setLanguage(lang[0]);
         await tester.pumpWidget(
-          MaterialApp(theme: saathiTheme(), home: HomePage(store: s)),
+          MaterialApp(
+            theme: saathiTheme(),
+            home: HomePage(store: s),
+          ),
         );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull, reason: '${lang[0]} @ $width');
@@ -46,16 +50,24 @@ void main() {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     await tester.pumpWidget(
-      MaterialApp(theme: saathiTheme(), home: HomePage(store: s)),
+      MaterialApp(
+        theme: saathiTheme(),
+        home: HomePage(store: s),
+      ),
     );
     await tester.pumpAndSettle();
 
     // Exactly one brand mark: the lockup's own icon, not a separate one.
-    expect(find.byType(Image), findsOneWidget);
+    // (Its depth shadow paints the same artwork again, so count logos.)
+    expect(find.byType(BrandLogo), findsOneWidget);
+    expect(
+      tester.widget<BrandLogo>(find.byType(BrandLogo)).variant,
+      BrandLogoVariant.lockup,
+    );
 
     await tester.tap(find.byTooltip('Notifications'));
     await tester.pumpAndSettle();
-    expect(find.text('Notifications'), findsOneWidget);
+    expect(find.text('Opportunities, on your terms.'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Menu'));
     await tester.pumpAndSettle();

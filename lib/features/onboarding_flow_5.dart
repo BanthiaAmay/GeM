@@ -32,7 +32,10 @@ List<String> _bandLabels(AppStore s) => [
 ];
 
 String _bandKeyForLabel(AppStore s, String label) => _kTurnoverBands
-    .firstWhere((b) => s.t(b.$2, b.$3) == label, orElse: () => _kTurnoverBands.first)
+    .firstWhere(
+      (b) => s.t(b.$2, b.$3) == label,
+      orElse: () => _kTurnoverBands.first,
+    )
     .$1;
 
 String _labelForBandKey(AppStore s, String? key) {
@@ -52,7 +55,8 @@ class FlowTurnoverPage extends StatefulWidget {
 }
 
 class _FlowTurnoverPageState extends State<FlowTurnoverPage> {
-  late String selected = widget.store.profile['turnoverLatest'] as String? ?? '';
+  late String selected =
+      widget.store.profile['turnoverLatest'] as String? ?? '';
 
   @override
   Widget build(BuildContext context) {
@@ -105,10 +109,14 @@ class FlowTurnoverHistoryPage extends StatefulWidget {
 }
 
 class _FlowTurnoverHistoryPageState extends State<FlowTurnoverHistoryPage> {
-  late String fy2425 = widget.store.profile['turnoverFY2024_25'] as String? ?? '';
-  late bool same2425 = widget.store.profile['turnoverFY2024_25Same'] as bool? ?? false;
-  late String fy2324 = widget.store.profile['turnoverFY2023_24'] as String? ?? '';
-  late bool same2324 = widget.store.profile['turnoverFY2023_24Same'] as bool? ?? false;
+  late String fy2425 =
+      widget.store.profile['turnoverFY2024_25'] as String? ?? '';
+  late bool same2425 =
+      widget.store.profile['turnoverFY2024_25Same'] as bool? ?? false;
+  late String fy2324 =
+      widget.store.profile['turnoverFY2023_24'] as String? ?? '';
+  late bool same2324 =
+      widget.store.profile['turnoverFY2023_24Same'] as bool? ?? false;
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +125,8 @@ class _FlowTurnoverHistoryPageState extends State<FlowTurnoverHistoryPage> {
       s,
       s.profile['turnoverLatest'] as String?,
     );
-    final ready = (same2425 || fy2425.isNotEmpty) && (same2324 || fy2324.isNotEmpty);
+    final ready =
+        (same2425 || fy2425.isNotEmpty) && (same2324 || fy2324.isNotEmpty);
     return OnboardingStepScaffold(
       store: s,
       onBack: () => Navigator.of(context).pop(),
@@ -279,7 +288,8 @@ class FlowExperiencePage extends StatefulWidget {
 }
 
 class _FlowExperiencePageState extends State<FlowExperiencePage> {
-  late String selected = widget.store.profile['pastOrderExperience'] as String? ?? '';
+  late String selected =
+      widget.store.profile['pastOrderExperience'] as String? ?? '';
 
   Future<void> _finishSection(BuildContext context) async {
     await showSectionComplete(
@@ -355,7 +365,8 @@ class _FlowExperienceDetailPageState extends State<FlowExperienceDetailPage> {
   late final controller = TextEditingController(
     text: widget.store.profile['pastOrderCount'] as String? ?? '',
   );
-  late String valueRange = widget.store.profile['pastOrderValueRange'] as String? ?? '';
+  late String valueRange =
+      widget.store.profile['pastOrderValueRange'] as String? ?? '';
 
   @override
   void dispose() {

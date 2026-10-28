@@ -1,10 +1,13 @@
 # Deployment and live smoke test
 
 ## Supabase setup
-Apply both migrations, in timestamp order:
+Apply migrations in timestamp order:
 
 1. `supabase/migrations/202609090001_initial.sql`
 2. `supabase/migrations/202610130001_account_deletion.sql`
+3. `supabase/migrations/202610220001_bid_alerts.sql`
+
+The third migration adds private WhatsApp preferences, the bid feed, private notifications and server-only matching/delivery jobs. See [the auth and alerts guide](auth-and-bid-alerts.md) for the live preflight findings and remaining provider setup.
 
 The second migration adds a no-argument account-deletion RPC scoped to the authenticated caller. It is required for the Play account-deletion policy.
 
@@ -21,6 +24,8 @@ Use a production SMTP provider and test rate limits/deliverability. Copy `config
 No anonymous auth provider or service-role client key is required. RLS must stay enabled. Public data consists only of explicitly published benchmark rows. Review database grants in the migration before changing schemas.
 
 ### Google sign-in
+
+Google signup is currently hidden. These steps are for a future integration and are not required for the active email-code login.
 
 1. In Google Cloud / Google Auth Platform, configure the consent screen and audience.
 2. Create an OAuth client whose application type is **Web application**. Supabase owns the OAuth callback even for the Android app; this flow does not need `google-services.json`.
@@ -69,7 +74,7 @@ Before production submission, increment the `version:` build number in `pubspec.
 1. Create the Play app as **Bid2Scale**, choose the appropriate app category and use `com.bid2scale.app` as the package identity by uploading the signed AAB.
 2. Complete developer identity verification and Play App Signing. New personal accounts may have device verification and closed-testing requirements.
 3. Publish the web build over HTTPS. Use `/privacy.html` as the privacy-policy URL and `/delete-account.html` as the account-deletion URL.
-4. Complete **Data safety** from actual production behavior. The current app can process an email address, Google identity metadata, business-planning answers, optional research events/referral attribution, and user-requested support data. Supabase is the app backend; Google is used only when the user selects Google sign-in.
+4. Complete **Data safety** from actual production behavior. The current app can process an email address, Google identity metadata, WhatsApp contact number and consent, bid filters and notification history, business-planning answers, optional research events/referral attribution, and user-requested support data. Supabase is the app backend; Google is used only when the user selects Google sign-in. WhatsApp delivery and device push are not yet connected.
 5. Declare that accounts can be deleted in-app under **Save progress → Privacy controls → Delete account permanently**, and through the hosted deletion page.
 6. Complete App access, Ads, Content rating, Target audience, News-app and Government-app declarations accurately. This independent project must not be represented as an official GeM/government app.
 7. Add phone screenshots, a feature graphic, short/full descriptions and a working developer contact email. Test the internal-track build on a physical Android device before closed or production release.

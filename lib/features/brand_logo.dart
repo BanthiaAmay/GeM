@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'components.dart' show Depth;
 
 /// Which of the three approved Bid2Scale logo assets to render.
 ///
@@ -28,7 +29,16 @@ class BrandLogo extends StatelessWidget {
   final BrandLogoVariant variant;
   final double width;
 
-  const BrandLogo({super.key, required this.variant, required this.width});
+  /// Soft silhouette shadow with a press tilt (see [Depth]). Off only where
+  /// two logos are stacked exactly, so their shadows would double up.
+  final bool depth;
+
+  const BrandLogo({
+    super.key,
+    required this.variant,
+    required this.width,
+    this.depth = true,
+  });
 
   static const _assetFor = {
     BrandLogoVariant.full: 'assets/brand/bid2scale-logo-full.png',
@@ -37,9 +47,20 @@ class BrandLogo extends StatelessWidget {
   };
 
   @override
-  Widget build(BuildContext context) => Image.asset(
-    _assetFor[variant]!,
-    width: width,
-    fit: BoxFit.contain,
-  );
+  Widget build(BuildContext context) {
+    final image = Image.asset(
+      _assetFor[variant]!,
+      width: width,
+      fit: BoxFit.contain,
+    );
+    if (!depth) return image;
+    // The splash and Hero flights already animate the logo in, so only the
+    // shadow and press tilt apply here.
+    return Depth(
+      entrance: false,
+      lift: (width * 0.025).clamp(2.0, 6.0),
+      tilt: 0.22,
+      child: image,
+    );
+  }
 }

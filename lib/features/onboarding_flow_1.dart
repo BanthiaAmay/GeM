@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/motion.dart';
+import '../core/phone.dart';
 import '../data/app_store.dart';
 import 'components.dart';
 import 'onboarding_widgets.dart';
@@ -82,7 +83,14 @@ class _FlowFullNamePageState extends State<FlowFullNamePage> {
           ? null
           : () {
               s.setProfile('fullName', controller.text.trim());
-              Navigator.of(context).pushNamed('/flow-phone');
+              Navigator.of(context).pushNamed(
+                normalizeWhatsapp(
+                          s.profile['whatsappNumber'] as String? ?? '',
+                        ) !=
+                        null
+                    ? '/flow-location'
+                    : '/flow-phone',
+              );
             },
       children: [
         OnboardingTextField(
@@ -129,8 +137,7 @@ class _FlowPhonePageState extends State<FlowPhonePage> {
     super.dispose();
   }
 
-  bool get _valid =>
-      controller.text.replaceAll(RegExp(r'\D'), '').length == 10;
+  bool get _valid => normalizeWhatsapp(controller.text) != null;
 
   @override
   Widget build(BuildContext context) {
@@ -140,14 +147,17 @@ class _FlowPhonePageState extends State<FlowPhonePage> {
       onBack: () => Navigator.of(context).pop(),
       headline: s.t('Your mobile number', 'आपका मोबाइल नंबर'),
       subtitle: s.t(
-        'This is a demonstration sign-in. No SMS will be sent.',
-        'यह एक डेमो साइन-इन है। कोई SMS नहीं भेजा जाएगा।',
+        'Save your contact number. WhatsApp verification is not connected yet.',
+        'अपना संपर्क नंबर सहेजें। WhatsApp सत्यापन अभी जुड़ा नहीं है।',
       ),
-      continueLabel: s.t('Send demo code', 'डेमो कोड भेजें'),
+      continueLabel: s.t('Continue', 'जारी रखें'),
       onContinue: _valid
           ? () {
-              s.setProfile('mobile', controller.text.trim());
-              Navigator.of(context).pushNamed('/flow-otp');
+              s.setProfile(
+                'mobile',
+                normalizeWhatsapp(controller.text)!.substring(3),
+              );
+              Navigator.of(context).pushNamed('/flow-location');
             }
           : null,
       children: [
@@ -162,8 +172,8 @@ class _FlowPhonePageState extends State<FlowPhonePage> {
         const SizedBox(height: 12),
         Text(
           s.t(
-            'Use any 10 digits in this prototype. We won’t contact this number.',
-            'इस प्रोटोटाइप में कोई भी 10 अंक दें। हम इस नंबर पर संपर्क नहीं करेंगे।',
+            'Your email verifies your app account. Saving this number does not verify WhatsApp ownership.',
+            'आपका ईमेल ऐप खाते को सत्यापित करता है। नंबर सहेजने से WhatsApp स्वामित्व सत्यापित नहीं होता।',
           ),
           style: AppText.secondary(AppText.bodySmall),
         ),
@@ -185,15 +195,16 @@ class _FlowOtpPageState extends State<FlowOtpPage>
     with SingleTickerProviderStateMixin {
   final _codeController = TextEditingController();
   final _focusNode = FocusNode();
-  late final AnimationController _autoContinueTimer = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 300),
-  );
+  late final AnimationController _autoContinueTimer;
   bool _navigated = false;
 
   @override
   void initState() {
     super.initState();
+    _autoContinueTimer = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
     _focusNode.addListener(() => setState(() {}));
   }
 
@@ -261,11 +272,7 @@ class _FlowOtpPageState extends State<FlowOtpPage>
             child: child,
           ),
         ),
-        child: Text(
-          char,
-          key: ValueKey(char),
-          style: AppText.digit,
-        ),
+        child: Text(char, key: ValueKey(char), style: AppText.digit),
       ),
     );
   }

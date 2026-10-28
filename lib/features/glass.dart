@@ -42,7 +42,9 @@ class GlassBar extends StatelessWidget {
     EdgeInsetsGeometry padding = const EdgeInsets.fromLTRB(24, 14, 24, 24),
   }) => GlassBar(
     padding: padding,
-    border: const Border(top: BorderSide(color: AppColors.glassHairline, width: 0.6)),
+    border: const Border(
+      top: BorderSide(color: AppColors.glassHairline, width: 0.6),
+    ),
     child: child,
   );
 
@@ -62,6 +64,43 @@ class GlassBar extends StatelessWidget {
             border: border,
           ),
           child: child,
+        ),
+      ),
+    ),
+  );
+}
+
+/// Floating frosted capsule (the phone tab bar): everything scrolling
+/// behind it is blurred, with a soft shadow so it hovers above the page.
+class GlassCapsule extends StatelessWidget {
+  final Widget child;
+  const GlassCapsule({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(
+      borderRadius: BorderRadius.all(Radius.circular(AppRadius.pill)),
+      boxShadow: AppShadow.floating,
+    ),
+    child: RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: const BorderRadius.all(Radius.circular(AppRadius.pill)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpace.sm,
+              vertical: AppSpace.xs + 2,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.glassFill,
+              borderRadius: const BorderRadius.all(
+                Radius.circular(AppRadius.pill),
+              ),
+              border: Border.all(color: AppColors.glassRim, width: 1),
+            ),
+            child: child,
+          ),
         ),
       ),
     ),

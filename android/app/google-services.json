@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1035123858036",
+    "project_id": "gem---amay-banthia",
+    "storage_bucket": "gem---amay-banthia.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1035123858036:android:b815d3b027d404ce354f21",
+        "android_client_info": {
+          "package_name": "com.bid2scale.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaqw4zjDWsdVEcGuXCvpVY0Qi227A8-rk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

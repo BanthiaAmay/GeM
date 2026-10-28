@@ -1,0 +1,4 @@
+# Server-side bid worker only (scripts/bid_worker.py); the Flutter app never uses these.
+pypdf==6.21.2
+google-auth==2.62.0
+requests==2.34.2

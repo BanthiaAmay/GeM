@@ -3,6 +3,7 @@ import 'dart:math' show pi, sin;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/motion.dart';
+import '../core/phone.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
 import 'brand_logo.dart';
@@ -28,11 +29,11 @@ class _OnboardingStep {
 const _kOnboardingSteps = <_OnboardingStep>[
   _OnboardingStep('flow-name', 'Getting started', 'शुरुआत'),
   _OnboardingStep('flow-phone', 'Getting started', 'शुरुआत'),
-  _OnboardingStep('flow-otp', 'Getting started', 'शुरुआत'),
   _OnboardingStep('flow-location', 'Getting started', 'शुरुआत'),
   _OnboardingStep('flow-bizname', 'Your business', 'आपका व्यवसाय'),
   _OnboardingStep('flow-bizform', 'Your business', 'आपका व्यवसाय'),
   _OnboardingStep('flow-sector', 'Your business', 'आपका व्यवसाय'),
+  _OnboardingStep('flow-products', 'Your business', 'आपका व्यवसाय'),
   _OnboardingStep('flow-role', 'Your business', 'आपका व्यवसाय'),
   _OnboardingStep('flow-authorised', 'Your business', 'आपका व्यवसाय'),
   _OnboardingStep('flow-turnover', 'GeM bidding', 'GeM बोली'),
@@ -66,7 +67,10 @@ class _StepInfo {
   );
 }
 
-_StepInfo _stepInfoFor(String? route) {
+_StepInfo _stepInfoFor(String? route, {bool hasWhatsappNumber = false}) {
+  final steps = _kOnboardingSteps
+      .where((s) => !hasWhatsappNumber || s.route != 'flow-phone')
+      .toList();
   // Navigator stores settings.name exactly as passed to pushNamed
   // ('/flow-phone'), but the table below keys on the bare route
   // ('flow-phone') — strip the leading slash before matching, or every
@@ -74,11 +78,11 @@ _StepInfo _stepInfoFor(String? route) {
   final normalized = route?.replaceFirst('/', '');
   var index = normalized == null
       ? -1
-      : _kOnboardingSteps.indexWhere((e) => e.route == normalized);
+      : steps.indexWhere((e) => e.route == normalized);
   if (index == -1) index = 0;
-  final entry = _kOnboardingSteps[index];
-  final total = _kOnboardingSteps.where((e) => e.sectionEn == entry.sectionEn).length;
-  final step = _kOnboardingSteps
+  final entry = steps[index];
+  final total = steps.where((e) => e.sectionEn == entry.sectionEn).length;
+  final step = steps
       .take(index + 1)
       .where((e) => e.sectionEn == entry.sectionEn)
       .length;
@@ -87,7 +91,7 @@ _StepInfo _stepInfoFor(String? route) {
     entry.sectionHi,
     step,
     total,
-    (index + 1) / _kOnboardingSteps.length,
+    (index + 1) / steps.length,
   );
 }
 
@@ -237,8 +241,7 @@ class OnboardingStepScaffold extends StatefulWidget {
   });
 
   @override
-  State<OnboardingStepScaffold> createState() =>
-      _OnboardingStepScaffoldState();
+  State<OnboardingStepScaffold> createState() => _OnboardingStepScaffoldState();
 }
 
 class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
@@ -292,7 +295,14 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
     // forward when a new screen appears, backward when returning to
     // one that was already showing a lower progress value.
     final route = ModalRoute.of(context)?.settings.name;
-    final target = _stepInfoFor(route).progress;
+    final target = _stepInfoFor(
+      route,
+      hasWhatsappNumber:
+          normalizeWhatsapp(
+            widget.store.profile['whatsappNumber'] as String? ?? '',
+          ) !=
+          null,
+    ).progress;
     setState(() {
       _beginProgress = lastProgress;
       _target = target;
@@ -305,7 +315,12 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
   Widget build(BuildContext context) {
     final s = widget.store;
     final route = ModalRoute.of(context)?.settings.name;
-    final info = _stepInfoFor(route);
+    final info = _stepInfoFor(
+      route,
+      hasWhatsappNumber:
+          normalizeWhatsapp(s.profile['whatsappNumber'] as String? ?? '') !=
+          null,
+    );
     final reduced = Motion.reduced(context);
     final sectionLabel = s.t(info.sectionEn, info.sectionHi);
     final stepLabel = s.t(
@@ -347,9 +362,11 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                           tooltip: s.t('Back', 'वापस'),
                         ),
                         const Expanded(
-                          child: BrandLogo(
-                            variant: BrandLogoVariant.lockup,
-                            width: 150,
+                          child: Center(
+                            child: BrandLogo(
+                              variant: BrandLogoVariant.lockup,
+                              width: 150,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 48),
@@ -358,10 +375,7 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                     const SizedBox(height: 10),
                     TweenAnimationBuilder<double>(
                       key: _barKey,
-                      tween: Tween<double>(
-                        begin: _beginProgress,
-                        end: _target,
-                      ),
+                      tween: Tween<double>(begin: _beginProgress, end: _target),
                       duration: reduced ? Duration.zero : Motion.slow,
                       curve: Motion.enter,
                       builder: (context, value, child) {
@@ -385,22 +399,18 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                     children: [
                       AnimatedSwitcher(
                         duration: reduced ? Duration.zero : Motion.fast,
-                        transitionBuilder: (child, animation) =>
-                            FadeTransition(
-                              opacity: animation,
-                              child: AnimatedBuilder(
-                                animation: animation,
-                                builder: (context, builtChild) =>
-                                    Transform.translate(
-                                      offset: Offset(
-                                        0,
-                                        6 * (1 - animation.value),
-                                      ),
-                                      child: builtChild,
-                                    ),
-                                child: child,
-                              ),
-                            ),
+                        transitionBuilder: (child, animation) => FadeTransition(
+                          opacity: animation,
+                          child: AnimatedBuilder(
+                            animation: animation,
+                            builder: (context, builtChild) =>
+                                Transform.translate(
+                                  offset: Offset(0, 6 * (1 - animation.value)),
+                                  child: builtChild,
+                                ),
+                            child: child,
+                          ),
+                        ),
                         child: _showLabels
                             ? KeyedSubtree(
                                 key: const ValueKey('labels-shown'),
@@ -408,19 +418,13 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                               )
                             : KeyedSubtree(
                                 key: const ValueKey('labels-hidden'),
-                                child: Opacity(
-                                  opacity: 0,
-                                  child: labelBlock,
-                                ),
+                                child: Opacity(opacity: 0, child: labelBlock),
                               ),
                       ),
                       const SizedBox(height: 14),
                       StaggeredEntrance(
                         index: 0,
-                        child: Text(
-                          widget.headline,
-                          style: AppText.h1,
-                        ),
+                        child: Text(widget.headline, style: AppText.h1),
                       ),
                       if (widget.subtitle != null) ...[
                         const SizedBox(height: 12),
@@ -578,15 +582,9 @@ class _OnboardingLabelBlock extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.start,
     mainAxisSize: MainAxisSize.min,
     children: [
-      Text(
-        sectionLabel,
-        style: AppText.secondary(AppText.bodySmall),
-      ),
+      Text(sectionLabel, style: AppText.secondary(AppText.bodySmall)),
       const SizedBox(height: 16),
-      Text(
-        stepLabel,
-        style: AppText.overline,
-      ),
+      Text(stepLabel, style: AppText.overline),
     ],
   );
 }
@@ -614,10 +612,7 @@ class OnboardingTextField extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
-        label,
-        style: AppText.secondary(AppText.bodySmall),
-      ),
+      Text(label, style: AppText.secondary(AppText.bodySmall)),
       const SizedBox(height: 8),
       TextField(
         controller: controller,
@@ -647,10 +642,14 @@ class OnboardingArt extends StatelessWidget {
     child: Center(
       child: FittedBox(
         fit: BoxFit.scaleDown,
-        child: Image.asset(
-          'assets/illustrations/$name.png',
-          scale: _artScale,
-          excludeFromSemantics: true,
+        child: Depth(
+          lift: 9,
+          tilt: 0.12,
+          child: Image.asset(
+            'assets/illustrations/$name.png',
+            scale: _artScale,
+            excludeFromSemantics: true,
+          ),
         ),
       ),
     ),
@@ -695,11 +694,18 @@ class OnboardingTextArt extends StatelessWidget {
             height: h,
             child: Stack(
               children: [
-                Image.asset(
-                  'assets/illustrations/$name.png',
-                  width: w,
-                  height: h,
-                  excludeFromSemantics: true,
+                // Shadow only: the user's text is drawn on top and must stay
+                // aligned with the card, so this art neither rises nor tilts.
+                Depth(
+                  entrance: false,
+                  tilt: 0,
+                  lift: 8,
+                  child: Image.asset(
+                    'assets/illustrations/$name.png',
+                    width: w,
+                    height: h,
+                    excludeFromSemantics: true,
+                  ),
                 ),
                 Positioned(
                   left: textBox.left * w,
@@ -748,7 +754,7 @@ class OnboardingIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (asset == null) return Icon(icon, size: 24, color: AppColors.ink);
+    if (asset == null) return DepthIcon(icon, size: 24, color: AppColors.ink);
     return SizedBox(
       width: slot,
       child: Align(
@@ -756,10 +762,14 @@ class OnboardingIcon extends StatelessWidget {
         child: FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
-          child: Image.asset(
-            'assets/icons/$asset.png',
-            scale: _artScale,
-            excludeFromSemantics: true,
+          child: Depth(
+            lift: 3,
+            tilt: 0.3,
+            child: Image.asset(
+              'assets/icons/$asset.png',
+              scale: _artScale,
+              excludeFromSemantics: true,
+            ),
           ),
         ),
       ),
@@ -949,8 +959,10 @@ class _RadioIndicator extends StatelessWidget {
 /// readiness questions throughout this flow.
 class OnboardingRadioOption extends StatefulWidget {
   final IconData? icon;
+
   /// Artwork from `assets/icons/` (name without extension); wins over [icon].
   final String? iconAsset;
+
   /// Width reserved for the leading artwork so labels stay aligned.
   final double iconSlot;
   final String label;
@@ -1013,12 +1025,7 @@ class _OnboardingRadioOptionState extends State<OnboardingRadioOption>
                     slot: widget.iconSlot,
                   ),
                   const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      widget.label,
-                      style: AppText.h3,
-                    ),
-                  ),
+                  Expanded(child: Text(widget.label, style: AppText.h3)),
                   _RadioIndicator(selected: widget.selected),
                 ],
               ),
@@ -1151,8 +1158,10 @@ class _CheckTickPainter extends CustomPainter {
 /// checklist.
 class OnboardingCheckOption extends StatefulWidget {
   final IconData? icon;
+
   /// Artwork from `assets/icons/` (name without extension); wins over [icon].
   final String? iconAsset;
+
   /// Width reserved for the leading artwork so labels stay aligned.
   final double iconSlot;
   final String label;
@@ -1216,15 +1225,9 @@ class _OnboardingCheckOptionState extends State<OnboardingCheckOption>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      widget.label,
-                      style: AppText.input,
-                    ),
+                    Text(widget.label, style: AppText.input),
                     if (widget.sublabel != null)
-                      Text(
-                        widget.sublabel!,
-                        style: AppText.caption,
-                      ),
+                      Text(widget.sublabel!, style: AppText.caption),
                   ],
                 ),
               ),
@@ -1398,10 +1401,7 @@ class _SectionCompleteOverlayState extends State<_SectionCompleteOverlay>
                 const SizedBox(height: 16),
                 FadeTransition(
                   opacity: _text,
-                  child: Text(
-                    widget.message,
-                    style: AppText.title,
-                  ),
+                  child: Text(widget.message, style: AppText.title),
                 ),
               ],
             ),

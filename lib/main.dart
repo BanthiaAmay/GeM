@@ -8,8 +8,11 @@ import 'core/motion.dart';
 import 'core/theme.dart';
 import 'core/transitions.dart';
 import 'data/app_store.dart';
+import 'data/push_service.dart';
 import 'features/brand_logo.dart';
 import 'features/account_page.dart';
+import 'features/alerts_page.dart';
+import 'features/gem_guide_page.dart';
 import 'features/gem_check_page.dart';
 import 'features/home_page.dart';
 import 'features/insights_page.dart';
@@ -22,16 +25,16 @@ import 'features/onboarding_flow_5.dart';
 import 'features/shell.dart';
 import 'features/welcome_page.dart';
 
-/// The 15-step "not yet on GeM" readiness walkthrough, keyed by route
+/// The seller readiness walkthrough, keyed by route
 /// name. Kept as a lookup table rather than another long ternary chain.
 final Map<String, Widget Function(AppStore)> flowPages = {
   'flow-name': (s) => FlowFullNamePage(store: s),
   'flow-phone': (s) => FlowPhonePage(store: s),
-  'flow-otp': (s) => FlowOtpPage(store: s),
   'flow-location': (s) => FlowLocationPage(store: s),
   'flow-bizname': (s) => FlowBusinessNamePage(store: s),
   'flow-bizform': (s) => FlowBusinessFormPage(store: s),
   'flow-sector': (s) => FlowSectorPage(store: s),
+  'flow-products': (s) => FlowProductsPage(store: s),
   'flow-role': (s) => FlowRolePage(store: s),
   'flow-authorised': (s) => FlowAuthorisedPage(store: s),
   'flow-turnover': (s) => FlowTurnoverPage(store: s),
@@ -51,6 +54,13 @@ Future<void> main() async {
   const url = String.fromEnvironment('SUPABASE_URL');
   const key = String.fromEnvironment('SUPABASE_ANON_KEY');
   SupabaseClient? client;
+  if (url.isEmpty || key.isEmpty) {
+    // Plain `flutter run` passes no settings: say so instead of failing quietly.
+    debugPrint(
+      'Bid2Scale: Supabase is not configured, so sign-in and cloud saving are off. '
+      'Run ./run (or flutter run --dart-define-from-file=config/env.json).',
+    );
+  }
   if (url.isNotEmpty && key.isNotEmpty) {
     try {
       await Supabase.initialize(url: url, publishableKey: key);
@@ -60,14 +70,45 @@ Future<void> main() async {
     }
   }
   final store = AppStore(await SharedPreferences.getInstance(), client: client);
-  final ready = store.initialize();
-  runApp(SaathiApp(store: store, ready: ready));
+  final navigator = GlobalKey<NavigatorState>();
+  final messenger = GlobalKey<ScaffoldMessengerState>();
+  final push = PushService(store)
+    ..onForeground = (message) {
+      unawaited(store.loadAlerts());
+      messenger.currentState?.showSnackBar(
+        SnackBar(
+          content: Text(
+            message.notification?.title ??
+                store.t('New matching GeM bid', 'नई मेल खाती GeM बोली'),
+          ),
+          action: SnackBarAction(
+            label: store.t('View', 'देखें'),
+            onPressed: () => navigator.currentState?.pushNamed('/alerts'),
+          ),
+        ),
+      );
+    }
+    ..onOpened = (_) {
+      unawaited(store.loadAlerts());
+      navigator.currentState?.pushNamed('/alerts');
+    };
+  store.push = push;
+  final ready = Future.wait([store.initialize(), push.init()]).then((_) {
+    unawaited(push.refresh());
+  });
+  runApp(
+    SaathiApp(
+      store: store,
+      ready: ready,
+      navigatorKey: navigator,
+      messengerKey: messenger,
+    ),
+  );
 }
 
 /// A short brand reveal — the mark appears first, then the wordmark
 /// fades and rises in beside/below it — before handing off to
-/// onboarding (new user) or straight into the app (returning user).
-/// Never shown again itself.
+/// welcome and language, then app registration before the GeM questions.
 class SplashGate extends StatefulWidget {
   final AppStore store;
 
@@ -159,10 +200,17 @@ class _SplashGateState extends State<SplashGate>
       Future<void>.delayed(_maxTotal),
     ]);
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed(
-      widget.store.hasOnboarded ? '/home' : '/welcome',
+    final home = widget.store.hasOnboarded && widget.store.signedIn;
+    final navigator = Navigator.of(context);
+    navigator.pushReplacementNamed(
+      widget.store.hasOnboarded
+          ? (widget.store.signedIn ? '/home' : '/onboarding-auth')
+          : '/welcome',
       arguments: fadeOnlyTransition,
     );
+    // Opened from a bid-alert notification: show the inbox over Home.
+    final launchRoute = home ? widget.store.push?.takeLaunchRoute() : null;
+    if (launchRoute != null) unawaited(navigator.pushNamed(launchRoute));
   }
 
   @override
@@ -190,6 +238,7 @@ class _SplashGateState extends State<SplashGate>
                 animation: _markScale,
                 child: const BrandLogo(
                   variant: BrandLogoVariant.mark,
+                  depth: false,
                   width: _markWidth,
                 ),
                 builder: (context, child) =>
@@ -223,11 +272,24 @@ class _SplashGateState extends State<SplashGate>
 class SaathiApp extends StatelessWidget {
   final AppStore store;
   final Future<void> ready;
-  const SaathiApp({super.key, required this.store, required this.ready});
+
+  /// Let notification taps and foreground alerts reach the app from outside
+  /// the widget tree.
+  final GlobalKey<NavigatorState>? navigatorKey;
+  final GlobalKey<ScaffoldMessengerState>? messengerKey;
+  const SaathiApp({
+    super.key,
+    required this.store,
+    required this.ready,
+    this.navigatorKey,
+    this.messengerKey,
+  });
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: store,
     builder: (context, _) => MaterialApp(
+      navigatorKey: navigatorKey,
+      scaffoldMessengerKey: messengerKey,
       title: 'Bid2Scale',
       debugShowCheckedModeBanner: false,
       theme: saathiTheme(),
@@ -239,10 +301,28 @@ class SaathiApp extends StatelessWidget {
       home: SplashGate(store: store, ready: ready),
       onGenerateRoute: (settings) {
         Widget builder(BuildContext context) {
-          final page = (settings.name ?? '/').replaceFirst('/', '').split('?').first;
+          final page = (settings.name ?? '/')
+              .replaceFirst('/', '')
+              .split('?')
+              .first;
+          final requiresAccount =
+              flowPages.containsKey(page) ||
+              {'', 'home', 'gem-check', 'gem-guide', 'register'}.contains(page);
           return ListenableBuilder(
             listenable: store,
-            builder: (context, _) => flowPages.containsKey(page)
+            builder: (context, _) => requiresAccount && !store.signedIn
+                ? AccountPage(
+                    store: store,
+                    entry: true,
+                    continueTo: page.isEmpty ? '/home' : '/$page',
+                  )
+                : page == 'onboarding-auth'
+                ? AccountPage(
+                    store: store,
+                    entry: true,
+                    continueTo: store.hasOnboarded ? '/home' : '/gem-check',
+                  )
+                : flowPages.containsKey(page)
                 ? flowPages[page]!(store)
                 : page.isEmpty || page == 'home'
                 ? HomePage(store: store)
@@ -253,7 +333,11 @@ class SaathiApp extends StatelessWidget {
                 : page == 'gem-check'
                 ? GemCheckPage(store: store)
                 : page == 'account' || page == 'auth'
-                ? AccountPage(store: store)
+                ? AccountPage(store: store, entry: page == 'auth')
+                : page == 'alerts'
+                ? AlertsPage(store: store)
+                : page == 'gem-guide'
+                ? GemGuidePage(store: store)
                 : page == 'insights'
                 ? InsightsPage(store: store)
                 : page == 'insights-trends'

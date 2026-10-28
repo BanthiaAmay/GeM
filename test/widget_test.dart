@@ -1,3 +1,4 @@
+import 'support/authenticated_journey_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,10 +13,9 @@ void main() {
   // ever settling in these tests.
   ScrollMoreHint.debugDisableBounce = true;
 
-
-  /// Walks the 11 steps shared by both "already on GeM" and "not yet"
+  /// Walks the 12 steps shared by both "already on GeM" and "not yet"
   /// answers: name, phone, OTP, location, business name, business
-  /// form, sector, role, authorised person, privacy, and business
+  /// form, sector, what you sell, role, authorised person, privacy, and business
   /// documentation. Leaves the caller wherever that last step's
   /// Continue button goes (Home for "yes", PAN check for "no").
   Future<void> fillFirstElevenSteps(WidgetTester tester) async {
@@ -30,15 +30,6 @@ void main() {
     // 2. Mobile number
     expect(find.text('Your mobile number'), findsOneWidget);
     await tester.enterText(find.byType(TextField).first, '9876543210');
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Send demo code'));
-    await tester.tap(find.text('Send demo code'));
-    await tester.pumpAndSettle();
-
-    // 3. OTP
-    expect(find.text('Enter your code'), findsOneWidget);
-    await tester.ensureVisible(find.text('Use demo code'));
-    await tester.tap(find.text('Use demo code'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Continue'));
     await tester.tap(find.text('Continue'));
@@ -79,6 +70,15 @@ void main() {
     expect(find.text('Which sector best fits your business?'), findsOneWidget);
     await tester.ensureVisible(find.text('Manufacturing'));
     await tester.tap(find.text('Manufacturing'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    // 7a. What it supplies — answered by ticking, not typing.
+    expect(find.text('What does your business supply?'), findsOneWidget);
+    await tester.ensureVisible(find.text('Furniture'));
+    await tester.tap(find.text('Furniture'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Continue'));
     await tester.tap(find.text('Continue'));
@@ -147,7 +147,9 @@ void main() {
     await tester.ensureVisible(
       find.text('I understand this is a preparation guide.'),
     );
-    await tester.ensureVisible(find.text('I understand this is a preparation guide.'));
+    await tester.ensureVisible(
+      find.text('I understand this is a preparation guide.'),
+    );
     await tester.tap(find.text('I understand this is a preparation guide.'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Continue'));
@@ -171,7 +173,7 @@ void main() {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     SharedPreferences.setMockInitialValues({});
-    final s = AppStore(await SharedPreferences.getInstance());
+    final s = AuthenticatedJourneyStore(await SharedPreferences.getInstance());
     await tester.pumpWidget(SaathiApp(store: s, ready: s.initialize()));
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
@@ -217,8 +219,11 @@ void main() {
   });
   testWidgets('desktop tool navigation and validation work', (tester) async {
     await setup(tester, const Size(1440, 1000));
-    await tester.ensureVisible(find.text('Can I sell on GeM?'));
-    await tester.tap(find.text('Can I sell on GeM?'));
+    final nav = tester.state<NavigatorState>(find.byType(Navigator));
+    nav.pushNamed('/tools');
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Open tool →').first);
+    await tester.tap(find.text('Open tool →').first);
     await tester.pumpAndSettle();
     expect(find.text('Can your business sell on GeM?'), findsOneWidget);
     final submit = find.text('Check my eligibility');
@@ -320,7 +325,9 @@ void main() {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
       SharedPreferences.setMockInitialValues({});
-      final s = AppStore(await SharedPreferences.getInstance());
+      final s = AuthenticatedJourneyStore(
+        await SharedPreferences.getInstance(),
+      );
       await tester.pumpWidget(SaathiApp(store: s, ready: s.initialize()));
       await tester.pump(const Duration(seconds: 2));
       await tester.pumpAndSettle();
@@ -357,10 +364,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 14. Video guide placeholder
-      expect(
-        find.text('How to register your business on GeM'),
-        findsOneWidget,
-      );
+      expect(find.text('How to register your business on GeM'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: 'video');
       await tester.ensureVisible(find.text('Continue without video'));
       await tester.tap(find.text('Continue without video'));
@@ -382,6 +386,7 @@ void main() {
       expect(s.profile['businessName'], 'Asha Textiles');
       expect(s.profile['businessForm'], 'proprietorship');
       expect(s.profile['sector'], 'manufacturing');
+      expect(s.profile['bidKeywords'], contains('Steel almirah'));
       expect(s.profile['role'], 'owner');
       expect(s.profile['authorisedReady'], 'yes');
       expect(s.profile['records'], contains('pan'));
@@ -406,7 +411,9 @@ void main() {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
       SharedPreferences.setMockInitialValues({});
-      final s = AppStore(await SharedPreferences.getInstance());
+      final s = AuthenticatedJourneyStore(
+        await SharedPreferences.getInstance(),
+      );
       await tester.pumpWidget(
         // copyWith (not a bare MediaQueryData(disableAnimations: true))
         // — a fresh MediaQueryData() defaults size to Size.zero, which
@@ -464,10 +471,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 14. Video guide placeholder
-      expect(
-        find.text('How to register your business on GeM'),
-        findsOneWidget,
-      );
+      expect(find.text('How to register your business on GeM'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: 'video');
       await tester.ensureVisible(find.text('Continue without video'));
       await tester.tap(find.text('Continue without video'));

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/motion.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
 import 'brand_logo.dart';
@@ -45,10 +46,15 @@ class WelcomePage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      Image.asset(
-                        'assets/welcome_illustration.png',
-                        width: double.infinity,
-                        fit: BoxFit.contain,
+                      Depth(
+                        lift: 10,
+                        tilt: 0.1,
+                        delay: Motion.normal,
+                        child: Image.asset(
+                          'assets/welcome_illustration.png',
+                          width: double.infinity,
+                          fit: BoxFit.contain,
+                        ),
                       ),
                       const SizedBox(height: 28),
                       Text(

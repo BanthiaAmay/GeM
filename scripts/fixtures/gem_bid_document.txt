@@ -1,0 +1,81 @@
+बिड विवरण/Bid Details
+बिड बंद होने की तारीख/समय /Bid End Date/Time
+28-09-2026 19:00:00
+बिड खुलने की तारीख/समय /Bid Opening
+Date/Time
+29-09-2026 19:00:00
+बिड पेशकश वैधता (बंद होने की तारीख से)/Bid Offer
+Validity (From End Date)
+30 (Days)
+मंत्रालय/राज्य का नाम/Ministry/State Name
+Gujarat
+विभाग का नाम/Department Name
+Panchayats And Rural Housing Department Gujarat
+संगठन का नाम/Organisation Name
+N/a
+कार्यालय का नाम/Office Name
+Taluka Panchayat Office
+शिकायत निवारण के संपर्क विवरण/ Contact details of
+Grievance redressal
+HOD Email id :office@example.gov.in
+कुल मात्रा/Total Quantity
+156
+वस्तु श्रेणी /Item Category
+LED Luminaire For Road And Street Lights Conforming To IS
+10322 (Part 5/Section 3) (V3) (Under BIS Scheme - II) (Q2)
+मूल उपकरण निर्माता का औसत टर्नओवर (गत 3 वर्षों
+का)/OEM Average Turnover (Last 3 Years)
+10 Lakh (s)
+उन्हीं/समान सेवा के लिए अपेक्षित विगत अनुभव के
+वर्ष/Years of Past Experience Required for
+same/similar service
+3 Year (s)
+वर्षों के अनुभव एवं टर्नओवर से एमएसई को छूट प्राप्त है /
+MSE Relaxation for Years Of Experience
+and Turnover
+Yes | Complete
+विक्रेता से मांगे गए दस्तावेज़/Document required
+from seller
+Experience Criteria,Past Performance,Bidder
+Turnover,Certificate (Requested in ATC),OEM Authorization
+Certificate,OEM Annual Turnover
+*In case any bidder is seeking exemption from Experience /
+Turnover Criteria, the supporting documents to prove his
+eligibility for exemption must be uploaded for evaluation by
+the buyer
+
+बिड संख्या/Bid Number: GEM/2026/B/1000001
+दिनांक /Dated: 18-09-2026
+बिड दस्तावेज़ / Bid Document
+1 / 8
+
+विगत प्रदर्शन /Past Performance
+80 %
+बिड का प्रकार/Type of Bid
+Two Packet Bid
+तकनीकी मूल्यांकन के दौरान तकनीकी स्पष्टीकरण हेतु
+अनुमत समय /Time allowed for Technical
+Clarifications during technical evaluation
+2 Days
+मूल्यांकन पद्धति/Evaluation Method
+Total value wise evaluation
+ईएमडी विवरण/EMD Detail
+आवश्यकता/Required
+No
+तकनीकी विशिष्टियाँ /Technical Specifications
+* जेम केटेगरी विशिष्टि के अनुसार / As per GeM Category Specification
+System Wattage (in Watt)
+36
+परेषिती/रिपोर्टिंग अधिकारी तथा मात्रा/Consignees/Reporting Officer and Quantity
+1
+Consignee Officer
+Example Office, Example Town
+156
+क्रेता द्वारा जोड़ी गई बिड की विशेष शर्तें/Buyer Added Bid Specific Terms and Conditions
+1. Generic
+OPTION CLAUSE: The Purchaser reserves the right to increase or decrease the quantity.
+2. Buyer Added Bid Specific ATC
+Agency must have registration within Gujarat.
+5 / 8
+अस्वीकरण/Disclaimer
+The Additional Terms and Conditions (ATC) have been incorporated by the Buyer.

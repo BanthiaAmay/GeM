@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#5B81E8</color>
+    <!-- AppColors.brand, for bid-alert notifications. -->
+    <color name="notification_color">#22654C</color>
 </resources>

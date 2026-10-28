@@ -5,16 +5,47 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 import '../core/models.dart';
+import '../core/phone.dart';
+
+/// Device notifications for bid alerts. `PushService` (Firebase) implements it
+/// in the app; it is absent in tests and in builds without Firebase setup.
+abstract class PushBridge {
+  /// Whether this build and platform can receive app notifications.
+  bool get supported;
+
+  /// Asks for notification permission if needed and registers this device
+  /// for the signed-in user. Returns whether notifications are allowed.
+  Future<bool> enable();
+
+  /// Re-registers this device when permission was already given (after
+  /// sign-in or a language change, so alerts arrive in the right language).
+  Future<void> refresh();
+
+  /// Stops alerts for the signed-in user on this device (before sign-out).
+  Future<void> detach();
+
+  /// The screen to open for the notification that launched the app, once.
+  String? takeLaunchRoute();
+}
 
 class AppStore extends ChangeNotifier {
   final SharedPreferences prefs;
   final SupabaseClient? client;
+  PushBridge? push;
   Map<String, dynamic> data = {};
   List<Map<String, dynamic>> queue = [];
   List<Map<String, dynamic>> benchmarks = [];
   List<Map<String, dynamic>> outcomes = [];
+  Map<String, dynamic> alertPreferences = {};
+  List<Map<String, dynamic>> bidNotifications = [];
+  String? alertsError;
+  bool? googleAvailable;
+  bool? emailAvailable;
+  String? authError;
   String status = '';
+
   /// Date range (7, 30 or 90 days) shared by every Insights screen. Not
   /// persisted — a fresh session starts on 30 days.
   int insightsDays = 30;
@@ -25,6 +56,7 @@ class AppStore extends ChangeNotifier {
   Completer<void>? _syncDone;
   StreamSubscription<AuthState>? _authSubscription;
   bool _handlingAuth = false;
+  Future<void>? _authReady;
   final sessionId = const Uuid().v4();
   AppStore(this.prefs, {this.client}) {
     _read();
@@ -34,10 +66,12 @@ class AppStore extends ChangeNotifier {
   bool get hi => data['language'] == 'hi';
   String get language => data['language'] as String? ?? 'en';
   bool get consent => data['researchConsent'] == true;
+
   /// Whether this device has ever completed the welcome/language
   /// onboarding flow. Device-scoped (not per-account) so a returning
   /// user never sees the "Get started" welcome screen again.
   bool get hasOnboarded => prefs.getBool('saathi.v1.onboarded') ?? false;
+
   /// Whether this device has already played the language screen's
   /// multilingual greeting tour (see LanguagePage). Device-scoped, like
   /// [hasOnboarded]: a fresh "Start onboarding again" plays it once more,
@@ -49,9 +83,24 @@ class AppStore extends ChangeNotifier {
     if (hasSeenGreetingIntro) return;
     await prefs.setBool('saathi.v1.seenGreetingIntro', true);
   }
+
   bool get signedIn => client?.auth.currentUser != null;
   bool get configured => client != null;
   User? get currentUser => client?.auth.currentUser;
+  bool get hasContactDetails =>
+      normalizeWhatsapp(alertPreferences['whatsapp_number'] as String? ?? '') !=
+      null;
+  int get unreadAlerts =>
+      bidNotifications.where((n) => n['read_at'] == null).length;
+  bool get pushSupported => push?.supported ?? false;
+
+  /// What the business sells, as bid-matching keywords. The saved alert
+  /// preferences win; the onboarding copy covers a save still pending.
+  List<String> get bidKeywords => List<String>.from(
+    alertPreferences.containsKey('keywords')
+        ? alertPreferences['keywords'] ?? const []
+        : profile['bidKeywords'] ?? const [],
+  );
   Map<String, dynamic> section(String key) =>
       Map<String, dynamic>.from(data[key] as Map? ?? {});
   List<String> get completed => List<String>.from(data['completed'] ?? []);
@@ -66,6 +115,7 @@ class AppStore extends ChangeNotifier {
     }
     return out;
   }
+
   void _read() {
     try {
       data = Map<String, dynamic>.from(
@@ -85,16 +135,26 @@ class AppStore extends ChangeNotifier {
 
   Future<void> initialize() async {
     if (client != null) {
-      _authSubscription ??= client!.auth.onAuthStateChange.listen((change) {
-        if (change.event == AuthChangeEvent.signedIn && change.session != null) {
-          unawaited(_adoptAuthenticatedSession());
-        } else if (change.event == AuthChangeEvent.signedOut) {
-          _loadedCloud = false;
-          outcomes = [];
-          _read();
+      _authSubscription ??= client!.auth.onAuthStateChange.listen(
+        (change) {
+          if (change.event == AuthChangeEvent.signedIn &&
+              change.session != null) {
+            unawaited(_adoptAuthenticatedSession());
+          } else if (change.event == AuthChangeEvent.signedOut) {
+            _loadedCloud = false;
+            outcomes = [];
+            alertPreferences = {};
+            bidNotifications = [];
+            _read();
+            notifyListeners();
+          }
+        },
+        onError: (Object error) {
+          authError = 'Sign-in could not be completed. Please try again.';
           notifyListeners();
-        }
-      });
+        },
+      );
+      unawaited(checkAuthProviders());
     }
     final ref = Uri.base.queryParameters['ref'];
     if (ref != null && RegExp(r'^[a-zA-Z0-9_-]{1,64}$').hasMatch(ref)) {
@@ -102,6 +162,7 @@ class AppStore extends ChangeNotifier {
     }
     if (signedIn) {
       await restoreCloud();
+      await loadAlerts();
     }
     event('page_view', page: 'home');
     await persist();
@@ -132,6 +193,8 @@ class AppStore extends ChangeNotifier {
     data['language'] = value;
     unawaited(persist());
     notifyListeners();
+    // Notifications are written in the device's registered language.
+    if (signedIn) unawaited(push?.refresh());
   }
 
   /// Whether the seller says their business is already listed on GeM —
@@ -154,8 +217,7 @@ class AppStore extends ChangeNotifier {
 
   void setProfile(String key, dynamic value) {
     data['profile'] = {...profile, key: value};
-    unawaited(persist());
-    notifyListeners();
+    save();
   }
 
   Future<void> completeOnboarding() async {
@@ -252,13 +314,38 @@ class AppStore extends ChangeNotifier {
     return 'tracker';
   }
 
-  Future<void> sendOtp(String email) async {
+  Future<void> checkAuthProviders() async {
+    if (client == null) return;
+    const url = String.fromEnvironment('SUPABASE_URL');
+    const key = String.fromEnvironment('SUPABASE_ANON_KEY');
+    if (url.isEmpty || key.isEmpty) return;
+    try {
+      final response = await http
+          .get(Uri.parse('$url/auth/v1/settings'), headers: {'apikey': key})
+          .timeout(const Duration(seconds: 8));
+      if (response.statusCode == 200) {
+        final settings = jsonDecode(response.body) as Map;
+        final providers = settings['external'] as Map? ?? {};
+        googleAvailable = providers['google'] == true;
+        emailAvailable = providers['email'] == true;
+        notifyListeners();
+      }
+    } catch (_) {
+      // An unavailable preflight never implies that a provider is disabled.
+    }
+  }
+
+  Future<void> sendOtp(String email, {bool shouldCreateUser = true}) async {
     if (client == null) throw StateError('Supabase is not configured');
     await _stashGuestState();
-    await client!.auth.signInWithOtp(email: email.trim(), shouldCreateUser: true);
+    await client!.auth.signInWithOtp(
+      email: email.trim(),
+      shouldCreateUser: shouldCreateUser,
+    );
   }
 
   Future<void> verifyOtp(String email, String token) async {
+    if (client == null) throw StateError('Supabase is not configured');
     await client!.auth.verifyOTP(
       email: email.trim(),
       token: token.trim(),
@@ -272,11 +359,14 @@ class AppStore extends ChangeNotifier {
   /// manifest. Supabase uses PKCE and restores the resulting session.
   Future<bool> signInWithGoogle() async {
     if (client == null) throw StateError('Supabase is not configured');
+    if (googleAvailable == false) {
+      throw StateError('Google sign-in is not enabled');
+    }
     await _stashGuestState();
     return client!.auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: kIsWeb
-          ? Uri.base.origin
+          ? Uri.base.replace(query: '', fragment: '/auth').toString()
           : 'com.bid2scale.app://login-callback/',
       authScreenLaunchMode: kIsWeb
           ? LaunchMode.platformDefault
@@ -294,7 +384,10 @@ class AppStore extends ChangeNotifier {
   }
 
   Future<void> _adoptAuthenticatedSession() async {
-    if (!signedIn || _handlingAuth) return;
+    if (!signedIn) return;
+    if (_handlingAuth) return _authReady;
+    final done = Completer<void>();
+    _authReady = done.future;
     _handlingAuth = true;
     try {
       Map<String, dynamic> guest = {};
@@ -320,6 +413,9 @@ class AppStore extends ChangeNotifier {
       }
       _loadedCloud = false;
       await restoreCloud();
+      await loadAlerts();
+      // A device keeps its token across accounts; point it at this one.
+      unawaited(push?.refresh());
       await prefs.remove('saathi.auth.pending_guest');
       await prefs.remove('saathi.v1.guest');
       await prefs.remove('saathi.v1.guest.events');
@@ -328,6 +424,7 @@ class AppStore extends ChangeNotifier {
       notifyListeners();
     } finally {
       _handlingAuth = false;
+      done.complete();
     }
   }
 
@@ -436,9 +533,12 @@ class AppStore extends ChangeNotifier {
 
   Future<void> signOut() async {
     await sync();
+    await _detachPush();
     await client!.auth.signOut();
     _loadedCloud = false;
     outcomes = [];
+    alertPreferences = {};
+    bidNotifications = [];
     _read();
     notifyListeners();
   }
@@ -451,11 +551,14 @@ class AppStore extends ChangeNotifier {
     try {
       if (syncing) await _syncDone!.future;
       final accountStorageKey = storageKey;
+      await _detachPush();
       await client!.rpc('delete_my_account');
       await client!.auth.signOut(scope: SignOutScope.local);
       data = {};
       queue = [];
       outcomes = [];
+      alertPreferences = {};
+      bidNotifications = [];
       _loadedCloud = false;
       await prefs.remove('saathi.auth.pending_guest');
       await prefs.remove(accountStorageKey);
@@ -483,11 +586,148 @@ class AppStore extends ChangeNotifier {
       data = {};
       queue = [];
       outcomes = [];
+      alertPreferences = {};
+      bidNotifications = [];
       await persist();
       notifyListeners();
     } finally {
       _deleting = false;
     }
+  }
+
+  Future<void> loadAlerts() async {
+    if (!signedIn) return;
+    final userId = currentUser!.id;
+    try {
+      var preferences = await client!
+          .from('bid_alert_preferences')
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+      // Retry an onboarding answer that could not be saved at the time.
+      final pending = List<String>.from(profile['bidKeywords'] ?? const []);
+      if (preferences == null && pending.isNotEmpty) {
+        preferences = Map<String, dynamic>.from(
+          await client!.rpc(
+                'save_bid_interests',
+                params: {'p_keywords': pending},
+              )
+              as Map,
+        );
+      }
+      final notifications = await client!
+          .from('bid_notifications')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(50);
+      if (currentUser?.id != userId) return;
+      alertPreferences = Map<String, dynamic>.from(preferences ?? {});
+      bidNotifications = List<Map<String, dynamic>>.from(notifications);
+      alertsError = null;
+    } catch (_) {
+      if (currentUser?.id != userId) return;
+      alertsError = 'Could not load alerts. Check your connection and retry.';
+    }
+    notifyListeners();
+  }
+
+  Future<void> saveAlertPreferences({
+    required String phone,
+    required bool whatsapp,
+    bool inApp = true,
+    List<String> keywords = const [],
+    List<String> states = const [],
+  }) async {
+    if (!signedIn) throw StateError('sign_in_required');
+    final normalized = normalizeWhatsapp(phone);
+    if (normalized == null) throw ArgumentError('Invalid WhatsApp number');
+    final userId = currentUser!.id;
+    final result = await client!.rpc(
+      'save_bid_alert_preferences',
+      params: {
+        'p_phone': normalized,
+        'p_whatsapp': whatsapp,
+        'p_in_app': inApp,
+        'p_keywords': keywords,
+        'p_states': states,
+      },
+    );
+    if (currentUser?.id != userId) {
+      throw StateError('Account changed during save');
+    }
+    alertPreferences = Map<String, dynamic>.from(result as Map);
+    // Reuse the number in the seller preparation form, without a second entry.
+    data['profile'] = {
+      ...profile,
+      'mobile': normalized.substring(3),
+      'bidKeywords': keywords,
+    };
+    await persist();
+    notifyListeners();
+  }
+
+  /// Saves the products or services the business supplies (onboarding's
+  /// "What do you sell?"). Kept in the profile first, so an offline save is
+  /// retried by [loadAlerts]; contact and channel choices are untouched.
+  Future<void> saveBidInterests(List<String> keywords) async {
+    data['profile'] = {...profile, 'bidKeywords': keywords};
+    save();
+    if (!signedIn || client == null) return;
+    final userId = currentUser!.id;
+    final result = await client!.rpc(
+      'save_bid_interests',
+      params: {'p_keywords': keywords},
+    );
+    if (currentUser?.id != userId) return;
+    alertPreferences = Map<String, dynamic>.from(result as Map);
+    notifyListeners();
+  }
+
+  /// Daily-ish email digest of matching bids, sent to the sign-in address.
+  bool get emailAlerts => alertPreferences['email_enabled'] != false;
+
+  Future<void> setEmailAlerts(bool enabled) async {
+    if (!signedIn || client == null) return;
+    final userId = currentUser!.id;
+    final result = await client!.rpc(
+      'set_email_alerts',
+      params: {'p_enabled': enabled},
+    );
+    if (currentUser?.id != userId) return;
+    alertPreferences = Map<String, dynamic>.from(result as Map);
+    notifyListeners();
+  }
+
+  Future<void> registerPushDevice(String token, String platform) async {
+    if (!signedIn || client == null) return;
+    await client!.rpc(
+      'register_push_device',
+      params: {
+        'p_token': token,
+        'p_platform': platform,
+        'p_language': language,
+      },
+    );
+  }
+
+  Future<void> unregisterPushDevice(String token) async {
+    if (!signedIn || client == null) return;
+    await client!.rpc('unregister_push_device', params: {'p_token': token});
+  }
+
+  Future<void> _detachPush() async {
+    try {
+      await push?.detach();
+    } catch (_) {
+      // Signing out or deleting must never be blocked by the push service.
+    }
+  }
+
+  Future<void> markAlertRead(String id) async {
+    if (!signedIn) throw StateError('sign_in_required');
+    await client!.rpc('mark_bid_notification_read', params: {'p_id': id});
+    await loadAlerts();
   }
 
   String report() {
@@ -508,7 +748,9 @@ class AppStore extends ChangeNotifier {
       b.writeln('\n${toolName(key)}');
       if (key == 'eligibility') {
         final r = Eligibility.evaluate(s);
-        b.writeln('${classificationName(r.enterprise, language)} • ${r.verdict}');
+        b.writeln(
+          '${classificationName(r.enterprise, language)} • ${r.verdict}',
+        );
       }
       if (key == 'revenue') {
         b.writeln(

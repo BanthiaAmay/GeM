@@ -1,6 +1,6 @@
 # Bid2Scale
 
-Flutter application for **Android and web**: GeM education, eligibility/classification, revenue scenarios, pricing, ROI, onboarding and Supabase-backed private accounts with email-code and Google sign-in.
+Flutter application for **Android and web**: GeM education, eligibility/classification, revenue scenarios, pricing, ROI, the existing onboarding journey and Supabase-backed private accounts with email-code sign-in. Google signup is not currently offered.
 
 ## Run locally
 Requires Flutter 3.44.4 / Dart 3.12 or a compatible newer SDK.
@@ -12,7 +12,7 @@ flutter run -d chrome
 flutter run -d <device-id>
 ```
 
-No credentials are needed to explore the full local calculator journey. Progress is saved on the current device. Online saving and support/milestone submission are explicitly unavailable until Supabase is configured.
+The normal app journey requires a configured Supabase email provider: Welcome → language → app signup/login → GeM check → business onboarding. Run with `--dart-define-from-file=config/env.json`. Individual calculator routes and local persistence remain usable for development, but app registration is required before the GeM/onboarding and Home routes. WhatsApp verification is not connected yet.
 
 ## Connect Supabase
 1. Create a Supabase project and run [the core migration](supabase/migrations/202609090001_initial.sql) followed by [the account-deletion migration](supabase/migrations/202610130001_account_deletion.sql), or use `supabase db push` from a linked CLI project.
@@ -50,6 +50,8 @@ Android release signing uses the ignored local upload key configuration (see [de
 - Supabase schema, RLS/column grants, operator export, research analysis script and CI.
 
 See [prd.md](prd.md), [design.md](design.md), [deployment](docs/deployment.md) and [research operations](docs/research.md).
+
+See [signup, live auth findings, GeM guide and bid-alert setup](docs/auth-and-bid-alerts.md) for the new account entry flow, WhatsApp preferences, real bid-feed connection, server matching schema and the remaining collection/delivery integrations.
 
 ## Important data distinctions
 The brief's survey is provisional until raw data and field dates are supplied. Revenue defaults are examples, not public procurement benchmarks. Fee calculations follow the cited August 2024 model; confirm GeM's current terms before bidding. Micro classification uses the April 2025 thresholds. MSE preference does not guarantee contracts.

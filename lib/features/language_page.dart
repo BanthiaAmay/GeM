@@ -35,7 +35,9 @@ class _LanguagePageState extends State<LanguagePage> {
 
   void continueToApp() {
     widget.store.setLanguage(selected);
-    Navigator.of(context).pushNamed('/gem-check');
+    Navigator.of(
+      context,
+    ).pushNamed(widget.store.signedIn ? '/gem-check' : '/onboarding-auth');
   }
 
   @override
