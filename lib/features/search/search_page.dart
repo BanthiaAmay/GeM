@@ -878,7 +878,7 @@ class _NoResultsBody extends StatelessWidget {
           actionLabel: 'Ask BizReady',
           onAction: () {
             Navigator.pop(context);
-            Navigator.pushNamed(context, '/gem-check');
+            Navigator.pushNamed(context, '/saathi');
           },
         ),
         Padding(
@@ -1120,7 +1120,7 @@ class _AskBizReady extends StatelessWidget {
           label: isHindi ? 'Ask BizReady खोलें' : 'Open Ask BizReady',
           onPressed: () {
             Navigator.pop(context);
-            Navigator.pushNamed(context, '/gem-check');
+            Navigator.pushNamed(context, '/saathi', arguments: query);
           },
           expand: false,
         ),
@@ -1724,7 +1724,7 @@ class _AskBizReadyCard extends StatelessWidget {
   Widget build(BuildContext context) => GestureDetector(
     onTap: () {
       Navigator.pop(context);
-      Navigator.pushNamed(context, '/gem-check');
+      Navigator.pushNamed(context, '/saathi', arguments: query);
     },
     child: Padding(
       padding: const EdgeInsets.fromLTRB(

@@ -30,6 +30,23 @@ abstract class PushBridge {
   String? takeLaunchRoute();
 }
 
+/// One message in a Saathi conversation: 'user' or 'model'.
+class SaathiTurn {
+  final String role;
+  final String text;
+  const SaathiTurn(this.role, this.text);
+  Map<String, String> toJson() => {'role': role, 'text': text};
+}
+
+/// Why Saathi could not answer: sign_in_required, daily_limit,
+/// not_configured, model_unavailable, no_answer or unavailable.
+class SaathiException implements Exception {
+  final String code;
+  const SaathiException(this.code);
+  @override
+  String toString() => 'SaathiException($code)';
+}
+
 class AppStore extends ChangeNotifier {
   final SharedPreferences prefs;
   final SupabaseClient? client;
@@ -707,6 +724,36 @@ class AppStore extends ChangeNotifier {
     if (currentUser?.id != userId) return;
     alertPreferences = Map<String, dynamic>.from(result as Map);
     notifyListeners();
+  }
+
+  /// Asks Saathi, the assistant. The question goes to the `saathi` Edge
+  /// Function, which holds the Gemini key and reads this user's own data
+  /// server-side; the app never sees the key. [turns] end with the question.
+  Future<String> askSaathi(List<SaathiTurn> turns) async {
+    if (!signedIn || client == null) {
+      throw const SaathiException('sign_in_required');
+    }
+    try {
+      final response = await client!.functions.invoke(
+        'saathi',
+        body: {
+          'messages': [for (final t in turns) t.toJson()],
+          'language': language,
+        },
+      );
+      final answer = (response.data as Map?)?['answer'] as String?;
+      if (answer == null || answer.trim().isEmpty) {
+        throw const SaathiException('no_answer');
+      }
+      return answer.trim();
+    } on FunctionException catch (e) {
+      final details = e.details;
+      throw SaathiException(
+        details is Map && details['error'] is String
+            ? details['error'] as String
+            : 'unavailable',
+      );
+    }
   }
 
   Future<void> registerPushDevice(String token, String platform) async {

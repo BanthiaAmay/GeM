@@ -607,7 +607,7 @@ class _HomeTab extends StatelessWidget {
                 child: _QuickAction(
                   icon: Icons.chat_bubble_outline,
                   label: s.t('Ask\nBid2Scale', 'Bid2Scale\nसे पूछें'),
-                  onTap: () => onNavigate(_Tab.tools),
+                  onTap: () => Navigator.of(context).pushNamed('/saathi'),
                 ),
               ),
             ),
@@ -954,6 +954,7 @@ class _FinancialHubTab extends StatelessWidget {
         _ToolSection(
           icon: Icons.chat_bubble_outline,
           title: s.t('Ask Bid2Scale', 'Bid2Scale से पूछें'),
+          onTap: () => Navigator.of(context).pushNamed('/saathi'),
           description: s.t(
             'Get clear answers about preparing for GeM.',
             'GeM की तैयारी के बारे में स्पष्ट जवाब पाएं।',
@@ -986,16 +987,19 @@ class _ToolSection extends StatelessWidget {
   final String title;
   final String description;
   final String body;
+  final VoidCallback? onTap;
   const _ToolSection({
     required this.icon,
     required this.title,
     required this.description,
     required this.body,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) => AppCard(
     padding: const EdgeInsets.all(AppSpace.lg),
+    onTap: onTap,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

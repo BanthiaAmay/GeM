@@ -61,3 +61,5 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/email_alerts.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610280002_whatsapp_alerts.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/whatsapp_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610290001_saathi.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/saathi.sql

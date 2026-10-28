@@ -13,6 +13,7 @@ import 'features/brand_logo.dart';
 import 'features/account_page.dart';
 import 'features/alerts_page.dart';
 import 'features/bid_feed.dart';
+import 'features/saathi_page.dart';
 import 'features/gem_guide_page.dart';
 import 'features/gem_check_page.dart';
 import 'features/home_page.dart';
@@ -357,6 +358,8 @@ class SaathiApp extends StatelessWidget {
                 ? AlertsPage(store: store)
                 : page == 'bids'
                 ? BidsPage(store: store)
+                : page == 'saathi'
+                ? SaathiPage(store: store)
                 : page == 'gem-guide'
                 ? GemGuidePage(store: store)
                 : page == 'insights'
