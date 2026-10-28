@@ -6,7 +6,6 @@ import '../core/motion.dart';
 import '../core/phone.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
-import 'brand_logo.dart';
 import 'components.dart';
 import 'glass.dart';
 import 'scroll_hint.dart';
@@ -351,41 +350,18 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
             Hero(
               tag: 'onboarding-header',
               flightShuttleBuilder: _onboardingHeaderShuttle,
-              child: GlassBar.top(
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        AppIconButton(
-                          onPressed: widget.onBack,
-                          icon: Icons.arrow_back_ios_new,
-                          tooltip: s.t('Back', 'वापस'),
-                        ),
-                        const Expanded(
-                          child: Center(
-                            child: BrandLogo(
-                              variant: BrandLogoVariant.lockup,
-                              width: 150,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 48),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    TweenAnimationBuilder<double>(
-                      key: _barKey,
-                      tween: Tween<double>(begin: _beginProgress, end: _target),
-                      duration: reduced ? Duration.zero : Motion.slow,
-                      curve: Motion.enter,
-                      builder: (context, value, child) {
-                        return AppProgressBar(
-                          value: value.clamp(0.02, 0.98),
-                          animated: false,
-                        );
-                      },
-                    ),
-                  ],
+              child: AppTopBar(
+                onBack: widget.onBack,
+                backTooltip: s.t('Back', 'वापस'),
+                bottom: TweenAnimationBuilder<double>(
+                  key: _barKey,
+                  tween: Tween<double>(begin: _beginProgress, end: _target),
+                  duration: reduced ? Duration.zero : Motion.slow,
+                  curve: Motion.enter,
+                  builder: (context, value, child) => AppProgressBar(
+                    value: value.clamp(0.02, 0.98),
+                    animated: false,
+                  ),
                 ),
               ),
             ),
@@ -393,7 +369,7 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
               child: ScrollMoreHint(
                 builder: (context, scrollController) => SingleChildScrollView(
                   controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 60),
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 60),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -421,7 +397,7 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                                 child: Opacity(opacity: 0, child: labelBlock),
                               ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppSpace.sm),
                       StaggeredEntrance(
                         index: 0,
                         child: Text(widget.headline, style: AppText.h1),
@@ -447,7 +423,7 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                 ),
               ),
             ),
-            GlassBar.bottom(
+            FloatingActionArea(
               child: _OnboardingContinueButton(
                 label: widget.continueLabel,
                 onContinue: widget.onContinue,
@@ -578,14 +554,15 @@ class _OnboardingLabelBlock extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Text(sectionLabel, style: AppText.secondary(AppText.bodySmall)),
-      const SizedBox(height: 16),
-      Text(stepLabel, style: AppText.overline),
-    ],
+  // One line: the step label already names the section ("GETTING
+  // STARTED · 1 OF 3"); the plain section name stays for screen readers.
+  Widget build(BuildContext context) => Semantics(
+    label: '$sectionLabel. $stepLabel',
+    excludeSemantics: true,
+    child: Text(
+      stepLabel,
+      style: AppText.overline.copyWith(color: AppColors.brand),
+    ),
   );
 }
 

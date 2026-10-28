@@ -68,8 +68,13 @@ class HomePage extends StatefulWidget {
 /// Header row height below the status bar: one row of 48pt tap targets.
 const _headerHeight = 48.0;
 
-/// Room left under the content so its end scrolls clear of the nav capsule.
-const _navClearance = 104.0;
+/// The floating tab capsule's height (two 6pt paddings + a 48pt+ tab).
+const _navHeight = 66.0;
+
+/// Gap between the capsule and the screen's bottom edge: tucked into the
+/// home-indicator area on notched phones, a small margin elsewhere.
+double _navBottom(EdgeInsets insets) =>
+    insets.bottom > AppSpace.lg ? insets.bottom - AppSpace.md : AppSpace.md;
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
@@ -270,7 +275,9 @@ class _HomePageState extends State<HomePage>
                         AppSpace.xl,
                         insets.top + _headerHeight + AppSpace.md,
                         AppSpace.xl,
-                        isWide ? 60 : insets.bottom + _navClearance,
+                        isWide
+                            ? 60
+                            : _navBottom(insets) + _navHeight + AppSpace.md,
                       ),
                       child: AnimatedSwitcher(
                         duration: Motion.of(context, Motion.normal),
@@ -296,7 +303,7 @@ class _HomePageState extends State<HomePage>
                   Positioned(
                     left: AppSpace.lg,
                     right: AppSpace.lg,
-                    bottom: insets.bottom + AppSpace.md,
+                    bottom: _navBottom(insets),
                     child: Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 520),
@@ -384,6 +391,25 @@ class _HomeDrawer extends StatelessWidget {
               child: BrandLogo(variant: BrandLogoVariant.lockup, width: 150),
             ),
             const Divider(),
+            ListTile(
+              leading: const Icon(Icons.gavel_outlined, color: AppColors.brand),
+              title: Text(s.t('Live GeM bids', 'लाइव GeM बोलियाँ')),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushNamed('/bids');
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.notifications_outlined,
+                color: AppColors.brand,
+              ),
+              title: Text(s.t('Bid alerts', 'बोली अलर्ट')),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushNamed('/alerts');
+              },
+            ),
             ListTile(
               leading: const Icon(
                 Icons.description_outlined,
@@ -537,7 +563,7 @@ class _HomeTab extends StatelessWidget {
           index: 2,
           child: _FeaturedBid(
             store: s,
-            onTap: () => openLink(context, s, gemSource),
+            onTap: () => Navigator.of(context).pushNamed('/bids'),
           ),
         ),
         const SizedBox(height: AppSpace.lg),

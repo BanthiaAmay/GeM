@@ -274,3 +274,26 @@ class _BidCard extends StatelessWidget {
     );
   }
 }
+
+/// The live bid feed as its own screen (reached from Home and the menu).
+class BidsPage extends StatelessWidget {
+  final AppStore store;
+  const BidsPage({super.key, required this.store});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: AppColors.canvas,
+    appBar: AppBar(title: Text(store.t('Live GeM bids', 'लाइव GeM बोलियाँ'))),
+    body: SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpace.gutter),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: BidFeed(store: store),
+          ),
+        ),
+      ),
+    ),
+  );
+}

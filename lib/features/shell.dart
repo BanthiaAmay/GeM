@@ -81,7 +81,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     ];
     Widget brand() => InkWell(
       onTap: () => go(context, s, ''),
-      child: const BrandLogo(variant: BrandLogoVariant.lockup, width: 130),
+      child: const BrandLogo(variant: BrandLogoVariant.lockup, width: 68),
     );
     return Scaffold(
       appBar: AppBar(
@@ -95,7 +95,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         backgroundColor: AppColors.surface.withValues(alpha: 0.92),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        toolbarHeight: 82,
+        toolbarHeight: 56,
         automaticallyImplyLeading: false,
         title: Padding(
           padding: EdgeInsets.only(left: wide ? 24 : 0),

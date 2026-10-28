@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../core/tokens.dart';
+import 'brand_logo.dart';
+import 'components.dart';
 
 /// A translucent, frosted "glass" bar in the style of iOS navigation
 /// and tool bars: content scrolling underneath shows through as a
@@ -104,5 +106,95 @@ class GlassCapsule extends StatelessWidget {
         ),
       ),
     ),
+  );
+}
+
+/// The compact top bar for onboarding-style screens: one 48pt row (back
+/// button, the logo sized to the row, a balancing gap) on frosted glass,
+/// with an optional [bottom] (e.g. the progress bar) right under it. Keeps
+/// the header short so the question starts high on the screen.
+class AppTopBar extends StatelessWidget {
+  final VoidCallback? onBack;
+  final String backTooltip;
+  final Widget? bottom;
+  const AppTopBar({
+    super.key,
+    required this.onBack,
+    required this.backTooltip,
+    this.bottom,
+  });
+
+  @override
+  Widget build(BuildContext context) => GlassBar.top(
+    padding: EdgeInsets.fromLTRB(
+      AppSpace.sm,
+      AppSpace.xs,
+      AppSpace.lg,
+      bottom == null ? AppSpace.xs : AppSpace.md,
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            if (onBack != null)
+              AppIconButton(
+                onPressed: onBack,
+                icon: Icons.arrow_back_ios_new,
+                tooltip: backTooltip,
+              )
+            else
+              const SizedBox(width: AppSize.tap),
+            const Expanded(
+              child: Center(
+                child: BrandLogo(variant: BrandLogoVariant.lockup, width: 68),
+              ),
+            ),
+            const SizedBox(width: AppSize.tap),
+          ],
+        ),
+        if (bottom != null) ...[
+          const SizedBox(height: AppSpace.sm),
+          Padding(
+            padding: const EdgeInsets.only(left: AppSpace.sm),
+            child: bottom,
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+/// The bottom action of a screen (Continue, Get started…) as a floating
+/// pill: no bar, no divider line behind it — only the button, lifted by a
+/// soft shadow, the same way the Home tab capsule floats.
+class FloatingActionArea extends StatelessWidget {
+  final Widget child;
+
+  /// Shadow under a pill-shaped child; off for a child that isn't one pill.
+  final bool elevated;
+  const FloatingActionArea({
+    super.key,
+    required this.child,
+    this.elevated = true,
+  });
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      AppSpace.xxl,
+      AppSpace.sm,
+      AppSpace.xxl,
+      AppSpace.md,
+    ),
+    child: elevated
+        ? DecoratedBox(
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.all(Radius.circular(AppRadius.pill)),
+              boxShadow: AppShadow.floating,
+            ),
+            child: child,
+          )
+        : child,
   );
 }

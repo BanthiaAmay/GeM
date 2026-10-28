@@ -79,7 +79,7 @@ class WelcomePage extends StatelessWidget {
                 ),
               ),
             ),
-            GlassBar.bottom(
+            FloatingActionArea(
               child: AppButton(
                 label: store.t('Get started', 'शुरू करें'),
                 onPressed: () => _goToLanguage(context),

@@ -40,8 +40,9 @@ void main() {
         await tester.pumpAndSettle();
       }
 
+      // One label line names both the section and the step.
       void expectHeading(String section, String stepOfTotal) {
-        expect(find.text(section), findsOneWidget);
+        expect(stepOfTotal.startsWith(section.toUpperCase()), isTrue);
         expect(find.text(stepOfTotal), findsOneWidget);
       }
 
@@ -201,7 +202,6 @@ void main() {
       // Localization: the same route, in Hindi, without navigating.
       s.setLanguage('hi');
       await tester.pumpAndSettle();
-      expect(find.text('अगला कदम'), findsOneWidget);
       expect(find.text('अगला कदम · 2 में से 2'), findsOneWidget);
 
       expect(tester.takeException(), isNull);

@@ -219,12 +219,9 @@ class _AccountPageState extends State<AccountPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 72,
+        toolbarHeight: 56,
         centerTitle: true,
-        title: const SizedBox(
-          height: 60,
-          child: BrandLogo(variant: BrandLogoVariant.lockup, width: 85),
-        ),
+        title: const BrandLogo(variant: BrandLogoVariant.lockup, width: 62),
         leading: IconButton(
           tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           onPressed: () => Navigator.of(context).canPop()

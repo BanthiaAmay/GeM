@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
-import 'brand_logo.dart';
 import 'components.dart';
 import 'glass.dart';
 import 'onboarding_widgets.dart';
@@ -43,25 +42,10 @@ class _GemCheckPageState extends State<GemCheckPage> {
       body: SafeArea(
         child: Column(
           children: [
-            GlassBar.top(
-              child: Row(
-                children: [
-                  AppIconButton(
-                    onPressed: back,
-                    icon: Icons.arrow_back_ios_new,
-                    tooltip: s.t('Back', 'वापस'),
-                  ),
-                  const Expanded(
-                    child: Center(
-                      child: BrandLogo(
-                        variant: BrandLogoVariant.lockup,
-                        width: 150,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 48),
-                ],
-              ),
+            AppTopBar(
+              onBack: back,
+              backTooltip: s.t('Back', 'वापस'),
+              bottom: const AppProgressBar(value: 0.55),
             ),
             Expanded(
               child: ScrollMoreHint(
@@ -69,25 +53,20 @@ class _GemCheckPageState extends State<GemCheckPage> {
                   controller: scrollController,
                   padding: const EdgeInsets.fromLTRB(
                     AppSpace.gutter,
-                    AppSpace.xl,
+                    AppSpace.lg,
                     AppSpace.gutter,
                     60,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const AppProgressBar(value: 0.55),
-                      const SizedBox(height: 28),
-                      Text(
-                        s.t('Your business', 'आपका व्यवसाय'),
-                        style: AppText.secondary(AppText.bodySmall),
-                      ),
-                      const SizedBox(height: 20),
                       Text(
                         s.t('ONE QUICK CHECK', 'एक जल्दी जाँच'),
-                        style: AppText.overline,
+                        style: AppText.overline.copyWith(
+                          color: AppColors.brand,
+                        ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppSpace.sm),
                       Text(
                         s.t(
                           'Is your business already on GeM?',
@@ -127,7 +106,7 @@ class _GemCheckPageState extends State<GemCheckPage> {
                 ),
               ),
             ),
-            GlassBar.bottom(
+            FloatingActionArea(
               child: AppButton(
                 label: s.t('Continue', 'जारी रखें'),
                 onPressed: continueToApp,

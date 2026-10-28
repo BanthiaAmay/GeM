@@ -97,7 +97,8 @@ class ToolPageScaffold extends StatelessWidget {
             ),
           ),
           if (bottomBar != null)
-            GlassBar.bottom(
+            FloatingActionArea(
+              elevated: false,
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 720),

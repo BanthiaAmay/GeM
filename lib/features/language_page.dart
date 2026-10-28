@@ -72,9 +72,9 @@ class _LanguagePageState extends State<LanguagePage> {
                     children: [
                       const BrandLogo(
                         variant: BrandLogoVariant.lockup,
-                        width: 160,
+                        width: 104,
                       ),
-                      const SizedBox(height: 80),
+                      const SizedBox(height: AppSpace.xxxl),
                       _GreetingIntro(
                         store: widget.store,
                         language: selected,
@@ -120,7 +120,7 @@ class _LanguagePageState extends State<LanguagePage> {
                 ),
               ),
             ),
-            GlassBar.bottom(
+            FloatingActionArea(
               child: AppButton(
                 label: widget.store.t('Continue', 'जारी रखें'),
                 onPressed: continueToApp,
