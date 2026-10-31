@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../core/models.dart';
 import '../core/transitions.dart';
 import '../data/app_store.dart';
@@ -275,36 +275,27 @@ class _VideoCard extends StatefulWidget {
 }
 
 class _VideoCardState extends State<_VideoCard> {
-  YoutubePlayerController? _controller;
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
+  WebViewController? _webCtrl;
 
   void _startPlaying() {
-    setState(() {
-      _controller = YoutubePlayerController(
-        initialVideoId: widget.videoId,
-        flags: const YoutubePlayerFlags(autoPlay: true),
-      );
-    });
+    final ctrl = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..loadRequest(Uri.parse(
+        'https://www.youtube.com/embed/${widget.videoId}'
+        '?autoplay=1&playsinline=1&rel=0',
+      ));
+    setState(() => _webCtrl = ctrl);
   }
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = _controller;
+    final ctrl = _webCtrl;
     if (ctrl != null) {
       return ClipRRect(
         borderRadius: AppRadius.card,
-        child: YoutubePlayer(
-          controller: ctrl,
-          showVideoProgressIndicator: true,
-          progressColors: const ProgressBarColors(
-            playedColor: AppColors.brand,
-            handleColor: AppColors.brand,
-          ),
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: WebViewWidget(controller: ctrl),
         ),
       );
     }
@@ -329,9 +320,7 @@ class _VideoCardState extends State<_VideoCard> {
                 ),
               ),
               const ColoredBox(color: Color(0x33000000)),
-              const Center(
-                child: _PlayButton(),
-              ),
+              const Center(child: _PlayButton()),
             ],
           ),
         ),
