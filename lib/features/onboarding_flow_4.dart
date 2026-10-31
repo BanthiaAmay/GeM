@@ -75,7 +75,7 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
         'GeM पहचान सत्यापन के लिए मेरे पास फोन है',
       ),
       'authorised': s.t(
-        'I have the authorised person’s identity information',
+        'I have the authorised person\'s identity information',
         'मेरे पास अधिकृत व्यक्ति की पहचान जानकारी है',
       ),
       'pan': s.t(
@@ -87,8 +87,8 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
         'मुझे अपने व्यवसाय का प्रकार पता है',
       ),
       'sellType': s.t(
-        'I know if I’ll sell products, services, or both',
-        'मुझे पता है मैं उत्पाद, सेवाएँ या दोनों बेचूँगा/बेचूँगी',
+        'I know if I\'ll sell products, services, or both',
+        'मुझे पता है मैं उत्पाद, सेवाएँ या दोनों बेचूंगा/बेचूंगी',
       ),
       'category': s.t(
         'I know my main product or service category',
@@ -126,7 +126,7 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
         // never reaches this screen).
         await showSectionComplete(
           context,
-          s.t('Get ready complete', 'तैयार हो जाएँ पूर्ण'),
+          s.t('Get ready complete', 'तैयार हो जाएं पूर्ण'),
         );
         if (!context.mounted) return;
         Navigator.of(context).pushNamed('/flow-video');
@@ -170,17 +170,17 @@ class FlowVideoPage extends StatelessWidget {
       store: s,
       onBack: () => Navigator.of(context).pop(),
       headline: s.t(
-        ‘How to register your business on GeM’,
-        ‘GeM पर अपना व्यवसाय कैसे पंजीकृत करें’,
+        'How to register your business on GeM',
+        'GeM पर अपना व्यवसाय कैसे पंजीकृत करें',
       ),
       subtitle: s.t(
-        ‘This short guide will walk you through seller registration on the official GeM portal.’,
-        ‘यह छोटी गाइड आपको आधिकारिक GeM पोर्टल पर विक्रेता पंजीकरण के बारे में बताएगी।’,
+        'This short guide will walk you through seller registration on the official GeM portal.',
+        'यह छोटी गाइड आपको आधिकारिक GeM पोर्टल पर विक्रेता पंजीकरण के बारे में बताएगी।',
       ),
-      continueLabel: s.t(‘Continue’, ‘जारी रखें’),
-      onContinue: () => Navigator.of(context).pushNamed(‘/flow-redirect’),
+      continueLabel: s.t('Continue', 'जारी रखें'),
+      onContinue: () => Navigator.of(context).pushNamed('/flow-redirect'),
       children: [
-        Text(s.t(‘VIDEO GUIDE’, ‘वीडियो गाइड’), style: AppText.overline),
+        Text(s.t('VIDEO GUIDE', 'वीडियो गाइड'), style: AppText.overline),
         const SizedBox(height: 12),
         for (final id in _gemVideoIds) ...[
           _VideoCard(videoId: id),
@@ -199,13 +199,13 @@ class FlowVideoPage extends StatelessWidget {
               Expanded(
                 child: Text.rich(
                   TextSpan(
-                    text: s.t(‘Source: ‘, ‘स्रोत: ‘),
+                    text: s.t('Source: ', 'स्रोत: '),
                     style: AppText.caption,
                     children: [
                       TextSpan(
                         text: s.t(
-                          ‘Government e-Marketplace on YouTube’,
-                          ‘YouTube पर Government e-Marketplace’,
+                          'Government e-Marketplace on YouTube',
+                          'YouTube पर Government e-Marketplace',
                         ),
                         style: AppText.caption.copyWith(
                           color: AppColors.brand,
@@ -222,36 +222,36 @@ class FlowVideoPage extends StatelessWidget {
         ),
         const SizedBox(height: 28),
         Text(
-          s.t(‘What the guide will cover’, ‘गाइड में क्या शामिल होगा’),
+          s.t('What the guide will cover', 'गाइड में क्या शामिल होगा'),
           style: AppText.h3,
         ),
         const SizedBox(height: 16),
         _CoverRow(
-          asset: ‘video_seller’,
+          asset: 'video_seller',
           text: s.t(
-            ‘Choose the right seller type’,
-            ‘सही विक्रेता प्रकार चुनें’,
+            'Choose the right seller type',
+            'सही विक्रेता प्रकार चुनें',
           ),
         ),
         _CoverRow(
-          asset: ‘video_details’,
+          asset: 'video_details',
           text: s.t(
-            ‘Keep your business details ready’,
-            ‘अपने व्यवसाय का विवरण तैयार रखें’,
+            'Keep your business details ready',
+            'अपने व्यवसाय का विवरण तैयार रखें',
           ),
         ),
         _CoverRow(
-          asset: ‘video_portal’,
+          asset: 'video_portal',
           text: s.t(
-            ‘Complete registration on the official GeM portal’,
-            ‘आधिकारिक GeM पोर्टल पर पंजीकरण पूरा करें’,
+            'Complete registration on the official GeM portal',
+            'आधिकारिक GeM पोर्टल पर पंजीकरण पूरा करें',
           ),
         ),
         const SizedBox(height: 12),
         Align(
           alignment: Alignment.centerLeft,
           child: AppButton(
-            label: s.t(‘View registration overview’, ‘पंजीकरण अवलोकन देखें’),
+            label: s.t('View registration overview', 'पंजीकरण अवलोकन देखें'),
             onPressed: () => openLink(context, s, gemSource),
             variant: AppButtonVariant.tertiary,
             size: AppButtonSize.sm,
@@ -310,7 +310,7 @@ class _VideoCardState extends State<_VideoCard> {
     }
 
     final thumbUrl =
-        ‘https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg’;
+        'https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg';
     return GestureDetector(
       onTap: _startPlaying,
       child: ClipRRect(
@@ -394,12 +394,12 @@ class FlowRedirectPage extends StatelessWidget {
       store: s,
       onBack: () => Navigator.of(context).pop(),
       headline: s.t(
-        'You’re ready to register on GeM',
+        'You\'re ready to register on GeM',
         'आप GeM पर पंजीकरण के लिए तैयार हैं',
       ),
       subtitle: s.t(
-        'You’ll now leave Bid2Scale and complete seller registration yourself on the official Government e-Marketplace portal.',
-        'अब आप Bid2Scale छोड़कर आधिकारिक सरकारी ई-मार्केटप्लेस पोर्टल पर स्वयं विक्रेता पंजीकरण पूरा करेंगे।',
+        'You\'ll now leave Bid2Scale and complete seller registration yourself on the official Government e-Marketplace portal.',
+        'अब आप Bid2Scale छोड़कर आधिकारिक सरकारी ई-मार्केटप्लेस पोर्टल पर स्वयं विक्रेता पंजीकरण पूरा करेंगे।',
       ),
       continueLabel: s.t(
         'Open official GeM registration',
