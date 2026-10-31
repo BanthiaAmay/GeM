@@ -9,7 +9,7 @@ import 'widgets.dart';
 import '../core/tokens.dart';
 
 const _gemYoutubeChannel = 'https://www.youtube.com/@GovernmenteMarketplace';
-const _gemVideoIds = ['kU4pJKE9uqo', 'EEToHsUxbyA'];
+const _gemVideoIds = ['EEToHsUxbyA', 'kU4pJKE9uqo'];
 
 /// Step 13 of 15: readiness checklist — the user ticks each item off
 /// themselves rather than having it computed for them. Items the
