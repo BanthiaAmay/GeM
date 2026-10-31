@@ -13,6 +13,25 @@
 // OTP, GeM, MSME, Udyam, CA, L1) are kept in Latin script throughout, the
 // same convention the existing Hindi text already uses.
 const Map<String, Map<String, String>> kTranslations = {
+  // ── GeM video guide ────────────────────────────────────────────
+  'Source: ': {
+    'mr': 'स्रोत: ',
+    'bn': 'উৎস: ',
+    'pa': 'ਸਰੋਤ: ',
+    'gu': 'સ્રોત: ',
+    'ta': 'ஆதாரம்: ',
+    'te': 'మూలం: ',
+    'kn': 'ಮೂಲ: ',
+  },
+  'Government e-Marketplace on YouTube': {
+    'mr': 'YouTube वर Government e-Marketplace',
+    'bn': 'YouTube-এ Government e-Marketplace',
+    'pa': 'YouTube \'ਤੇ Government e-Marketplace',
+    'gu': 'YouTube પર Government e-Marketplace',
+    'ta': 'YouTube-ல் Government e-Marketplace',
+    'te': 'YouTube లో Government e-Marketplace',
+    'kn': 'YouTube ನಲ್ಲಿ Government e-Marketplace',
+  },
   // ── Revenue calculator ─────────────────────────────────────────
   'Most likely scenario': {
     'mr': 'सर्वाधिक संभाव्य परिस्थिती',

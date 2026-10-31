@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../core/models.dart';
 import '../core/transitions.dart';
 import '../data/app_store.dart';
@@ -6,6 +7,9 @@ import 'components.dart';
 import 'onboarding_widgets.dart';
 import 'widgets.dart';
 import '../core/tokens.dart';
+
+const _gemYoutubeChannel = 'https://www.youtube.com/@GovernmenteMarketplace';
+const _gemVideoIds = ['kU4pJKE9uqo'];
 
 /// Step 13 of 15: readiness checklist — the user ticks each item off
 /// themselves rather than having it computed for them. Items the
@@ -154,7 +158,7 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
   }
 }
 
-/// Step 14 of 15: registration video guide (placeholder).
+/// Step 14 of 15: registration video guide with in-app YouTube playback.
 class FlowVideoPage extends StatelessWidget {
   final AppStore store;
   const FlowVideoPage({super.key, required this.store});
@@ -166,72 +170,88 @@ class FlowVideoPage extends StatelessWidget {
       store: s,
       onBack: () => Navigator.of(context).pop(),
       headline: s.t(
-        'How to register your business on GeM',
-        'GeM पर अपना व्यवसाय कैसे पंजीकृत करें',
+        ‘How to register your business on GeM’,
+        ‘GeM पर अपना व्यवसाय कैसे पंजीकृत करें’,
       ),
       subtitle: s.t(
-        'This short guide will walk you through seller registration on the official GeM portal.',
-        'यह छोटी गाइड आपको आधिकारिक GeM पोर्टल पर विक्रेता पंजीकरण के बारे में बताएगी।',
+        ‘This short guide will walk you through seller registration on the official GeM portal.’,
+        ‘यह छोटी गाइड आपको आधिकारिक GeM पोर्टल पर विक्रेता पंजीकरण के बारे में बताएगी।’,
       ),
-      continueLabel: s.t('Continue without video', 'वीडियो के बिना जारी रखें'),
-      onContinue: () => Navigator.of(context).pushNamed('/flow-redirect'),
+      continueLabel: s.t(‘Continue’, ‘जारी रखें’),
+      onContinue: () => Navigator.of(context).pushNamed(‘/flow-redirect’),
       children: [
-        AppCard(
-          padding: const EdgeInsets.fromLTRB(12, 24, 12, 28),
-          child: Column(
+        Text(s.t(‘VIDEO GUIDE’, ‘वीडियो गाइड’), style: AppText.overline),
+        const SizedBox(height: 12),
+        for (final id in _gemVideoIds) ...[
+          _VideoCard(videoId: id),
+          const SizedBox(height: 10),
+        ],
+        GestureDetector(
+          onTap: () => openLink(context, s, _gemYoutubeChannel),
+          child: Row(
             children: [
-              const OnboardingArt('video', topGap: 0),
-              const SizedBox(height: 16),
-              Text(s.t('VIDEO GUIDE', 'वीडियो गाइड'), style: AppText.overline),
-              const SizedBox(height: 6),
-              Text(
-                s.t('Video coming soon', 'वीडियो शीघ्र आ रहा है'),
-                style: AppText.title,
+              const Icon(
+                Icons.ondemand_video_outlined,
+                size: 14,
+                color: AppColors.ink,
               ),
-              const SizedBox(height: 6),
-              Text(
-                s.t(
-                  'We’re preparing a clear, step-by-step walkthrough.',
-                  'हम एक स्पष्ट, चरण-दर-चरण गाइड तैयार कर रहे हैं।',
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    text: s.t(‘Source: ‘, ‘स्रोत: ‘),
+                    style: AppText.caption,
+                    children: [
+                      TextSpan(
+                        text: s.t(
+                          ‘Government e-Marketplace on YouTube’,
+                          ‘YouTube पर Government e-Marketplace’,
+                        ),
+                        style: AppText.caption.copyWith(
+                          color: AppColors.brand,
+                          decoration: TextDecoration.underline,
+                          decorationColor: AppColors.brand,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                style: AppText.secondary(AppText.bodySmall),
               ),
             ],
           ),
         ),
         const SizedBox(height: 28),
         Text(
-          s.t('What the guide will cover', 'गाइड में क्या शामिल होगा'),
+          s.t(‘What the guide will cover’, ‘गाइड में क्या शामिल होगा’),
           style: AppText.h3,
         ),
         const SizedBox(height: 16),
         _CoverRow(
-          asset: 'video_seller',
+          asset: ‘video_seller’,
           text: s.t(
-            'Choose the right seller type',
-            'सही विक्रेता प्रकार चुनें',
+            ‘Choose the right seller type’,
+            ‘सही विक्रेता प्रकार चुनें’,
           ),
         ),
         _CoverRow(
-          asset: 'video_details',
+          asset: ‘video_details’,
           text: s.t(
-            'Keep your business details ready',
-            'अपने व्यवसाय का विवरण तैयार रखें',
+            ‘Keep your business details ready’,
+            ‘अपने व्यवसाय का विवरण तैयार रखें’,
           ),
         ),
         _CoverRow(
-          asset: 'video_portal',
+          asset: ‘video_portal’,
           text: s.t(
-            'Complete registration on the official GeM portal',
-            'आधिकारिक GeM पोर्टल पर पंजीकरण पूरा करें',
+            ‘Complete registration on the official GeM portal’,
+            ‘आधिकारिक GeM पोर्टल पर पंजीकरण पूरा करें’,
           ),
         ),
         const SizedBox(height: 12),
         Align(
           alignment: Alignment.centerLeft,
           child: AppButton(
-            label: s.t('View registration overview', 'पंजीकरण अवलोकन देखें'),
+            label: s.t(‘View registration overview’, ‘पंजीकरण अवलोकन देखें’),
             onPressed: () => openLink(context, s, gemSource),
             variant: AppButtonVariant.tertiary,
             size: AppButtonSize.sm,
@@ -242,6 +262,97 @@ class FlowVideoPage extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Thumbnail with a YouTube play button. Tapping initialises the
+/// in-app player; the video plays without leaving the app.
+class _VideoCard extends StatefulWidget {
+  final String videoId;
+  const _VideoCard({required this.videoId});
+
+  @override
+  State<_VideoCard> createState() => _VideoCardState();
+}
+
+class _VideoCardState extends State<_VideoCard> {
+  YoutubePlayerController? _controller;
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  void _startPlaying() {
+    setState(() {
+      _controller = YoutubePlayerController(
+        initialVideoId: widget.videoId,
+        flags: const YoutubePlayerFlags(autoPlay: true),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = _controller;
+    if (ctrl != null) {
+      return ClipRRect(
+        borderRadius: AppRadius.card,
+        child: YoutubePlayer(
+          controller: ctrl,
+          showVideoProgressIndicator: true,
+          progressColors: const ProgressBarColors(
+            playedColor: AppColors.brand,
+            handleColor: AppColors.brand,
+          ),
+        ),
+      );
+    }
+
+    final thumbUrl =
+        ‘https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg’;
+    return GestureDetector(
+      onTap: _startPlaying,
+      child: ClipRRect(
+        borderRadius: AppRadius.card,
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                thumbUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const ColoredBox(
+                  color: Color(0xFFD0D0D0),
+                  child: Icon(Icons.video_library_outlined, size: 48),
+                ),
+              ),
+              const ColoredBox(color: Color(0x33000000)),
+              const Center(
+                child: _PlayButton(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlayButton extends StatelessWidget {
+  const _PlayButton();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 64,
+    height: 64,
+    decoration: const BoxDecoration(
+      color: Color(0xFFFF0000),
+      shape: BoxShape.circle,
+    ),
+    child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 38),
+  );
 }
 
 class _CoverRow extends StatelessWidget {
