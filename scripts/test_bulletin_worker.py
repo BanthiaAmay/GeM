@@ -3,7 +3,7 @@ import json
 import unittest
 from urllib.error import URLError
 
-from bulletin_worker import FeedError, fetch_feed, main, parse_bulletins
+from bulletin_worker import GEM_CHANNEL_ID, FeedError, fetch_feed, main, parse_bulletins
 
 FEED = b'''<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns="http://www.w3.org/2005/Atom">
@@ -66,8 +66,20 @@ class ParseTest(unittest.TestCase):
 
 
 class MainTest(unittest.TestCase):
-    def test_requires_a_valid_channel_id(self):
+    def test_rejects_an_invalid_channel_override(self):
         self.assertEqual(main(['run', '--dry-run'], env={'GEM_YOUTUBE_CHANNEL_ID': '@GovernmenteMarketplace'}), 2)
+
+    def test_defaults_to_the_gem_channel(self):
+        calls = []
+
+        def urlopen(request, timeout):
+            calls.append(request.full_url)
+            return Response(FEED)
+        for env in ({}, {'GEM_YOUTUBE_CHANNEL_ID': ''}):
+            calls.clear()
+            self.assertEqual(main(['run', '--dry-run'], env=env, urlopen=urlopen), 0)
+            self.assertEqual(calls, [f'https://www.youtube.com/feeds/videos.xml?channel_id={GEM_CHANNEL_ID}'])
+        self.assertEqual(GEM_CHANNEL_ID, 'UC1LaBWVVZv3k23BZApfDlsQ')
 
     def test_dry_run_writes_nothing(self):
         calls = []

@@ -26,18 +26,19 @@ No anonymous auth provider or service-role client key is required. RLS must stay
 ### GeM Weekly Bulletin (News)
 GeM uploads a "GeM Weekly Bulletin" video every Thursday. The **GeM bulletin worker** GitHub Action runs on Friday at 06:47 IST and again at 12:47 IST. It saves any bulletin from the channel's latest 15 uploads into `gem_bulletins`, and the app shows them on Home and the News page.
 
+The worker reads GeM's channel (`UC1LaBWVVZv3k23BZApfDlsQ`, built into the script). An optional repository variable `GEM_YOUTUBE_CHANNEL_ID` overrides it.
+
 1. Apply `supabase/migrations/202611010001_gem_bulletins.sql`.
-2. Find GeM's channel ID: open youtube.com/@GovernmenteMarketplace, tap **…more** in the channel description, then **Share channel → Copy channel ID**. It starts with `UC` and is 24 characters long.
-3. In GitHub, go to **Settings → Secrets and variables → Actions**:
-   - Add the repository variable `GEM_YOUTUBE_CHANNEL_ID` with that ID.
+2. In GitHub, go to **Settings → Secrets and variables → Actions**:
    - Add the repository variable `BULLETIN_WORKER_ENABLED=true`.
-   - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are already secrets for the bid worker.
+   - Make sure the secrets `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` exist. The bid worker uses the same ones.
+3. Make sure the workflow file is on the default branch (`main`). GitHub runs schedules and shows **Run workflow** only from there.
 4. Run **Actions → GeM bulletin worker → Run workflow** once. This backfills the bulletins currently in the feed.
 
 To check locally without writing anything:
 
 ```bash
-GEM_YOUTUBE_CHANNEL_ID=UC... python3 scripts/bulletin_worker.py run --dry-run
+python3 scripts/bulletin_worker.py run --dry-run
 ```
 
 To hide a bulletin, set `published = false` on its row.

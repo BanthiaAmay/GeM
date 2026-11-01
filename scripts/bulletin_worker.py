@@ -5,9 +5,10 @@
   python3 scripts/bulletin_worker.py run             save new bulletins to gem_bulletins
 
 Reads the official GeM YouTube channel's public upload feed (latest 15 uploads,
-no API key). Needs GEM_YOUTUBE_CHANNEL_ID (the channel's "UC..." id) and, unless
---dry-run, the server secrets SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY. Values
-may also sit in a git-ignored .env file. Standard library only.
+no API key). GEM_YOUTUBE_CHANNEL_ID optionally overrides the built-in GeM channel
+id. Unless --dry-run, needs the server secrets SUPABASE_URL and
+SUPABASE_SERVICE_ROLE_KEY. Values may also sit in a git-ignored .env file.
+Standard library only.
 """
 import argparse
 from datetime import datetime
@@ -21,6 +22,7 @@ import xml.etree.ElementTree as ET
 
 from bid_worker import Supabase, load_env_file
 
+GEM_CHANNEL_ID = 'UC1LaBWVVZv3k23BZApfDlsQ'  # youtube.com/@GovernmenteMarketplace
 FEED_URL = 'https://www.youtube.com/feeds/videos.xml?channel_id={}'
 USER_AGENT = 'Mozilla/5.0 (compatible; Bid2Scale-bulletins/1.0)'
 CHANNEL_ID = re.compile(r'^UC[A-Za-z0-9_-]{22}$')
@@ -81,9 +83,9 @@ def main(argv=None, env=os.environ, urlopen=urllib.request.urlopen):
     args = parser.parse_args(argv)
     env = {**load_env_file(Path(__file__).resolve().parent.parent / '.env'), **env}
 
-    channel_id = env.get('GEM_YOUTUBE_CHANNEL_ID', '').strip()
+    channel_id = (env.get('GEM_YOUTUBE_CHANNEL_ID') or '').strip() or GEM_CHANNEL_ID
     if not CHANNEL_ID.match(channel_id):
-        print('Set GEM_YOUTUBE_CHANNEL_ID to the GeM channel id (starts with "UC", 24 characters).',
+        print('GEM_YOUTUBE_CHANNEL_ID must be a channel id (starts with "UC", 24 characters).',
               file=sys.stderr)
         return 2
     try:
