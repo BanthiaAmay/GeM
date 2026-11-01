@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../core/models.dart';
 import '../core/transitions.dart';
 import '../data/app_store.dart';
@@ -183,7 +182,7 @@ class FlowVideoPage extends StatelessWidget {
         Text(s.t('VIDEO GUIDE', 'वीडियो गाइड'), style: AppText.overline),
         const SizedBox(height: 12),
         for (final id in _gemVideoIds) ...[
-          _VideoCard(videoId: id),
+          _VideoCard(videoId: id, store: s),
           const SizedBox(height: 10),
         ],
         GestureDetector(
@@ -266,28 +265,19 @@ class FlowVideoPage extends StatelessWidget {
 
 /// Thumbnail with a YouTube play button. Tapping initialises the
 /// in-app player; the video plays without leaving the app.
-class _VideoCard extends StatefulWidget {
+class _VideoCard extends StatelessWidget {
   final String videoId;
-  const _VideoCard({required this.videoId});
-
-  @override
-  State<_VideoCard> createState() => _VideoCardState();
-}
-
-class _VideoCardState extends State<_VideoCard> {
-  void _play() {
-    launchUrl(
-      Uri.parse('https://www.youtube.com/watch?v=${widget.videoId}'),
-      mode: LaunchMode.externalApplication,
-    );
-  }
+  final AppStore store;
+  const _VideoCard({required this.videoId, required this.store});
 
   @override
   Widget build(BuildContext context) {
     final thumbUrl =
-        'https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg';
+        'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
     return GestureDetector(
-      onTap: _play,
+      onTap: () => openLink(
+        context, store, 'https://www.youtube.com/watch?v=$videoId',
+      ),
       child: ClipRRect(
         borderRadius: AppRadius.card,
         child: AspectRatio(
