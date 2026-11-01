@@ -278,7 +278,7 @@ class _VideoCardState extends State<_VideoCard> {
   void _play() {
     launchUrl(
       Uri.parse('https://www.youtube.com/watch?v=${widget.videoId}'),
-      mode: LaunchMode.inAppBrowserView,
+      mode: LaunchMode.externalApplication,
     );
   }
 
