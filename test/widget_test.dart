@@ -357,11 +357,11 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
-      // 14. Video guide placeholder
+      // 14. Video guide
       expect(find.text('How to register your business on GeM'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: 'video');
-      await tester.ensureVisible(find.text('Continue without video'));
-      await tester.tap(find.text('Continue without video'));
+      await tester.ensureVisible(find.text('Continue'));
+      await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
       // 15. Redirect to official GeM registration
@@ -464,11 +464,11 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
-      // 14. Video guide placeholder
+      // 14. Video guide
       expect(find.text('How to register your business on GeM'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: 'video');
-      await tester.ensureVisible(find.text('Continue without video'));
-      await tester.tap(find.text('Continue without video'));
+      await tester.ensureVisible(find.text('Continue'));
+      await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
       // 15. Redirect to official GeM registration

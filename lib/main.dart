@@ -19,6 +19,7 @@ import 'features/gem_check_page.dart';
 import 'features/home_page.dart';
 import 'features/insights_page.dart';
 import 'features/language_page.dart';
+import 'features/news_page.dart';
 import 'features/onboarding_flow_1.dart';
 import 'features/onboarding_flow_2.dart';
 import 'features/onboarding_flow_3.dart';
@@ -327,7 +328,14 @@ class SaathiApp extends StatelessWidget {
               .first;
           final requiresAccount =
               flowPages.containsKey(page) ||
-              {'', 'home', 'gem-check', 'gem-guide', 'register'}.contains(page);
+              {
+                '',
+                'home',
+                'news',
+                'gem-check',
+                'gem-guide',
+                'register',
+              }.contains(page);
           return ListenableBuilder(
             listenable: store,
             builder: (context, _) => requiresAccount && !store.signedIn
@@ -358,6 +366,8 @@ class SaathiApp extends StatelessWidget {
                 ? AlertsPage(store: store)
                 : page == 'bids'
                 ? BidsPage(store: store)
+                : page == 'news'
+                ? NewsPage(store: store)
                 : page == 'saathi'
                 ? SaathiPage(store: store)
                 : page == 'gem-guide'

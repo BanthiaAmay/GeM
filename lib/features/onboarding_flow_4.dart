@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import '../core/models.dart';
 import '../core/transitions.dart';
 import '../data/app_store.dart';
 import 'components.dart';
 import 'onboarding_widgets.dart';
 import 'widgets.dart';
+import 'youtube_video.dart';
 import '../core/tokens.dart';
 
-const _gemYoutubeChannel = 'https://www.youtube.com/@GovernmenteMarketplace';
 const _gemVideoIds = ['EEToHsUxbyA', 'kU4pJKE9uqo'];
 
 /// Step 13 of 15: readiness checklist — the user ticks each item off
@@ -75,7 +74,7 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
         'GeM पहचान सत्यापन के लिए मेरे पास फोन है',
       ),
       'authorised': s.t(
-        'I have the authorised person\'s identity information',
+        'I have the authorised person’s identity information',
         'मेरे पास अधिकृत व्यक्ति की पहचान जानकारी है',
       ),
       'pan': s.t(
@@ -87,8 +86,8 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
         'मुझे अपने व्यवसाय का प्रकार पता है',
       ),
       'sellType': s.t(
-        'I know if I\'ll sell products, services, or both',
-        'मुझे पता है मैं उत्पाद, सेवाएँ या दोनों बेचूंगा/बेचूंगी',
+        'I know if I’ll sell products, services, or both',
+        'मुझे पता है मैं उत्पाद, सेवाएँ या दोनों बेचूँगा/बेचूँगी',
       ),
       'category': s.t(
         'I know my main product or service category',
@@ -126,7 +125,7 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
         // never reaches this screen).
         await showSectionComplete(
           context,
-          s.t('Get ready complete', 'तैयार हो जाएं पूर्ण'),
+          s.t('Get ready complete', 'तैयार हो जाएँ पूर्ण'),
         );
         if (!context.mounted) return;
         Navigator.of(context).pushNamed('/flow-video');
@@ -183,43 +182,10 @@ class FlowVideoPage extends StatelessWidget {
         Text(s.t('VIDEO GUIDE', 'वीडियो गाइड'), style: AppText.overline),
         const SizedBox(height: 12),
         for (final id in _gemVideoIds) ...[
-          _VideoCard(videoId: id, store: s),
+          YouTubeVideoCard(videoId: id, store: s),
           const SizedBox(height: 10),
         ],
-        GestureDetector(
-          onTap: () => openLink(context, s, _gemYoutubeChannel),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.ondemand_video_outlined,
-                size: 14,
-                color: AppColors.ink,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text.rich(
-                  TextSpan(
-                    text: s.t('Source: ', 'स्रोत: '),
-                    style: AppText.caption,
-                    children: [
-                      TextSpan(
-                        text: s.t(
-                          'Government e-Marketplace on YouTube',
-                          'YouTube पर Government e-Marketplace',
-                        ),
-                        style: AppText.caption.copyWith(
-                          color: AppColors.brand,
-                          decoration: TextDecoration.underline,
-                          decorationColor: AppColors.brand,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        YouTubeSourceNote(store: s),
         const SizedBox(height: 28),
         Text(
           s.t('What the guide will cover', 'गाइड में क्या शामिल होगा'),
@@ -264,120 +230,6 @@ class FlowVideoPage extends StatelessWidget {
   }
 }
 
-class _VideoCard extends StatelessWidget {
-  final String videoId;
-  final AppStore store;
-  const _VideoCard({required this.videoId, required this.store});
-
-  @override
-  Widget build(BuildContext context) {
-    final thumbUrl =
-        'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => _VideoPlayerPage(videoId: videoId, store: store),
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: AppRadius.card,
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Image.network(
-                thumbUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => ColoredBox(
-                  color: AppColors.disabled,
-                  child: const Icon(Icons.video_library_outlined, size: 48),
-                ),
-              ),
-              const ColoredBox(color: Color(0x33000000)),
-              const Center(child: _PlayButton()),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _VideoPlayerPage extends StatefulWidget {
-  final String videoId;
-  final AppStore store;
-  const _VideoPlayerPage({required this.videoId, required this.store});
-
-  @override
-  State<_VideoPlayerPage> createState() => _VideoPlayerPageState();
-}
-
-class _VideoPlayerPageState extends State<_VideoPlayerPage> {
-  late final WebViewController _controller;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageFinished: (_) {
-          if (mounted) setState(() => _loading = false);
-        },
-      ))
-      ..loadRequest(Uri.parse(
-        'https://m.youtube.com/watch?v=${widget.videoId}',
-      ));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final s = widget.store;
-    return Scaffold(
-      backgroundColor: AppColors.ink,
-      appBar: AppBar(
-        backgroundColor: AppColors.ink,
-        foregroundColor: AppColors.surface,
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          s.t('Video Guide', 'वीडियो गाइड'),
-          style: AppText.bodyStrong.copyWith(color: AppColors.surface),
-        ),
-        elevation: 0,
-      ),
-      body: Stack(
-        children: [
-          WebViewWidget(controller: _controller),
-          if (_loading)
-            Center(
-              child: CircularProgressIndicator(color: AppColors.surface),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PlayButton extends StatelessWidget {
-  const _PlayButton();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 64,
-    height: 64,
-    decoration: const BoxDecoration(
-      color: Color(0xFFFF0000),
-      shape: BoxShape.circle,
-    ),
-    child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 38),
-  );
-}
-
 class _CoverRow extends StatelessWidget {
   final String asset;
   final String text;
@@ -417,12 +269,12 @@ class FlowRedirectPage extends StatelessWidget {
       store: s,
       onBack: () => Navigator.of(context).pop(),
       headline: s.t(
-        'You\'re ready to register on GeM',
+        'You’re ready to register on GeM',
         'आप GeM पर पंजीकरण के लिए तैयार हैं',
       ),
       subtitle: s.t(
-        'You\'ll now leave Bid2Scale and complete seller registration yourself on the official Government e-Marketplace portal.',
-        'अब आप Bid2Scale छोड़कर आधिकारिक सरकारी ई-मार्केटप्लेस पोर्टल पर स्वयं विक्रेता पंजीकरण पूरा करेंगे।',
+        'You’ll now leave Bid2Scale and complete seller registration yourself on the official Government e-Marketplace portal.',
+        'अब आप Bid2Scale छोड़कर आधिकारिक सरकारी ई-मार्केटप्लेस पोर्टल पर स्वयं विक्रेता पंजीकरण पूरा करेंगे।',
       ),
       continueLabel: s.t(
         'Open official GeM registration',

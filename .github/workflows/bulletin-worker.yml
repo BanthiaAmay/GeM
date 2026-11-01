@@ -1,0 +1,26 @@
+name: GeM bulletin worker
+# Saves the new "GeM Weekly Bulletin" video (uploaded on Thursdays) for the app's News page.
+# Off until the repository variable BULLETIN_WORKER_ENABLED is set to "true".
+on:
+  schedule:
+    - cron: '17 1 * * 5'  # Friday 06:47 IST
+    - cron: '17 7 * * 5'  # Friday 12:47 IST, in case the upload was late
+  workflow_dispatch:
+concurrency:
+  group: bulletin-worker
+  cancel-in-progress: false
+jobs:
+  run:
+    if: vars.BULLETIN_WORKER_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/bulletin_worker.py run
+        env:
+          GEM_YOUTUBE_CHANNEL_ID: ${{ vars.GEM_YOUTUBE_CHANNEL_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

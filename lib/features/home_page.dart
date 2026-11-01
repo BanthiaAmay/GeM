@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/models.dart';
 import '../core/motion.dart';
@@ -15,6 +16,7 @@ import 'onboarding_flow_4.dart' show gemRegistrationUrl;
 import 'onboarding_widgets.dart' show StaggeredEntrance;
 import 'scroll_hint.dart';
 import 'widgets.dart';
+import 'youtube_video.dart' show BulletinCard;
 
 /// The five destinations in the persistent bottom nav. Each is its own
 /// full page body — switching tabs swaps only the middle scrollable
@@ -103,6 +105,7 @@ class _HomePageState extends State<HomePage>
           (_snapTo - _snapFrom) * Motion.enter.transform(_snap.value),
     );
     _initAlerts();
+    unawaited(widget.store.loadBulletins());
   }
 
   @override
@@ -392,10 +395,7 @@ class _HomeDrawer extends StatelessWidget {
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(
-                Icons.person_outline,
-                color: AppColors.brand,
-              ),
+              leading: const Icon(Icons.person_outline, color: AppColors.brand),
               title: Text(s.t('Account', 'खाता')),
               onTap: () {
                 Navigator.of(context).pop();
@@ -408,6 +408,17 @@ class _HomeDrawer extends StatelessWidget {
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).pushNamed('/bids');
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.newspaper_outlined,
+                color: AppColors.brand,
+              ),
+              title: Text(s.t('News', 'समाचार')),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushNamed('/news');
               },
             ),
             ListTile(
@@ -569,6 +580,15 @@ class _HomeTab extends StatelessWidget {
           child: _NotificationsSection(store: s, searchAlerts: searchAlerts),
         ),
         const SizedBox(height: AppSpace.xxxl),
+        if (s.bulletins.isNotEmpty) ...[
+          SectionHeader(
+            s.t('GeM Weekly Bulletin', 'GeM साप्ताहिक बुलेटिन'),
+            actionLabel: s.t('See all', 'सभी देखें'),
+            onAction: () => Navigator.of(context).pushNamed('/news'),
+          ),
+          BulletinCard(store: s, bulletin: s.bulletins.first),
+          const SizedBox(height: AppSpace.xxxl),
+        ],
         SectionHeader(s.t('Bids for you', 'आपके लिए बोलियाँ')),
         StaggeredEntrance(
           index: 2,
@@ -1237,7 +1257,10 @@ class _AccountSectionState extends State<_AccountSection> {
           ),
         ] else
           AppButton(
-            label: s.t('Sign in or create account', 'साइन इन करें या खाता बनाएँ'),
+            label: s.t(
+              'Sign in or create account',
+              'साइन इन करें या खाता बनाएँ',
+            ),
             icon: Icons.login,
             onPressed: () => Navigator.of(context).pushNamed('/auth'),
           ),

@@ -58,6 +58,11 @@ class AppStore extends ChangeNotifier {
   Map<String, dynamic> alertPreferences = {};
   List<Map<String, dynamic>> bidNotifications = [];
   String? alertsError;
+
+  /// GeM Weekly Bulletin videos (newest first) for Home and News.
+  List<Map<String, dynamic>> bulletins = [];
+  bool bulletinsLoading = false;
+  bool bulletinsFailed = false;
   bool? googleAvailable;
   bool? emailAvailable;
   String? authError;
@@ -655,6 +660,28 @@ class AppStore extends ChangeNotifier {
     } catch (_) {
       if (currentUser?.id != userId) return;
       alertsError = 'Could not load alerts. Check your connection and retry.';
+    }
+    notifyListeners();
+  }
+
+  /// Public, read-only table filled by scripts/bulletin_worker.py. Safe to
+  /// call from initState: it only notifies after the first await.
+  Future<void> loadBulletins() async {
+    final db = client;
+    if (db == null || bulletinsLoading) return;
+    bulletinsLoading = true;
+    try {
+      final rows = await db
+          .from('gem_bulletins')
+          .select('video_id,title,published_at')
+          .order('published_at', ascending: false)
+          .limit(20);
+      bulletins = List<Map<String, dynamic>>.from(rows);
+      bulletinsFailed = false;
+    } catch (_) {
+      bulletinsFailed = true;
+    } finally {
+      bulletinsLoading = false;
     }
     notifyListeners();
   }

@@ -77,6 +77,12 @@ abstract final class AppColors {
   /// Page canvas behind cards: a hair off white so cards lift off it.
   static const canvas = Color(0xFFF6F7F5);
 
+  /// Light dimming over video thumbnails so the play button reads.
+  static const scrim = Color(0x33000000);
+
+  /// YouTube's play-button red, only on video thumbnails.
+  static const videoPlay = Color(0xFFFF0000);
+
   /// Silhouette shadow cast by artwork and icons (see Depth, DepthIcon).
   static const depthShadow = Color(0x42101C15);
 }
