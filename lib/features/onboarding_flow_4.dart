@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/models.dart';
 import '../core/transitions.dart';
 import '../data/app_store.dart';
@@ -275,46 +275,19 @@ class _VideoCard extends StatefulWidget {
 }
 
 class _VideoCardState extends State<_VideoCard> {
-  YoutubePlayerController? _controller;
-
-  @override
-  void dispose() {
-    _controller?.close();
-    super.dispose();
-  }
-
-  void _startPlaying() {
-    final ctrl = YoutubePlayerController.fromVideoId(
-      videoId: widget.videoId,
-      autoPlay: true,
-      params: const YoutubePlayerParams(
-        playsInline: true,
-        showControls: true,
-        strictRelatedVideos: true,
-        showFullscreenButton: true,
-      ),
+  void _play() {
+    launchUrl(
+      Uri.parse('https://www.youtube.com/watch?v=${widget.videoId}'),
+      mode: LaunchMode.inAppBrowserView,
     );
-    setState(() => _controller = ctrl);
   }
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = _controller;
-    if (ctrl != null) {
-      return ClipRRect(
-        borderRadius: AppRadius.card,
-        child: YoutubePlayerScaffold(
-          controller: ctrl,
-          aspectRatio: 16 / 9,
-          builder: (context, player) => player,
-        ),
-      );
-    }
-
     final thumbUrl =
         'https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg';
     return GestureDetector(
-      onTap: _startPlaying,
+      onTap: _play,
       child: ClipRRect(
         borderRadius: AppRadius.card,
         child: AspectRatio(

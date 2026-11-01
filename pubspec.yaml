@@ -51,7 +51,6 @@ dependencies:
   image_picker: any
   pasteboard: ^0.5.0
   speech_to_text: ^7.5.0
-  youtube_player_iframe: ^4.0.1
 
 dev_dependencies:
   flutter_test:
