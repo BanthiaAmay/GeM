@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../core/models.dart';
 import '../core/transitions.dart';
 import '../data/app_store.dart';
@@ -263,8 +264,6 @@ class FlowVideoPage extends StatelessWidget {
   }
 }
 
-/// Thumbnail with a YouTube play button. Tapping initialises the
-/// in-app player; the video plays without leaving the app.
 class _VideoCard extends StatelessWidget {
   final String videoId;
   final AppStore store;
@@ -275,8 +274,10 @@ class _VideoCard extends StatelessWidget {
     final thumbUrl =
         'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
     return GestureDetector(
-      onTap: () => openLink(
-        context, store, 'https://www.youtube.com/watch?v=$videoId',
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => _VideoPlayerPage(videoId: videoId, store: store),
+        ),
       ),
       child: ClipRRect(
         borderRadius: AppRadius.card,
@@ -288,9 +289,9 @@ class _VideoCard extends StatelessWidget {
               Image.network(
                 thumbUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const ColoredBox(
-                  color: Color(0xFFD0D0D0),
-                  child: Icon(Icons.video_library_outlined, size: 48),
+                errorBuilder: (_, __, ___) => ColoredBox(
+                  color: AppColors.disabled,
+                  child: const Icon(Icons.video_library_outlined, size: 48),
                 ),
               ),
               const ColoredBox(color: Color(0x33000000)),
@@ -298,6 +299,65 @@ class _VideoCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _VideoPlayerPage extends StatefulWidget {
+  final String videoId;
+  final AppStore store;
+  const _VideoPlayerPage({required this.videoId, required this.store});
+
+  @override
+  State<_VideoPlayerPage> createState() => _VideoPlayerPageState();
+}
+
+class _VideoPlayerPageState extends State<_VideoPlayerPage> {
+  late final WebViewController _controller;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageFinished: (_) {
+          if (mounted) setState(() => _loading = false);
+        },
+      ))
+      ..loadRequest(Uri.parse(
+        'https://m.youtube.com/watch?v=${widget.videoId}',
+      ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.store;
+    return Scaffold(
+      backgroundColor: AppColors.ink,
+      appBar: AppBar(
+        backgroundColor: AppColors.ink,
+        foregroundColor: AppColors.surface,
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          s.t('Video Guide', 'वीडियो गाइड'),
+          style: AppText.bodyStrong.copyWith(color: AppColors.surface),
+        ),
+        elevation: 0,
+      ),
+      body: Stack(
+        children: [
+          WebViewWidget(controller: _controller),
+          if (_loading)
+            Center(
+              child: CircularProgressIndicator(color: AppColors.surface),
+            ),
+        ],
       ),
     );
   }
