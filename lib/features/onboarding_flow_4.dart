@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../core/models.dart';
 import '../core/transitions.dart';
 import '../data/app_store.dart';
@@ -275,27 +275,38 @@ class _VideoCard extends StatefulWidget {
 }
 
 class _VideoCardState extends State<_VideoCard> {
-  WebViewController? _webCtrl;
+  YoutubePlayerController? _controller;
+
+  @override
+  void dispose() {
+    _controller?.close();
+    super.dispose();
+  }
 
   void _startPlaying() {
-    final ctrl = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadRequest(Uri.parse(
-        'https://www.youtube.com/embed/${widget.videoId}'
-        '?autoplay=1&playsinline=1&rel=0',
-      ));
-    setState(() => _webCtrl = ctrl);
+    final ctrl = YoutubePlayerController.fromVideoId(
+      videoId: widget.videoId,
+      autoPlay: true,
+      params: const YoutubePlayerParams(
+        playsInline: true,
+        showControls: true,
+        strictRelatedVideos: true,
+        showFullscreenButton: true,
+      ),
+    );
+    setState(() => _controller = ctrl);
   }
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = _webCtrl;
+    final ctrl = _controller;
     if (ctrl != null) {
       return ClipRRect(
         borderRadius: AppRadius.card,
-        child: AspectRatio(
+        child: YoutubePlayerScaffold(
+          controller: ctrl,
           aspectRatio: 16 / 9,
-          child: WebViewWidget(controller: ctrl),
+          builder: (context, player) => player,
         ),
       );
     }
