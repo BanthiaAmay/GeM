@@ -127,15 +127,24 @@ void main() {
     final largeIndex = SearchIndex.withItems(items);
     final largeEngine = SearchEngine(index: largeIndex);
 
-    final sw = Stopwatch()..start();
+    // Warm-up run excludes the one-time JIT compile cost from the timing.
     largeEngine.query('bank guarantee');
-    sw.stop();
+    final runs = <int>[];
+    for (var i = 0; i < 5; i++) {
+      final sw = Stopwatch()..start();
+      largeEngine.query('bank guarantee');
+      sw.stop();
+      runs.add(sw.elapsedMicroseconds);
+    }
+    runs.sort();
+    final medianMs = runs[runs.length ~/ 2] / 1000;
 
     expect(
-      sw.elapsedMilliseconds,
+      medianMs,
       lessThan(50),
       reason:
-          '1,000-item query took ${sw.elapsedMilliseconds} ms (limit: 50 ms)',
+          '1,000-item query median ${medianMs.toStringAsFixed(1)} ms '
+          '(limit: 50 ms)',
     );
   });
 

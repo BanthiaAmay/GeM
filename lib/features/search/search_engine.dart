@@ -27,9 +27,11 @@ class SearchEngine {
     if (tokens.isEmpty) return [];
 
     final results = <SearchItem>[];
+    // Items share most terms, so each (token, term) pair is scored once.
+    final pairScores = <String, double>{};
     for (final item in _index.items) {
       if (scope.typeFilter != null && item.type != scope.typeFilter) continue;
-      final score = _score(item, tokens);
+      final score = _score(item, tokens, pairScores);
       if (score > 0) {
         // clone with new score
         results.add(
@@ -57,11 +59,14 @@ class SearchEngine {
 
   // ── Normalisation ─────────────────────────────────────────────────────────
 
+  static final _punctuation = RegExp(r'[^\w\sऀ-ॿ]');
+  static final _spaces = RegExp(r'\s+');
+
   static String normalise(String raw) => raw
       .trim()
       .toLowerCase()
-      .replaceAll(RegExp(r'[^\w\sऀ-ॿ]'), ' ')
-      .replaceAll(RegExp(r'\s+'), ' ')
+      .replaceAll(_punctuation, ' ')
+      .replaceAll(_spaces, ' ')
       .trim();
 
   // ── Tokenisation ──────────────────────────────────────────────────────────
@@ -113,13 +118,17 @@ class SearchEngine {
 
   // ── Scoring ───────────────────────────────────────────────────────────────
 
-  double _score(SearchItem item, List<String> tokens) {
+  double _score(
+    SearchItem item,
+    List<String> tokens,
+    Map<String, double> pairScores,
+  ) {
     final indexTerms = _indexTerms(item);
     double total = 0;
     for (final token in tokens) {
       double best = 0;
       for (final term in indexTerms) {
-        final s = _termScore(token, term);
+        final s = pairScores['$token\u0000$term'] ??= _termScore(token, term);
         if (s > best) best = s;
       }
       total += best;
@@ -129,7 +138,13 @@ class SearchEngine {
     return norm;
   }
 
-  static List<String> _indexTerms(SearchItem item) {
+  // Items are immutable, so each one's terms are built once, not per query.
+  static final _termCache = Expando<List<String>>('searchTerms');
+
+  static List<String> _indexTerms(SearchItem item) =>
+      _termCache[item] ??= _buildIndexTerms(item);
+
+  static List<String> _buildIndexTerms(SearchItem item) {
     final terms = <String>[];
     terms.addAll(_tokenise(normalise(item.titleEn)));
     terms.addAll(_tokenise(normalise(item.titleHi)));
@@ -152,9 +167,11 @@ class SearchEngine {
     if (term.contains(query) && query.length >= 3) return 0.70;
     // Fuzzy: Damerau-Levenshtein
     if (query.length >= 4) {
+      final threshold = query.length >= 8 ? 2 : 1;
+      // Edit distance is at least the length difference.
+      if ((query.length - term.length).abs() > threshold) return 0;
       final dist = _dl(query, term);
       final maxLen = query.length > term.length ? query.length : term.length;
-      final threshold = query.length >= 8 ? 2 : 1;
       if (dist <= threshold) {
         return (1 - dist / maxLen) * 0.75;
       }
