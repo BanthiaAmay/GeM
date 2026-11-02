@@ -481,6 +481,17 @@ class _HomeDrawer extends StatelessWidget {
               title: Text(s.t('Financing', 'वित्तपोषण')),
               onTap: () => openDrawerPage((_) => FinancingPage(store: s)),
             ),
+            ListTile(
+              leading: const Icon(
+                Icons.ondemand_video_outlined,
+                color: AppColors.brand,
+              ),
+              title: Text(s.t('Module Trainings', 'मॉड्यूल प्रशिक्षण')),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushNamed('/trainings');
+              },
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(
@@ -579,6 +590,22 @@ class _HomeTab extends StatelessWidget {
           index: 1,
           child: _NotificationsSection(store: s, searchAlerts: searchAlerts),
         ),
+        const SizedBox(height: AppSpace.lg),
+        StaggeredEntrance(
+          index: 2,
+          child: AppCard(
+            padding: const EdgeInsets.all(AppSpace.lg),
+            onTap: () => Navigator.of(context).pushNamed('/trainings'),
+            child: AppListTile(
+              icon: Icons.ondemand_video_outlined,
+              title: s.t('Module Trainings', 'मॉड्यूल प्रशिक्षण'),
+              subtitle: s.t(
+                '34 official GeM videos in 6 modules',
+                '34 आधिकारिक GeM वीडियो, 6 मॉड्यूल में',
+              ),
+            ),
+          ),
+        ),
         const SizedBox(height: AppSpace.xxxl),
         if (s.bulletins.isNotEmpty) ...[
           SectionHeader(
@@ -591,7 +618,7 @@ class _HomeTab extends StatelessWidget {
         ],
         SectionHeader(s.t('Bids for you', 'आपके लिए बोलियाँ')),
         StaggeredEntrance(
-          index: 2,
+          index: 3,
           child: _FeaturedBid(
             store: s,
             onTap: () => Navigator.of(context).pushNamed('/bids'),
@@ -623,7 +650,7 @@ class _HomeTab extends StatelessWidget {
           children: [
             Expanded(
               child: StaggeredEntrance(
-                index: 3,
+                index: 4,
                 child: _QuickAction(
                   icon: Icons.bar_chart_outlined,
                   label: s.t('ROI\ncalculator', 'ROI\nकैलकुलेटर'),
@@ -634,7 +661,7 @@ class _HomeTab extends StatelessWidget {
             const SizedBox(width: AppSpace.md),
             Expanded(
               child: StaggeredEntrance(
-                index: 4,
+                index: 5,
                 child: _QuickAction(
                   icon: Icons.chat_bubble_outline,
                   label: s.t('Ask\nBid2Scale', 'Bid2Scale\nसे पूछें'),
@@ -646,7 +673,7 @@ class _HomeTab extends StatelessWidget {
         ),
         const SizedBox(height: AppSpace.md),
         StaggeredEntrance(
-          index: 5,
+          index: 6,
           child: AppCard(
             padding: const EdgeInsets.all(AppSpace.lg),
             onTap: () => Navigator.of(context).pushNamed('/insights'),
@@ -656,22 +683,6 @@ class _HomeTab extends StatelessWidget {
               subtitle: s.t(
                 'Trends, categories and bid fit',
                 'रुझान, श्रेणियाँ और बोली उपयुक्तता',
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpace.md),
-        StaggeredEntrance(
-          index: 6,
-          child: AppCard(
-            padding: const EdgeInsets.all(AppSpace.lg),
-            onTap: () => Navigator.of(context).pushNamed('/trainings'),
-            child: AppListTile(
-              icon: Icons.ondemand_video_outlined,
-              title: s.t('Module Trainings', 'मॉड्यूल प्रशिक्षण'),
-              subtitle: s.t(
-                '34 official GeM videos in 6 modules',
-                '34 आधिकारिक GeM वीडियो, 6 मॉड्यूल में',
               ),
             ),
           ),
