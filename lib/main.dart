@@ -487,9 +487,10 @@ class SaathiApp extends StatelessWidget {
                 : page == 'training-module'
                 ? ModuleDetailPage(
                     store: store,
+                    // Empty string → findTrainingModule returns null → _UnknownModule.
                     moduleId: settings.arguments is String
                         ? settings.arguments as String
-                        : 'trn-m1',
+                        : '',
                   )
                 : AppShell(store: store, page: page),
           );

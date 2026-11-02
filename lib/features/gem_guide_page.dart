@@ -95,9 +95,9 @@ class GemGuidePage extends StatelessWidget {
                       style: AppText.title,
                     ),
                     const SizedBox(height: AppSpace.md),
-                    LinearProgressIndicator(
+                    AppProgressBar(
                       value: done.where((v) => v).length / 5,
-                      semanticsLabel: s.t(
+                      semanticLabel: s.t(
                         'Registration preparation',
                         'पंजीकरण तैयारी',
                       ),

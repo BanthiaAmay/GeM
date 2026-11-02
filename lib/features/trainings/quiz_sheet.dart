@@ -47,11 +47,13 @@ class _QuizSheetState extends State<QuizSheet> {
       _step += 1;
     });
     if (_step >= _total && _passed) {
-      widget.store.markQuizPassed(
-        widget.module.id,
-        score: _score,
-        total: _total,
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.store.markQuizPassed(
+          widget.module.id,
+          score: _score,
+          total: _total,
+        );
+      });
     }
   }
 
@@ -274,7 +276,7 @@ class _OptionRow extends StatelessWidget {
             color: showCorrect
                 ? AppColors.brand
                 : showWrong
-                    ? AppColors.danger
+                    ? AppColors.textSecondary
                     : AppColors.textHint,
             size: AppIconSize.md,
           ),

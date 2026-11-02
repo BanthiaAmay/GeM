@@ -397,14 +397,14 @@ class AppStore extends ChangeNotifier {
 
   // Helpers kept private so callers never do local-vs-UTC date math by hand.
   static String _todayLocalIsoDate() {
-    final d = DateTime.now();
+    final d = DateTime.now().toUtc();
     return '${d.year.toString().padLeft(4, '0')}-'
         '${d.month.toString().padLeft(2, '0')}-'
         '${d.day.toString().padLeft(2, '0')}';
   }
 
   static String _yesterdayLocalIsoDate() {
-    final d = DateTime.now().subtract(const Duration(days: 1));
+    final d = DateTime.now().toUtc().subtract(const Duration(days: 1));
     return '${d.year.toString().padLeft(4, '0')}-'
         '${d.month.toString().padLeft(2, '0')}-'
         '${d.day.toString().padLeft(2, '0')}';
@@ -575,7 +575,7 @@ class AppStore extends ChangeNotifier {
 
   Future<void> _adoptAuthenticatedSession() async {
     if (!signedIn) return;
-    if (_handlingAuth) return _authReady;
+    if (_handlingAuth) return _authReady!;
     final done = Completer<void>();
     _authReady = done.future;
     _handlingAuth = true;
@@ -778,6 +778,7 @@ class AppStore extends ChangeNotifier {
       outcomes = [];
       alertPreferences = {};
       bidNotifications = [];
+      _loadedCloud = false;
       await persist();
       notifyListeners();
     } finally {
@@ -875,8 +876,7 @@ class AppStore extends ChangeNotifier {
       'mobile': normalized.substring(3),
       'bidKeywords': keywords,
     };
-    await persist();
-    notifyListeners();
+    save();
   }
 
   /// Saves the products or services the business supplies (onboarding's

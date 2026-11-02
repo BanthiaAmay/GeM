@@ -50,6 +50,7 @@ TrainingNudge? computeTrainingNudge(AppStore s, {DateTime? now}) {
   bool stillSuppressed(String id) {
     final at = s.trainingNudgeDismissedAt(id);
     if (at == null) return false;
+    if (at.isAfter(clock)) return false; // clock rolled back; treat as not dismissed
     return clock.difference(at) < kNudgeDismissWindow;
   }
 
@@ -91,7 +92,7 @@ TrainingNudge? computeTrainingNudge(AppStore s, {DateTime? now}) {
         state['lastWatchedAt'] as String? ?? '',
       );
       if (lastWatchedAt != null &&
-          clock.difference(lastWatchedAt).inDays <= 2) {
+          clock.difference(lastWatchedAt).inHours <= 48) {
         final title = band == 'all'
             ? s.t('All 34 videos — done.', 'सभी 34 वीडियो — पूरे।')
             : s.t('Milestone unlocked', 'मील का पत्थर');
@@ -130,7 +131,7 @@ TrainingNudge? computeTrainingNudge(AppStore s, {DateTime? now}) {
           state['lastWatchedAt'] as String? ?? '',
         );
         if (lastWatchedAt != null &&
-            clock.difference(lastWatchedAt).inDays <= 2) {
+            clock.difference(lastWatchedAt).inHours <= 48) {
           // Point to the next module, if there is one.
           final nextIdx = kTrainingModules.indexOf(mod) + 1;
           final next = nextIdx < kTrainingModules.length

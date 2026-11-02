@@ -11,8 +11,9 @@ import 'trainings_page.dart' show copyDeepLink;
 
 /// Deep view of one training module — a scrollable list of videos, each
 /// with a thumbnail (tap to play in-app), a "Mark as watched" tick and a
-/// bookmark toggle. A "Quick quiz" CTA appears at the end once at least
-/// one video has been watched; passing marks the module as "mastered".
+/// bookmark toggle. A "Quick quiz" panel is always visible at the end; the
+/// Start Quiz button is enabled once at least one video has been watched.
+/// Passing the quiz marks the module as "mastered".
 class ModuleDetailPage extends StatelessWidget {
   final AppStore store;
   final String moduleId;
@@ -189,7 +190,7 @@ class _VideoRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(video.titleEn, style: AppText.bodyStrong),
+                    Text(s.t(video.titleEn, video.titleHi), style: AppText.bodyStrong),
                     const SizedBox(height: AppSpace.xs),
                     Text(
                       s.t(

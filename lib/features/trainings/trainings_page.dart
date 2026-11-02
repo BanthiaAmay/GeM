@@ -100,13 +100,7 @@ class _NudgeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = store;
-    final tone = switch (nudge.kind) {
-      TrainingNudgeKind.welcome => AppCardTone.brand,
-      TrainingNudgeKind.resume => AppCardTone.brand,
-      TrainingNudgeKind.streak => AppCardTone.brand,
-      TrainingNudgeKind.completion => AppCardTone.brand,
-      TrainingNudgeKind.milestone => AppCardTone.brand,
-    };
+    const tone = AppCardTone.brand;
     final icon = switch (nudge.kind) {
       TrainingNudgeKind.welcome => Icons.waving_hand_outlined,
       TrainingNudgeKind.resume => Icons.play_circle_outline,
@@ -305,7 +299,7 @@ class _ModuleCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpace.md),
                 AppProgressBar(
-                  value: total == 0 ? 0 : done / total,
+                  value: total == 0 ? 0.0 : done / total,
                   semanticLabel: s.t(
                     '$done of $total videos watched',
                     '$total में से $done वीडियो देखे',
@@ -360,7 +354,7 @@ class _SavedStrip extends StatelessWidget {
         for (final (v, m) in rows) ...[
           AppListTile(
             icon: Icons.bookmark_outlined,
-            title: v.titleEn,
+            title: s.t(v.titleEn, v.titleHi),
             subtitle: s.t(
               '${s.t(m.titleEn, m.titleHi)} · ~${v.minutes} min',
               '${s.t(m.titleEn, m.titleHi)} · ~${v.minutes} मिनट',

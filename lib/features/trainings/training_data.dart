@@ -155,16 +155,16 @@ const kTrainingModules = <TrainingModule>[
         promptEn: 'Where should you create your GeM login?',
         promptHi: 'GeM लॉगिन कहाँ बनाएँ?',
         optionsEn: [
-          'The official GeM portal only',
           'Any registration agent',
+          'The official GeM portal only',
           'A WhatsApp group',
         ],
         optionsHi: [
-          'केवल आधिकारिक GeM पोर्टल',
           'कोई भी पंजीकरण एजेंट',
+          'केवल आधिकारिक GeM पोर्टल',
           'WhatsApp समूह',
         ],
-        correctIndex: 0,
+        correctIndex: 1,
       ),
     ],
   ),
@@ -219,31 +219,31 @@ const kTrainingModules = <TrainingModule>[
         promptEn: 'Vendor Assessment is usually done because the buyer wants to know …',
         promptHi: 'विक्रेता मूल्यांकन इसलिए होता है क्योंकि खरीदार जानना चाहता है …',
         optionsEn: [
-          'Your capability to deliver reliably',
           'Your bank balance',
+          'Your capability to deliver reliably',
           'Your family details',
         ],
         optionsHi: [
-          'आपकी भरोसेमंद आपूर्ति क्षमता',
           'आपका बैंक बैलेंस',
+          'आपकी भरोसेमंद आपूर्ति क्षमता',
           'आपकी पारिवारिक जानकारी',
         ],
-        correctIndex: 0,
+        correctIndex: 1,
       ),
       TrainingQuizQuestion(
         promptEn: 'Where do you update profile information?',
         promptHi: 'प्रोफ़ाइल जानकारी कहाँ अपडेट करें?',
         optionsEn: [
-          'Inside your seller dashboard on GeM',
           'By calling GeM support',
           'On a third-party form',
+          'Inside your seller dashboard on GeM',
         ],
         optionsHi: [
-          'GeM पर अपने विक्रेता डैशबोर्ड में',
           'GeM सहायता को कॉल करके',
           'किसी तीसरे-पक्ष फॉर्म पर',
+          'GeM पर अपने विक्रेता डैशबोर्ड में',
         ],
-        correctIndex: 0,
+        correctIndex: 2,
       ),
     ],
   ),
@@ -322,31 +322,31 @@ const kTrainingModules = <TrainingModule>[
         promptEn: 'Product images should be …',
         promptHi: 'उत्पाद चित्र कैसे होने चाहिए?',
         optionsEn: [
-          'Clear, your own, matching the actual product',
           'Any photo from the internet',
+          'Clear, your own, matching the actual product',
           'Blurred to protect the design',
         ],
         optionsHi: [
-          'स्पष्ट, आपके अपने, उत्पाद से मेल खाते हुए',
           'इंटरनेट से कोई भी फ़ोटो',
+          'स्पष्ट, आपके अपने, उत्पाद से मेल खाते हुए',
           'डिज़ाइन छुपाने के लिए धुंधली',
         ],
-        correctIndex: 0,
+        correctIndex: 1,
       ),
       TrainingQuizQuestion(
         promptEn: 'A notified brand rejection usually means …',
         promptHi: 'सूचित ब्रांड की अस्वीकृति अक्सर दर्शाती है …',
         optionsEn: [
-          'The documents needed updating or clarification',
           'The seller is banned forever',
           'The product cannot be sold anywhere',
+          'The documents needed updating or clarification',
         ],
         optionsHi: [
-          'दस्तावेज़ों को अद्यतन या स्पष्टीकरण की आवश्यकता',
           'विक्रेता पर स्थायी प्रतिबंध',
           'उत्पाद कहीं भी नहीं बिक सकता',
+          'दस्तावेज़ों को अद्यतन या स्पष्टीकरण की आवश्यकता',
         ],
-        correctIndex: 0,
+        correctIndex: 2,
       ),
     ],
   ),
@@ -425,31 +425,31 @@ const kTrainingModules = <TrainingModule>[
         promptEn: 'A Reverse Auction is one where …',
         promptHi: 'रिवर्स नीलामी वह है जहाँ …',
         optionsEn: [
-          'Sellers compete by progressively lowering their price',
           'Buyers raise their offer each round',
+          'Sellers compete by progressively lowering their price',
           'The seller sets the final price',
         ],
         optionsHi: [
-          'विक्रेता मूल्य घटाकर प्रतिस्पर्धा करते हैं',
           'खरीदार हर दौर में मूल्य बढ़ाते हैं',
+          'विक्रेता मूल्य घटाकर प्रतिस्पर्धा करते हैं',
           'विक्रेता अंतिम मूल्य तय करता है',
         ],
-        correctIndex: 0,
+        correctIndex: 1,
       ),
       TrainingQuizQuestion(
         promptEn: 'Before bidding, which is the single most important thing to read?',
         promptHi: 'बोली से पहले सबसे ज़रूरी क्या पढ़ना चाहिए?',
         optionsEn: [
-          'The bid document (specs, delivery, buyer terms)',
           'Only the price field',
           'Other sellers\' profiles',
+          'The bid document (specs, delivery, buyer terms)',
         ],
         optionsHi: [
-          'बोली दस्तावेज़ (विनिर्देश, डिलीवरी, खरीदार शर्तें)',
           'केवल मूल्य फ़ील्ड',
           'अन्य विक्रेताओं की प्रोफ़ाइल',
+          'बोली दस्तावेज़ (विनिर्देश, डिलीवरी, खरीदार शर्तें)',
         ],
-        correctIndex: 0,
+        correctIndex: 2,
       ),
     ],
   ),
@@ -516,31 +516,31 @@ const kTrainingModules = <TrainingModule>[
         promptEn: 'The consignee is …',
         promptHi: 'Consignee कौन होता है?',
         optionsEn: [
-          'The buyer\'s representative who receives and reviews the goods',
           'The seller\'s warehouse',
+          'The buyer\'s representative who receives and reviews the goods',
           'The transporter',
         ],
         optionsHi: [
-          'खरीदार का प्रतिनिधि जो सामान प्राप्त और समीक्षा करता है',
           'विक्रेता का गोदाम',
+          'खरीदार का प्रतिनिधि जो सामान प्राप्त और समीक्षा करता है',
           'ट्रांसपोर्टर',
         ],
-        correctIndex: 0,
+        correctIndex: 1,
       ),
       TrainingQuizQuestion(
         promptEn: 'A Price Variation Clause mainly protects against …',
         promptHi: 'मूल्य-परिवर्तन खंड मुख्यतः किससे रक्षा करता है?',
         optionsEn: [
-          'Material-cost swings during a long contract',
           'Tax audits',
           'Buyer cancellations',
+          'Material-cost swings during a long contract',
         ],
         optionsHi: [
-          'लंबे अनुबंध में सामग्री-लागत के उतार-चढ़ाव से',
           'कर ऑडिट से',
           'खरीदार द्वारा रद्द करने से',
+          'लंबे अनुबंध में सामग्री-लागत के उतार-चढ़ाव से',
         ],
-        correctIndex: 0,
+        correctIndex: 2,
       ),
     ],
   ),
@@ -619,46 +619,39 @@ const kTrainingModules = <TrainingModule>[
         promptEn: 'What does an OEM panel approve?',
         promptHi: 'OEM पैनल क्या अनुमोदित करता है?',
         optionsEn: [
-          'Reseller authorisations and reseller catalogues',
           'Buyer purchases',
+          'Reseller authorisations and reseller catalogues',
           'GeM policy changes',
         ],
         optionsHi: [
-          'रिसेलर अधिकार और रिसेलर कैटलॉग',
           'खरीदार खरीद',
+          'रिसेलर अधिकार और रिसेलर कैटलॉग',
           'GeM नीति परिवर्तन',
         ],
-        correctIndex: 0,
+        correctIndex: 1,
       ),
       TrainingQuizQuestion(
         promptEn: 'The Request Management System is where you …',
         promptHi: 'अनुरोध प्रबंधन प्रणाली में आप …',
         optionsEn: [
-          'Raise and track requests to GeM (support, change, exemption)',
           'Message other sellers',
           'Chat with buyers directly',
+          'Raise and track requests to GeM (support, change, exemption)',
         ],
         optionsHi: [
-          'GeM को अनुरोध (सहायता, परिवर्तन, छूट) करते और ट्रैक करते हैं',
           'अन्य विक्रेताओं को संदेश भेजते हैं',
           'खरीदारों से सीधे चैट करते हैं',
+          'GeM को अनुरोध (सहायता, परिवर्तन, छूट) करते और ट्रैक करते हैं',
         ],
-        correctIndex: 0,
+        correctIndex: 2,
       ),
     ],
   ),
 ];
 
-/// Total number of videos across every module. Cached in a const for the UI
-/// progress indicator — 34 at the time of writing. If the list grows, the
-/// cached expression recomputes at import time.
-int get kTotalTrainingVideos {
-  var n = 0;
-  for (final m in kTrainingModules) {
-    n += m.videos.length;
-  }
-  return n;
-}
+/// Total number of videos across every module. Computed once at startup.
+final int kTotalTrainingVideos =
+    kTrainingModules.fold(0, (n, m) => n + m.videos.length);
 
 /// Find a module by id. Returns null if the id is unknown (e.g. a stale
 /// deep link after a module was renamed).

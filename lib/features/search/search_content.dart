@@ -6,8 +6,8 @@
 /// Categories → product categories from core/models.dart.
 /// FAQs → common questions surfaced by the search engine.
 ///
-/// All routes must be registered in main.dart. Lessons and Finance items
-/// use 'home' because their content lives inside the Home page's tab system.
+/// All routes must be registered in main.dart. Lessons use 'trainings';
+/// Finance and FAQ items use 'home' (content in the Home tab system).
 library;
 
 import 'search_models.dart';
