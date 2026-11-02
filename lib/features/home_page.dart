@@ -8,6 +8,7 @@ import '../data/app_store.dart';
 import 'brand_logo.dart';
 import 'components.dart';
 import 'drawer_pages.dart';
+import 'oem/oem_page.dart';
 import 'search/search_engine.dart';
 import 'search/search_store.dart';
 import 'tools_hub/tool_card.dart';
@@ -491,6 +492,14 @@ class _HomeDrawer extends StatelessWidget {
                 Navigator.of(context).pop();
                 Navigator.of(context).pushNamed('/trainings');
               },
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.business_outlined,
+                color: AppColors.brand,
+              ),
+              title: Text(s.t('OEM Database', 'OEM डेटाबेस')),
+              onTap: () => openDrawerPage((_) => OemPage(store: s)),
             ),
             const Divider(),
             ListTile(
