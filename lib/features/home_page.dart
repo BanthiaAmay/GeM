@@ -660,6 +660,22 @@ class _HomeTab extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: AppSpace.md),
+        StaggeredEntrance(
+          index: 6,
+          child: AppCard(
+            padding: const EdgeInsets.all(AppSpace.lg),
+            onTap: () => Navigator.of(context).pushNamed('/trainings'),
+            child: AppListTile(
+              icon: Icons.ondemand_video_outlined,
+              title: s.t('Module Trainings', 'मॉड्यूल प्रशिक्षण'),
+              subtitle: s.t(
+                '34 official GeM videos in 6 modules',
+                '34 आधिकारिक GeM वीडियो, 6 मॉड्यूल में',
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

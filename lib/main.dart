@@ -44,6 +44,8 @@ import 'features/search/bid_detail_page.dart';
 import 'features/search/search_page.dart';
 import 'features/search/search_store.dart';
 import 'features/shell.dart';
+import 'features/trainings/module_detail_page.dart';
+import 'features/trainings/trainings_page.dart';
 import 'features/welcome_page.dart';
 
 /// The seller readiness walkthrough, keyed by route
@@ -479,6 +481,15 @@ class SaathiApp extends StatelessWidget {
                     bidId: settings.arguments is String
                         ? settings.arguments as String
                         : null,
+                  )
+                : page == 'trainings'
+                ? TrainingsPage(store: store)
+                : page == 'training-module'
+                ? ModuleDetailPage(
+                    store: store,
+                    moduleId: settings.arguments is String
+                        ? settings.arguments as String
+                        : 'trn-m1',
                   )
                 : AppShell(store: store, page: page),
           );
