@@ -9,11 +9,8 @@ import '../youtube_video.dart';
 import 'training_data.dart';
 import 'training_nudge.dart';
 
-/// Entry page for Module Trainings.
-///
-/// A single scroll that mirrors the Registration Guide's layout — a hero
-/// `Heading`, a dismissible in-app nudge banner, overall progress, 6
-/// module cards, a "My Saved" filter and the YouTube channel attribution.
+/// Entry page for Module Trainings — a "Learning hub" layout:
+/// an optional resume hero, slim stat chips, and a 2-column module grid.
 class TrainingsPage extends StatelessWidget {
   final AppStore store;
   const TrainingsPage({super.key, required this.store});
@@ -40,19 +37,23 @@ class TrainingsPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Heading(
-                      s.t('Video lessons', 'वीडियो पाठ'),
-                      s.t('Module Trainings', 'मॉड्यूल प्रशिक्षण'),
-                      s.t(
-                        '34 official GeM videos in 6 modules — browse at your own pace.',
-                        '34 आधिकारिक GeM वीडियो, 6 मॉड्यूल में — अपनी गति से देखें।',
-                      ),
-                    ),
                     if (nudge != null) ...[
                       _NudgeBanner(store: s, nudge: nudge),
                       const SizedBox(height: AppSpace.lg),
                     ],
-                    _OverallProgress(
+                    // Slim 2-line header — tighter than the old Heading widget.
+                    Text(
+                      s.t('VIDEO LESSONS', 'वीडियो पाठ').toUpperCase(),
+                      style: AppText.overline.copyWith(color: AppColors.brand),
+                    ),
+                    const SizedBox(height: AppSpace.xs),
+                    Text(
+                      s.t('Module Trainings', 'मॉड्यूल प्रशिक्षण'),
+                      style: AppText.h2,
+                    ),
+                    const SizedBox(height: AppSpace.lg),
+                    _ContinueHero(store: s, watchedIds: watched),
+                    _ProgressStrip(
                       store: s,
                       watched: watched.length,
                       total: total,
@@ -63,18 +64,15 @@ class TrainingsPage extends StatelessWidget {
                       _SavedStrip(store: s, savedVideoIds: saved),
                       const SizedBox(height: AppSpace.xxl),
                     ],
-                    SectionHeader(s.t('Choose a module', 'मॉड्यूल चुनें')),
-                    for (final mod in kTrainingModules) ...[
-                      _ModuleCard(
-                        store: s,
-                        module: mod,
-                        watchedIds: watched,
-                        quizPassed: s.trainingQuizPassed.contains(mod.id),
+                    SectionHeader(s.t('Modules', 'मॉड्यूल')),
+                    _ModuleGrid(store: s, watchedIds: watched),
+                    const SizedBox(height: AppSpace.xxl),
+                    ReassuranceNote(
+                      s.t(
+                        'Videos are in English. Each module carries a short Hindi description so you know what it covers.',
+                        'वीडियो अंग्रेज़ी में हैं। हर मॉड्यूल के साथ हिंदी विवरण दिया गया है।',
                       ),
-                      const SizedBox(height: AppSpace.md),
-                    ],
-                    const SizedBox(height: AppSpace.lg),
-                    _VideoLanguageNote(store: s),
+                    ),
                     const SizedBox(height: AppSpace.lg),
                     YouTubeSourceNote(store: s),
                     const SizedBox(height: AppSpace.huge),
@@ -89,9 +87,7 @@ class TrainingsPage extends StatelessWidget {
   );
 }
 
-/// Dismissible nudge banner (welcome / resume / streak / completion /
-/// milestone). The computation lives in [computeTrainingNudge]; this
-/// widget only renders.
+/// Dismissible nudge banner — kept identical to the original.
 class _NudgeBanner extends StatelessWidget {
   final AppStore store;
   final TrainingNudge nudge;
@@ -100,7 +96,6 @@ class _NudgeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = store;
-    const tone = AppCardTone.brand;
     final icon = switch (nudge.kind) {
       TrainingNudgeKind.welcome => Icons.waving_hand_outlined,
       TrainingNudgeKind.resume => Icons.play_circle_outline,
@@ -109,7 +104,7 @@ class _NudgeBanner extends StatelessWidget {
       TrainingNudgeKind.milestone => Icons.emoji_events_outlined,
     };
     return AppCard(
-      tone: tone,
+      tone: AppCardTone.brand,
       padding: const EdgeInsets.all(AppSpace.lg),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,13 +147,85 @@ class _NudgeBanner extends StatelessWidget {
   }
 }
 
-/// Overall progress ring + streak chip.
-class _OverallProgress extends StatelessWidget {
+/// Hero card shown when the user has watched at least one video.
+/// Surfaces the last watched video with a Play CTA.
+class _ContinueHero extends StatelessWidget {
+  final AppStore store;
+  final Set<String> watchedIds;
+  const _ContinueHero({required this.store, required this.watchedIds});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = store;
+    final lastId = s.trainingLastVideoId;
+    // Show only when there is a last video and not all 34 are done.
+    if (lastId == null || watchedIds.length >= kTotalTrainingVideos) {
+      return const SizedBox.shrink();
+    }
+    final video = findTrainingVideo(lastId);
+    final mod = moduleForVideo(lastId);
+    if (video == null || mod == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpace.lg),
+      child: FadeSlideIn(
+        child: Panel(
+          tone: AppCardTone.brand,
+          padding: const EdgeInsets.all(AppSpace.lg),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.t('RESUME', 'जारी रखें').toUpperCase(),
+                      style: AppText.overline.copyWith(color: AppColors.brand),
+                    ),
+                    const SizedBox(height: AppSpace.xs),
+                    Text(
+                      s.t(video.titleEn, video.titleHi),
+                      style: AppText.bodyStrong,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      s.t(mod.titleEn, mod.titleHi),
+                      style: AppText.caption,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpace.md),
+              AppButton(
+                label: s.t('Play', 'चलाएं'),
+                icon: Icons.play_arrow_outlined,
+                onPressed: () {
+                  s.event('cta_clicked', page: 'trainings', props: {
+                    'destination': 'resume_video',
+                    'videoId': lastId,
+                  });
+                  _openModule(context, s, mod.id, from: 'continue_hero');
+                },
+                size: AppButtonSize.sm,
+                expand: false,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Three horizontal stat chips: watched count, % done, streak.
+class _ProgressStrip extends StatelessWidget {
   final AppStore store;
   final int watched;
   final int total;
   final int streak;
-  const _OverallProgress({
+  const _ProgressStrip({
     required this.store,
     required this.watched,
     required this.total,
@@ -168,159 +235,179 @@ class _OverallProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = store;
-    final pct = total == 0 ? 0.0 : watched / total;
-    return Panel(
-      padding: const EdgeInsets.all(AppSpace.xl),
+    final pct = total == 0 ? 0 : (watched / total * 100).floor();
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          AppProgressRing(
-            value: pct,
-            label: '$watched / $total',
-            semanticLabel: s.t(
-              '$watched of $total videos watched',
-              '$total में से $watched वीडियो देखे',
-            ),
+          _Chip(
+            icon: Icons.ondemand_video_outlined,
+            label: s.t('$watched watched', '$watched देखे'),
           ),
-          const SizedBox(width: AppSpace.xl),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  s.t('Your training', 'आपका प्रशिक्षण'),
-                  style: AppText.caption,
-                ),
-                const SizedBox(height: AppSpace.xs),
-                Text(
-                  s.t(
-                    '$watched of $total videos watched',
-                    '$total में से $watched वीडियो देखे',
-                  ),
-                  style: AppText.title,
-                ),
-                const SizedBox(height: AppSpace.sm),
-                if (streak > 0)
-                  StatusChip(
-                    s.t(
-                      '$streak-day streak',
-                      '$streak-दिन streak',
-                    ),
-                    tone: StatusTone.success,
-                    icon: Icons.local_fire_department_outlined,
-                  )
-                else
-                  Text(
-                    s.t(
-                      'Watch one video to start a streak.',
-                      'streak शुरू करने के लिए एक वीडियो देखें।',
-                    ),
-                    style: AppText.caption,
-                  ),
-              ],
+          if (watched > 0) ...[
+            const SizedBox(width: AppSpace.sm),
+            _Chip(
+              icon: Icons.bar_chart_outlined,
+              label: s.t('$pct% done', '$pct% पूर्ण'),
             ),
-          ),
+          ],
+          if (streak > 0) ...[
+            const SizedBox(width: AppSpace.sm),
+            _Chip(
+              icon: Icons.local_fire_department_outlined,
+              label: s.t('$streak-day streak', '$streak-दिन streak'),
+              iconColor: AppColors.warning,
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-/// A single module tile.
-class _ModuleCard extends StatelessWidget {
+class _Chip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color? iconColor;
+  const _Chip({required this.icon, required this.label, this.iconColor});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: AppColors.surfaceMuted,
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: iconColor ?? AppColors.textSecondary),
+        const SizedBox(width: AppSpace.xs),
+        Text(label, style: AppText.label),
+      ],
+    ),
+  );
+}
+
+/// 2-column grid of module cards.
+class _ModuleGrid extends StatelessWidget {
+  final AppStore store;
+  final Set<String> watchedIds;
+  const _ModuleGrid({required this.store, required this.watchedIds});
+
+  // Accent colors per module slot — uses design system tints only.
+  static const _tints = [
+    AppColors.brandTint,
+    AppColors.infoTint,
+    AppColors.warningTint,
+    AppColors.brandTint,
+    AppColors.infoTint,
+    AppColors.dangerTint,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final s = store;
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: AppSpace.md,
+        mainAxisSpacing: AppSpace.md,
+        childAspectRatio: 0.88,
+      ),
+      itemCount: kTrainingModules.length,
+      itemBuilder: (context, i) {
+        final mod = kTrainingModules[i];
+        final total = mod.videos.length;
+        final done = mod.videos
+            .where((v) => watchedIds.contains(v.videoId))
+            .length;
+        final allWatched = done == total;
+        final quizPassed = s.trainingQuizPassed.contains(mod.id);
+        final tint = _tints[i % _tints.length];
+        return _ModuleGridCard(
+          store: s,
+          module: mod,
+          index: i + 1,
+          done: done,
+          total: total,
+          allWatched: allWatched,
+          quizPassed: quizPassed,
+          tint: tint,
+        );
+      },
+    );
+  }
+}
+
+class _ModuleGridCard extends StatelessWidget {
   final AppStore store;
   final TrainingModule module;
-  final Set<String> watchedIds;
+  final int index;
+  final int done;
+  final int total;
+  final bool allWatched;
   final bool quizPassed;
-  const _ModuleCard({
+  final Color tint;
+  const _ModuleGridCard({
     required this.store,
     required this.module,
-    required this.watchedIds,
+    required this.index,
+    required this.done,
+    required this.total,
+    required this.allWatched,
     required this.quizPassed,
+    required this.tint,
   });
 
   @override
   Widget build(BuildContext context) {
     final s = store;
-    final total = module.videos.length;
-    final done = module.videos.where((v) => watchedIds.contains(v.videoId)).length;
-    final allWatched = done == total;
+    final numLabel = index.toString().padLeft(2, '0');
     return AppCard(
-      onTap: () => _openModule(context, s, module.id, from: 'module_card'),
+      onTap: () => _openModule(context, s, module.id, from: 'module_grid'),
       padding: const EdgeInsets.all(AppSpace.lg),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: AppColors.brandTint,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              module.icon,
-              color: AppColors.brand,
-              size: AppIconSize.md,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: tint, shape: BoxShape.circle),
+                child: Icon(module.icon, color: AppColors.brand, size: 20),
+              ),
+              const Spacer(),
+              if (quizPassed)
+                const Icon(Icons.verified_outlined, size: 18, color: AppColors.brand)
+              else if (allWatched)
+                const Icon(Icons.check_circle_outline, size: 18, color: AppColors.brand)
+              else if (done > 0)
+                Text('$done/$total', style: AppText.tick),
+            ],
           ),
-          const SizedBox(width: AppSpace.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        s.t(module.titleEn, module.titleHi),
-                        style: AppText.title,
-                      ),
-                    ),
-                    if (allWatched) ...[
-                      const SizedBox(width: AppSpace.sm),
-                      StatusChip(
-                        quizPassed
-                            ? s.t('Mastered', 'पूरा दक्ष')
-                            : s.t('Watched', 'देखा'),
-                        tone: StatusTone.success,
-                        icon: quizPassed
-                            ? Icons.emoji_events_outlined
-                            : Icons.check_circle_outline,
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: AppSpace.xs),
-                Text(
-                  s.t(module.subtitleEn, module.subtitleHi),
-                  style: AppText.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: AppSpace.md),
-                AppProgressBar(
-                  value: total == 0 ? 0.0 : done / total,
-                  semanticLabel: s.t(
-                    '$done of $total videos watched',
-                    '$total में से $done वीडियो देखे',
-                  ),
-                ),
-                const SizedBox(height: AppSpace.xs),
-                Text(
-                  s.t(
-                    '$done of $total videos · ~${module.totalMinutes} min',
-                    '$total में से $done वीडियो · ~${module.totalMinutes} मिनट',
-                  ),
-                  style: AppText.caption,
-                ),
-              ],
-            ),
+          const SizedBox(height: AppSpace.sm),
+          Text(numLabel, style: AppText.overline),
+          const SizedBox(height: AppSpace.xs),
+          Text(
+            s.t(module.titleEn, module.titleHi),
+            style: AppText.bodyStrong,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(width: AppSpace.sm),
-          const Icon(
-            Icons.chevron_right,
-            color: AppColors.textHint,
-            size: AppIconSize.md,
+          const SizedBox(height: AppSpace.xs),
+          Text('$total videos', style: AppText.caption),
+          const Spacer(),
+          AppProgressBar(value: total == 0 ? 0.0 : done / total, height: 4),
+          const SizedBox(height: AppSpace.xs),
+          Text(
+            s.t('$done of $total', '$total में से $done'),
+            style: AppText.tick,
+            textAlign: TextAlign.right,
           ),
         ],
       ),
@@ -328,7 +415,7 @@ class _ModuleCard extends StatelessWidget {
   }
 }
 
-/// Horizontal strip of bookmarked videos; opens the owning module.
+/// Horizontal strip of bookmarked videos.
 class _SavedStrip extends StatelessWidget {
   final AppStore store;
   final List<String> savedVideoIds;
@@ -337,7 +424,6 @@ class _SavedStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = store;
-    // Resolve ids to concrete videos, dropping any that no longer exist.
     final rows = <(TrainingVideo, TrainingModule)>[];
     for (final id in savedVideoIds) {
       final v = findTrainingVideo(id);
@@ -348,9 +434,7 @@ class _SavedStrip extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionHeader(
-          s.t('My saved videos', 'मेरे सहेजे गए वीडियो'),
-        ),
+        SectionHeader(s.t('My saved videos', 'मेरे सहेजे गए वीडियो')),
         for (final (v, m) in rows) ...[
           AppListTile(
             icon: Icons.bookmark_outlined,
@@ -368,38 +452,7 @@ class _SavedStrip extends StatelessWidget {
   }
 }
 
-/// Caveat about the video language (playlist is English-only).
-class _VideoLanguageNote extends StatelessWidget {
-  final AppStore store;
-  const _VideoLanguageNote({required this.store});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = store;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Icon(
-          Icons.info_outline,
-          size: AppIconSize.sm,
-          color: AppColors.textSecondary,
-        ),
-        const SizedBox(width: AppSpace.sm),
-        Expanded(
-          child: Text(
-            s.t(
-              'The official videos are in English. Each module here carries a short Hindi description so you know what each one covers.',
-              'आधिकारिक वीडियो अंग्रेज़ी में हैं। हर मॉड्यूल के साथ हिंदी में संक्षिप्त विवरण दिया गया है।',
-            ),
-            style: AppText.caption,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Push the module detail page and fire the standard `cta_clicked` event.
+/// Push the module detail page.
 void _openModule(
   BuildContext context,
   AppStore store,
