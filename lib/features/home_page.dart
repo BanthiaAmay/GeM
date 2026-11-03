@@ -443,14 +443,6 @@ class _HomeDrawer extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(
-                Icons.task_alt_outlined,
-                color: AppColors.brand,
-              ),
-              title: Text(s.t('Execution', 'निष्पादन')),
-              onTap: () => openDrawerPage((_) => ExecutionPage(store: s)),
-            ),
-            ListTile(
-              leading: const Icon(
                 Icons.payments_outlined,
                 color: AppColors.brand,
               ),
