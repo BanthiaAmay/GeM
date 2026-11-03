@@ -41,7 +41,6 @@ List<(_Tab, IconData, IconData, String)> _navItems(AppStore s) => [
   (
     // Short form in the nav bar so the label never wraps next to
     // "GeM 101" and "Profile" at phone width; the tab's own page
-    // header still reads the full "Finance Hub".
     _Tab.financialHub,
     Icons.account_balance_outlined,
     Icons.account_balance,
@@ -949,7 +948,7 @@ class _FinancialHubTab extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _PageHeader(
-          title: s.t('Finance Hub', 'वित्त केंद्र'),
+          title: s.t('Finance', 'वित्त'),
           subtitle: s.t(
             'Plan the money side of a bid before you commit to it.',
             'प्रतिबद्ध होने से पहले बोली के वित्तीय पक्ष की योजना बनाएं।',
