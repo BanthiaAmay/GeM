@@ -56,3 +56,6 @@ android/key.properties
 *.jks
 *.keystore
 research/exports/
+
+# Windows bid-worker logs (scripts/windows/run_worker.bat)
+/logs/
