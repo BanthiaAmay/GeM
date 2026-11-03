@@ -203,74 +203,6 @@ class DocumentationsPage extends StatelessWidget {
   }
 }
 
-class BidPreparationAssistancePage extends StatelessWidget {
-  final AppStore store;
-  const BidPreparationAssistancePage({super.key, required this.store});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = store;
-    return _DrawerPageScaffold(
-      store: s,
-      title: s.t('Bid Preparation Assistance', 'बोली तैयारी सहायता'),
-      subtitle: s.t(
-        'What to check before you apply for a bid.',
-        'बोली लगाने से पहले क्या जाँचें।',
-      ),
-      children: [
-        _InfoList(
-          rows: [
-            (
-              Icons.rule_outlined,
-              s.t('Eligibility & specifications', 'पात्रता और विनिर्देश'),
-              s.t(
-                'Match your offering to the exact technical specification and quantity.',
-                'अपनी पेशकश को सटीक तकनीकी विनिर्देश और मात्रा से मिलाएँ।',
-              ),
-            ),
-            (
-              Icons.verified_outlined,
-              s.t('Required certificates', 'आवश्यक प्रमाणपत्र'),
-              s.t(
-                'OEM authorisation, quality certificates or test reports the bid may ask for.',
-                'OEM प्राधिकरण, गुणवत्ता प्रमाणपत्र या टेस्ट रिपोर्ट जो बोली माँग सकती है।',
-              ),
-            ),
-            (
-              Icons.account_balance_wallet_outlined,
-              s.t('EMD / bid security', 'EMD / बोली प्रतिभूति'),
-              s.t(
-                'Check whether an earnest money deposit applies and how it is paid.',
-                'जाँचें कि क्या बयाना राशि जमा लागू होती है और वह कैसे जमा होती है।',
-              ),
-            ),
-            (
-              Icons.local_shipping_outlined,
-              s.t('Delivery timeline', 'डिलिवरी समयसीमा'),
-              s.t(
-                'Confirm you can meet the delivery period before you submit.',
-                'सबमिट करने से पहले पुष्टि करें कि आप डिलिवरी अवधि पूरी कर सकते हैं।',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpace.lg),
-        AppCard(
-          padding: const EdgeInsets.all(AppSpace.lg),
-          child: AppListTile(
-            icon: Icons.chat_bubble_outline,
-            title: s.t('Ask BizReady', 'BizReady से पूछें'),
-            subtitle: s.t(
-              'Get clear answers about preparing for GeM.',
-              'GeM की तैयारी के बारे में स्पष्ट जवाब पाएं।',
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class BidCyclePage extends StatelessWidget {
   final AppStore store;
   const BidCyclePage({super.key, required this.store});
@@ -393,62 +325,6 @@ class ExecutionPage extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ],
-    );
-  }
-}
-
-class EarningsDynamicsPage extends StatelessWidget {
-  final AppStore store;
-  const EarningsDynamicsPage({super.key, required this.store});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = store;
-    return _DrawerPageScaffold(
-      store: s,
-      title: s.t('Earnings Dynamics', 'कमाई गतिशीलता'),
-      subtitle: s.t(
-        'How revenue, margin and contribution relate on a GeM order.',
-        'GeM ऑर्डर पर राजस्व, मार्जिन और योगदान का संबंध।',
-      ),
-      children: [
-        _InfoList(
-          rows: [
-            (
-              Icons.bar_chart_outlined,
-              s.t('Revenue vs. margin', 'राजस्व बनाम मार्जिन'),
-              s.t(
-                'Revenue is the order value; margin is what remains after your cost of goods.',
-                'राजस्व ऑर्डर मूल्य है; मार्जिन वह है जो आपकी वस्तु लागत के बाद बचता है।',
-              ),
-            ),
-            (
-              Icons.calculate_outlined,
-              s.t('Contribution, not profit', 'योगदान, लाभ नहीं'),
-              s.t(
-                'Contribution subtracts fees and delivery cost, but not overheads, tax or financing cost.',
-                'योगदान में फीस और डिलिवरी लागत घटाई जाती है, पर ओवरहेड, कर या वित्तपोषण लागत नहीं।',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpace.lg),
-        Text(
-          s.t(
-            'See your own numbers in the Finance tab\'s ROI calculator.',
-            'फाइनेंस टैब के ROI कैलकुलेटर में अपने आँकड़े देखें।',
-          ),
-          style: AppText.bodySmall,
-        ),
-        const SizedBox(height: AppSpace.sm),
-        Text(
-          s.t(
-            'Estimates are illustrative only — payment delay, financing cost, and tax are not modelled.',
-            'अनुमान केवल उदाहरण के लिए हैं — भुगतान में देरी, वित्तपोषण लागत और कर शामिल नहीं हैं।',
-          ),
-          style: AppText.caption,
         ),
       ],
     );

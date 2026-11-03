@@ -442,17 +442,6 @@ class _HomeDrawer extends StatelessWidget {
               onTap: () => openDrawerPage((_) => DocumentationsPage(store: s)),
             ),
             ListTile(
-              leading: const Icon(
-                Icons.fact_check_outlined,
-                color: AppColors.brand,
-              ),
-              title: Text(
-                s.t('Bid Preparation Assistance', 'बोली तैयारी सहायता'),
-              ),
-              onTap: () =>
-                  openDrawerPage((_) => BidPreparationAssistancePage(store: s)),
-            ),
-            ListTile(
               leading: const Icon(Icons.sync_outlined, color: AppColors.brand),
               title: Text(s.t('Bid Cycle', 'बोली चक्र')),
               onTap: () => openDrawerPage((_) => BidCyclePage(store: s)),
@@ -464,15 +453,6 @@ class _HomeDrawer extends StatelessWidget {
               ),
               title: Text(s.t('Execution', 'निष्पादन')),
               onTap: () => openDrawerPage((_) => ExecutionPage(store: s)),
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.trending_up_outlined,
-                color: AppColors.brand,
-              ),
-              title: Text(s.t('Earnings Dynamics', 'कमाई गतिशीलता')),
-              onTap: () =>
-                  openDrawerPage((_) => EarningsDynamicsPage(store: s)),
             ),
             ListTile(
               leading: const Icon(
