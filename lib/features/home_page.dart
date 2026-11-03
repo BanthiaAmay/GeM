@@ -443,14 +443,6 @@ class _HomeDrawer extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(
-                Icons.payments_outlined,
-                color: AppColors.brand,
-              ),
-              title: Text(s.t('Financing', 'वित्तपोषण')),
-              onTap: () => openDrawerPage((_) => FinancingPage(store: s)),
-            ),
-            ListTile(
-              leading: const Icon(
                 Icons.ondemand_video_outlined,
                 color: AppColors.brand,
               ),
