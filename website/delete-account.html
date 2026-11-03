@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Delete your account — Bid2Scale</title>
+  <meta name="description" content="Delete your Bid2Scale account and all its data, in the app or on this page.">
+  <link rel="icon" href="assets/favicon.png">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <a class="brand" href="index.html" aria-label="Bid2Scale home"><img src="assets/bid2scale-logo-lockup.png" alt="Bid2Scale"></a>
+    <nav aria-label="Main">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#bids">Live bids</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="delete-account.html" aria-current="page">Delete account</a>
+    </nav>
+  </header>
+
+  <main id="main" class="doc">
+    <span class="eyebrow">Account deletion</span>
+    <h1>Delete your Bid2Scale account</h1>
+    <p class="lead">You can delete your account and all its data yourself, in the app or right here. It takes about a minute.</p>
+
+    <h2>In the app</h2>
+    <ol>
+      <li>Open Bid2Scale and sign in.</li>
+      <li>Go to the <strong>Profile</strong> tab.</li>
+      <li>Tap <strong>Delete my account</strong> and confirm.</li>
+    </ol>
+
+    <h2>On this website</h2>
+    <div id="delete-flow" class="card">
+      <div id="step-email">
+        <form id="form-email">
+          <div class="field">
+            <label for="email">The email you use in Bid2Scale</label>
+            <input id="email" name="email" type="email" autocomplete="email" required>
+          </div>
+          <button class="btn" type="submit">Send me a code</button>
+        </form>
+      </div>
+      <div id="step-code" hidden>
+        <form id="form-code">
+          <div class="field">
+            <label for="code">Code from the email</label>
+            <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" required>
+          </div>
+          <div class="actions">
+            <button class="btn" type="submit">Continue</button>
+            <button class="btn secondary" type="button" id="restart">Use a different email</button>
+          </div>
+        </form>
+      </div>
+      <div id="step-confirm" hidden>
+        <p>Signed in as <strong id="signed-in-as"></strong>.</p>
+        <div class="note warn">This permanently deletes your account and everything linked to it. It cannot be undone.</div>
+        <label class="check"><input type="checkbox" id="understand"> <span>I understand my account and all its data will be deleted permanently.</span></label>
+        <button class="btn danger" id="do-delete" type="button" disabled>Delete my account</button>
+      </div>
+      <div id="step-done" hidden>
+        <h3>Your account has been deleted.</h3>
+        <p class="muted">Your sign-in and all Bid2Scale data linked to it are gone. You can uninstall the app; if you use it again you will start fresh.</p>
+      </div>
+      <p id="delete-status" class="status" role="status" aria-live="polite"></p>
+    </div>
+    <div id="delete-offline" class="note" hidden>Online deletion is not available on this page right now. Please delete your account in the app (Profile → Delete my account), or contact us below.</div>
+
+    <h2>What is deleted</h2>
+    <ul>
+      <li>Your sign-in identity (email account in Bid2Scale).</li>
+      <li>Your business profile answers, readiness checklist and calculator results.</li>
+      <li>Your bid alert settings, keywords, WhatsApp number and consent, alert inbox, and any queued notifications or emails.</li>
+      <li>Registered devices for app notifications and your Saathi usage count.</li>
+      <li>Optional research data and support requests.</li>
+    </ul>
+    <p class="muted">Data stored only on your phone is cleared when you sign out, delete in the app, or uninstall. Limited records may be kept only where the law requires or to investigate abuse.</p>
+
+    <h2>Can’t sign in?</h2>
+    <p>Contact <span data-contact>us through the developer contact on our Google Play listing</span> from the email address on the account, and we will delete it for you.</p>
+  </main>
+
+  <footer>
+    <div class="wrap cols">
+      <p>© <span data-year></span> Bid2Scale. Not affiliated with Government e-Marketplace (GeM).</p>
+      <nav aria-label="Footer">
+        <a href="index.html">Home</a>
+        <a href="privacy.html">Privacy policy</a>
+        <a href="terms.html">Terms of use</a>
+      </nav>
+    </div>
+  </footer>
+  <script src="js/config.js" onerror="this.remove()"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>
