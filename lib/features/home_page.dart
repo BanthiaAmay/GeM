@@ -7,7 +7,6 @@ import '../core/transitions.dart';
 import '../data/app_store.dart';
 import 'brand_logo.dart';
 import 'components.dart';
-import 'drawer_pages.dart';
 import 'oem/oem_page.dart';
 import 'search/search_engine.dart';
 import 'search/search_store.dart';
@@ -432,14 +431,6 @@ class _HomeDrawer extends StatelessWidget {
                 Navigator.of(context).pop();
                 Navigator.of(context).pushNamed('/alerts');
               },
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.description_outlined,
-                color: AppColors.brand,
-              ),
-              title: Text(s.t('Documentations', 'दस्तावेज़')),
-              onTap: () => openDrawerPage((_) => DocumentationsPage(store: s)),
             ),
             ListTile(
               leading: const Icon(
