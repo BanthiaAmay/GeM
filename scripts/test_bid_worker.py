@@ -64,6 +64,9 @@ class FakeDb:
     def rpc(self, name, args):
         if name in ('claim_push_jobs', 'claim_email_jobs', 'claim_whatsapp_jobs'):
             return self.jobs
+        if name == 'cleanup_bids':
+            self.cleaned = True
+            return {'closed_bids_deleted': 2, 'bids_slimmed': 1, 'old_jobs_deleted': 0}
         self.queued.append(args['p_bid_id'])
         return 1
 
@@ -159,6 +162,7 @@ class CollectTest(unittest.TestCase):
         self.assertEqual(new[0]['category'], '')
         self.assertEqual(db.queued, ['id-GEM/2026/B/3'])
         self.assertEqual(gem.documents, [3])
+        self.assertTrue(db.cleaned)  # Retention runs after every saving collection.
 
     def test_dry_run_writes_nothing(self):
         gem = FakeGem([[listing(3, NOW - timedelta(minutes=5))]])

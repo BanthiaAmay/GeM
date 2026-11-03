@@ -250,6 +250,13 @@ def collect(gem, db, *, now, lookback, max_pages, max_documents, dry_run=False, 
                              for k in NEW_COLUMNS} for r in new]) if new else []
     matched = sum(int(db.rpc('queue_bid_matches', {'p_bid_id': row['id']}) or 0) for row in saved)
     log(f'Saved {len(saved)} new bids, refreshed {len(refreshed)}, {matched} user matches queued.')
+    try:
+        cleaned = db.rpc('cleanup_bids', {}) or {}
+        log('Cleanup: {closed_bids_deleted} closed bids deleted, {bids_slimmed} unmatched bids '
+            'slimmed, {old_jobs_deleted} old delivery records deleted.'.format(**{
+                'closed_bids_deleted': 0, 'bids_slimmed': 0, 'old_jobs_deleted': 0, **cleaned}))
+    except Exception as error:  # Keep alerting even before the retention migration runs.
+        log(f'Cleanup skipped: {error}')
     return len(saved)
 
 
