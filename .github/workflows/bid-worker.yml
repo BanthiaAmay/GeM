@@ -1,9 +1,11 @@
 name: Bid alerts worker
 # Collects new GeM bids, queues matches, sends app notifications and email digests.
 # Off until the repository variable BID_WORKER_ENABLED is set to "true".
+# Hourly keeps a private repo inside GitHub's free Actions minutes; switch
+# to '*/15 * * * *' (or Render, render.yaml) for faster alerts.
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '7 * * * *'   # minute 7 of every hour (UTC), off the busy :00
   workflow_dispatch:
 concurrency:
   group: bid-worker
@@ -21,7 +23,7 @@ jobs:
           cache: pip
           cache-dependency-path: scripts/requirements-worker.txt
       - run: pip install -r scripts/requirements-worker.txt
-      - run: python scripts/bid_worker.py run
+      - run: python scripts/bid_worker.py run --max-documents 300 --min-gap-minutes 60 --email-gap-hours 12 --whatsapp-gap-hours 24
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
