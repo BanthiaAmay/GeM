@@ -949,10 +949,6 @@ class _FinancialHubTab extends StatelessWidget {
       children: [
         _PageHeader(
           title: s.t('Finance', 'वित्त'),
-          subtitle: s.t(
-            'Plan the money side of a bid before you commit to it.',
-            'प्रतिबद्ध होने से पहले बोली के वित्तीय पक्ष की योजना बनाएं।',
-          ),
         ),
         AppCard(
           padding: const EdgeInsets.symmetric(
@@ -990,21 +986,6 @@ class _FinancialHubTab extends StatelessWidget {
                     s.t('Coming Soon', 'जल्द आ रहा है'),
                     style: AppText.overline.copyWith(color: AppColors.brand),
                   ),
-                ),
-                const SizedBox(height: AppSpace.md),
-                Text(
-                  s.t('Financing tools on the way', 'वित्त उपकरण जल्द आएंगे'),
-                  style: AppText.h3,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpace.sm),
-                Text(
-                  s.t(
-                    'Working capital guides, CGTMSE scheme tips, and cash-flow planning tools are being built. Check back soon.',
-                    'वर्किंग कैपिटल गाइड, CGTMSE योजना टिप्स और कैश-फ्लो टूल्स बन रहे हैं। जल्द वापस देखें।',
-                  ),
-                  style: AppText.secondary(AppText.body),
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),
