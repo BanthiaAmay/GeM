@@ -96,28 +96,6 @@ class _DrawerPageScaffold extends StatelessWidget {
   }
 }
 
-/// A card of plain, non-interactive explainer rows (no checklist state,
-/// no chevron) — used for the ordered "how this works" lists on these
-/// pages, as distinct from the actionable [StatusItem] checklist in
-/// [DocumentChecklistCard].
-class _InfoList extends StatelessWidget {
-  final List<(IconData, String, String)> rows;
-  const _InfoList({required this.rows});
-
-  @override
-  Widget build(BuildContext context) => AppCard(
-    padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
-    child: DividedList(
-      children: [
-        for (final (icon, title, subtitle) in rows)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpace.xs),
-            child: AppListTile(icon: icon, title: title, subtitle: subtitle),
-          ),
-      ],
-    ),
-  );
-}
 
 /// The document-readiness checklist, shared between the GeM 101 tab and
 /// its own drawer destination so the two don't drift apart.
@@ -218,41 +196,58 @@ class FinancingPage extends StatelessWidget {
         'सरकारी ऑर्डर के नकदी-प्रवाह पक्ष की योजना बनाना।',
       ),
       children: [
-        _InfoList(
-          rows: [
-            (
-              Icons.schedule_outlined,
-              s.t('Payment timing', 'भुगतान समय'),
-              s.t(
-                'GeM payments are typically released after delivery and inspection are confirmed — not on order date.',
-                'GeM भुगतान आमतौर पर डिलिवरी और निरीक्षण की पुष्टि के बाद जारी होता है — ऑर्डर की तारीख पर नहीं।',
-              ),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpace.xxl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(
+                    color: AppColors.brandTint,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.savings_outlined,
+                    color: AppColors.brand,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(height: AppSpace.xl),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpace.md,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.brandTint,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    s.t('Coming Soon', 'जल्द आ रहा है'),
+                    style: AppText.overline.copyWith(color: AppColors.brand),
+                  ),
+                ),
+                const SizedBox(height: AppSpace.lg),
+                Text(
+                  s.t('Financing tools on the way', 'वित्त उपकरण जल्द आएंगे'),
+                  style: AppText.h3,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpace.sm),
+                Text(
+                  s.t(
+                    'Working capital guides, CGTMSE scheme tips, and cash-flow planning tools are being built. Check back soon.',
+                    'वर्किंग कैपिटल गाइड, CGTMSE योजना टिप्स और कैश-फ्लो टूल्स बन रहे हैं। जल्द वापस देखें।',
+                  ),
+                  style: AppText.secondary(AppText.body),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            (
-              Icons.account_balance_wallet_outlined,
-              s.t('Working capital gap', 'कार्यशील पूंजी अंतर'),
-              s.t(
-                'Budget for the cost of goods and delivery before payment arrives.',
-                'भुगतान आने से पहले वस्तु और डिलिवरी लागत के लिए बजट बनाएं।',
-              ),
-            ),
-            (
-              Icons.savings_outlined,
-              s.t('Government schemes', 'सरकारी योजनाएं'),
-              s.t(
-                'MSEs can explore schemes like CGTMSE collateral-free credit; eligibility and terms are set by the scheme, not by this app.',
-                'MSE CGTMSE जैसी बिना गारंटी वाली ऋण योजनाएँ देख सकते हैं; पात्रता और शर्तें योजना द्वारा तय होती हैं, इस ऐप द्वारा नहीं।',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpace.lg),
-        Text(
-          s.t(
-            'Confirm current scheme terms with your bank or the scheme administrator.',
-            'वर्तमान योजना शर्तों की पुष्टि अपने बैंक या योजना प्रशासक से करें।',
           ),
-          style: AppText.caption,
         ),
       ],
     );
