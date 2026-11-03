@@ -964,46 +964,6 @@ class _FinancialHubTab extends StatelessWidget {
             'प्रतिबद्ध होने से पहले बोली के वित्तीय पक्ष की योजना बनाएं।',
           ),
         ),
-        _ToolSection(
-          icon: Icons.bar_chart_outlined,
-          title: s.t('ROI calculator', 'ROI कैलकुलेटर'),
-          description: s.t(
-            'Estimate bid costs, working capital, and potential return.',
-            'बोली लागत, कार्यशील पूंजी और संभावित रिटर्न का अनुमान लगाएँ।',
-          ),
-          body: s.t(
-            'Use a simple estimate before bidding: include purchase cost, delivery, taxes, fees, and the time before payment.',
-            'बोली लगाने से पहले एक सरल अनुमान लगाएँ: खरीद लागत, डिलिवरी, कर, फीस और भुगतान से पहले का समय शामिल करें।',
-          ),
-        ),
-        const SizedBox(height: AppSpace.lg),
-        _ToolSection(
-          icon: Icons.chat_bubble_outline,
-          title: s.t('Ask Bid2Scale', 'Bid2Scale से पूछें'),
-          onTap: () => Navigator.of(context).pushNamed('/saathi'),
-          description: s.t(
-            'Get clear answers about preparing for GeM.',
-            'GeM की तैयारी के बारे में स्पष्ट जवाब पाएं।',
-          ),
-          body: s.t(
-            'Try asking: "Which documents should I prepare before I apply for this bid?"',
-            'पूछकर देखें: "इस बोली के लिए आवेदन करने से पहले मुझे कौन से दस्तावेज़ तैयार करने चाहिए?"',
-          ),
-        ),
-        const SizedBox(height: AppSpace.lg),
-        AppCard(
-          padding: const EdgeInsets.all(AppSpace.lg),
-          onTap: () => Navigator.of(context).pushNamed('/insights'),
-          child: AppListTile(
-            icon: Icons.insights,
-            title: s.t('Insights & analytics', 'इनसाइट्स और विश्लेषण'),
-            subtitle: s.t(
-              'Trends, categories and bid fit',
-              'रुझान, श्रेणियाँ और बोली उपयुक्तता',
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpace.lg),
         AppCard(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpace.lg,
@@ -1063,43 +1023,6 @@ class _FinancialHubTab extends StatelessWidget {
       ],
     );
   }
-}
-
-class _ToolSection extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String description;
-  final String body;
-  final VoidCallback? onTap;
-  const _ToolSection({
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.body,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) => AppCard(
-    padding: const EdgeInsets.all(AppSpace.lg),
-    onTap: onTap,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: AppIconSize.md, color: AppColors.brand),
-            const SizedBox(width: AppSpace.sm),
-            Expanded(child: Text(title, style: AppText.title)),
-          ],
-        ),
-        const SizedBox(height: AppSpace.xs),
-        Text(description, style: AppText.caption),
-        const SizedBox(height: AppSpace.md),
-        Text(body, style: AppText.bodySmall),
-      ],
-    ),
-  );
 }
 
 class _ProfileTab extends StatelessWidget {
