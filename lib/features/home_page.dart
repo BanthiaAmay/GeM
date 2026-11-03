@@ -442,11 +442,6 @@ class _HomeDrawer extends StatelessWidget {
               onTap: () => openDrawerPage((_) => DocumentationsPage(store: s)),
             ),
             ListTile(
-              leading: const Icon(Icons.sync_outlined, color: AppColors.brand),
-              title: Text(s.t('Bid Cycle', 'बोली चक्र')),
-              onTap: () => openDrawerPage((_) => BidCyclePage(store: s)),
-            ),
-            ListTile(
               leading: const Icon(
                 Icons.task_alt_outlined,
                 color: AppColors.brand,
