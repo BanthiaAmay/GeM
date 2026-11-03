@@ -1,7 +1,7 @@
 /// Static content definitions for the universal search index.
 ///
 /// Lessons → GeM 101 modules (derived from the 9-step path in core/models.dart).
-/// Finance → Financial Hub products shown in the Finance tab and Financing drawer.
+/// Finance → Finance Hub products shown in the Finance tab.
 /// Calculators → ROI and price calculators.
 /// Categories → product categories from core/models.dart.
 /// FAQs → common questions surfaced by the search engine.
@@ -203,7 +203,7 @@ const kLessons = <SearchItem>[
   ),
 ];
 
-// ── Financial Hub products ──────────────────────────────────────────────────
+// ── Finance Hub products ──────────────────────────────────────────────────
 
 /// Indexed as [SearchType.finance]. Route 'home' opens the Finance tab.
 const kFinanceItems = <SearchItem>[
