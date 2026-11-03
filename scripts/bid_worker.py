@@ -37,6 +37,9 @@ from gem_source import IST, GemClient, GemError, enrich, gem_time, listing_recor
 # keeps the newest-first listing free of auctions.
 MIN_OPEN_DAYS = 6
 QUIET_START, QUIET_END = 22, 7  # IST hours: notifications wait until morning.
+# Sent on every outgoing call: Cloudflare-fronted APIs (Resend) refuse
+# Python's default "Python-urllib" agent with HTTP 403 / error 1010.
+USER_AGENT = 'Bid2Scale-bid-alerts/1.0'
 NEW_COLUMNS = ('source_id', 'title', 'category', 'buyer', 'ministry', 'organisation', 'state',
                'quantity', 'starts_at', 'closes_at', 'source_url', 'published', 'details',
                'fetched_at')
@@ -144,7 +147,7 @@ class Supabase:
 
     def request(self, method, path, payload=None, prefer=None):
         headers = {'apikey': self.key, 'Authorization': f'Bearer {self.key}',
-                   'Content-Type': 'application/json'}
+                   'Content-Type': 'application/json', 'User-Agent': USER_AGENT}
         if prefer:
             headers['Prefer'] = prefer
         data = None if payload is None else json.dumps(payload, default=str).encode()
@@ -383,7 +386,15 @@ def send_emails(db, make_sender, *, now, min_gap_hours=12, respect_quiet_hours=T
     delivered = 0
     for user_jobs in by_user.values():
         ids = [job['job_id'] for job in user_jobs]
-        status, detail = sender.send(user_jobs[0]['email'], build_email(user_jobs, user_jobs[0]['language']))
+        try:
+            status, detail = sender.send(user_jobs[0]['email'], build_email(user_jobs, user_jobs[0]['language']))
+        except EmailConfigError as error:
+            # The provider refused our key or sender: put every claimed job
+            # back so the next run retries once the setting is fixed.
+            waiting = [job['job_id'] for jobs_ in by_user.values() for job in jobs_]
+            db.update_jobs(waiting, {'status': 'pending', 'last_error': _short(str(error), 500)})
+            log(f'Email stopped: the provider refused the request ({error}). Check RESEND_API_KEY and EMAIL_FROM.')
+            return delivered
         if status == 'sent':
             db.update_jobs(ids, {'status': 'sent', 'sent_at': now.isoformat(),
                                  'provider_message_id': _short(detail, 200), 'last_error': None})
@@ -470,7 +481,8 @@ class WhatsAppSender:
                              'components': [{'type': 'body', 'parameters': [
                                  {'type': 'text', 'text': p} for p in message['params']]}]}}
         request = urllib.request.Request(self.endpoint, data=json.dumps(body).encode(), headers={
-            'Authorization': f'Bearer {self.token}', 'Content-Type': 'application/json'})
+            'Authorization': f'Bearer {self.token}', 'Content-Type': 'application/json',
+            'User-Agent': USER_AGENT})
         try:
             with self.urlopen(request, timeout=30) as response:
                 return 'sent', (json.load(response).get('messages') or [{}])[0].get('id', '')
@@ -500,7 +512,8 @@ class ResendSender:
         body = {'from': self.sender, 'to': [to], 'subject': message['subject'],
                 'html': message['html'], 'text': message['text']}
         request = urllib.request.Request(self.ENDPOINT, data=json.dumps(body).encode(), headers={
-            'Authorization': f'Bearer {self.api_key}', 'Content-Type': 'application/json'})
+            'Authorization': f'Bearer {self.api_key}', 'Content-Type': 'application/json',
+            'User-Agent': USER_AGENT})
         try:
             with self.urlopen(request, timeout=30) as response:
                 return 'sent', json.load(response).get('id', '')
@@ -557,7 +570,7 @@ class FcmSender:
         }}
         request = urllib.request.Request(self.endpoint, data=json.dumps(body).encode(), headers={
             'Authorization': f'Bearer {self._credentials.token}',
-            'Content-Type': 'application/json; charset=utf-8'})
+            'Content-Type': 'application/json; charset=utf-8', 'User-Agent': USER_AGENT})
         try:
             with self.urlopen(request, timeout=30) as response:
                 return 'sent', json.load(response).get('name', '')

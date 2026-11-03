@@ -3,7 +3,7 @@ import json
 import unittest
 from urllib.parse import unquote
 
-from bid_worker import (postgres_safe, EMAIL_TEXT, PUSH_TEXT, build_email, build_whatsapp, send_emails,
+from bid_worker import (postgres_safe, EmailConfigError, EMAIL_TEXT, PUSH_TEXT, build_email, build_whatsapp, send_emails,
                         send_whatsapp, FcmConfigError, build_message, classify_fcm_error, collect,
                         in_filter, in_quiet_hours, push, retry_at)
 from gem_source import IST
@@ -187,6 +187,17 @@ class EmailTest(unittest.TestCase):
         self.assertIn('Chairs &lt;b&gt;&amp;&lt;/b&gt; tables', message['html'])
         self.assertIn('OEM Authorization Certificate', message['html'])
         self.assertIn('https://bidplus.gem.gov.in/showbidDocument/2', message['text'])
+
+    def test_a_refused_key_releases_jobs_instead_of_crashing(self):
+        class Refusing:
+            def send(self, to, message):
+                raise EmailConfigError('Email 403: error code: 1010')
+        db = FakeDb([self.email_job(1), {**self.email_job(2), 'user_id': 'user-2'}])
+        lines = []
+        self.assertEqual(send_emails(db, lambda: Refusing(), now=NOW, log=lines.append), 0)
+        self.assertEqual(db.updates[0][1]['status'], 'pending')
+        self.assertEqual(db.updates[0][0], ['job-1', 'job-2'])
+        self.assertIn('Email stopped', lines[-1])
 
     def test_one_email_per_user(self):
         db = FakeDb([self.email_job(1), self.email_job(2)])
