@@ -1003,6 +1003,63 @@ class _FinancialHubTab extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: AppSpace.lg),
+        AppCard(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.lg,
+            vertical: AppSpace.xxl,
+          ),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: AppColors.brandTint,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.savings_outlined,
+                    color: AppColors.brand,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(height: AppSpace.lg),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpace.md,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.brandTint,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    s.t('Coming Soon', 'जल्द आ रहा है'),
+                    style: AppText.overline.copyWith(color: AppColors.brand),
+                  ),
+                ),
+                const SizedBox(height: AppSpace.md),
+                Text(
+                  s.t('Financing tools on the way', 'वित्त उपकरण जल्द आएंगे'),
+                  style: AppText.h3,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpace.sm),
+                Text(
+                  s.t(
+                    'Working capital guides, CGTMSE scheme tips, and cash-flow planning tools are being built. Check back soon.',
+                    'वर्किंग कैपिटल गाइड, CGTMSE योजना टिप्स और कैश-फ्लो टूल्स बन रहे हैं। जल्द वापस देखें।',
+                  ),
+                  style: AppText.secondary(AppText.body),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
