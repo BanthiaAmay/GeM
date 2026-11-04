@@ -68,6 +68,9 @@ class HomePage extends StatefulWidget {
 /// Header row height below the status bar: one row of 48pt tap targets.
 const _headerHeight = 48.0;
 
+/// The floating "Ask Saathi" button's height.
+const _saathiHeight = 52.0;
+
 /// The floating tab capsule's height (two 6pt paddings + a 48pt+ tab).
 const _navHeight = 66.0;
 
@@ -275,9 +278,14 @@ class _HomePageState extends State<HomePage>
                         AppSpace.xl,
                         insets.top + _headerHeight + AppSpace.md,
                         AppSpace.xl,
+                        // Clears the Saathi button too, so the last card
+                        // can always scroll fully into view.
                         isWide
-                            ? 60
-                            : _navBottom(insets) + _navHeight + AppSpace.md,
+                            ? 60 + _saathiHeight
+                            : _navBottom(insets) +
+                                  _navHeight +
+                                  _saathiHeight +
+                                  AppSpace.lg,
                       ),
                       child: AnimatedSwitcher(
                         duration: Motion.of(context, Motion.normal),
@@ -317,6 +325,22 @@ class _HomePageState extends State<HomePage>
                       ),
                     ),
                   ),
+                // Saathi, always one tap away: floats above the tab capsule
+                // (or the page corner on wide layouts) and tucks to an icon
+                // while the page scrolls down.
+                Positioned(
+                  right: AppSpace.lg,
+                  bottom: isWide
+                      ? AppSpace.xl
+                      : _navBottom(insets) + _navHeight + AppSpace.md,
+                  child: ValueListenableBuilder<double>(
+                    valueListenable: _headerShift,
+                    builder: (context, shift, _) => _SaathiButton(
+                      store: s,
+                      expanded: shift < _headerHeight / 2,
+                    ),
+                  ),
+                ),
               ],
             );
 
@@ -392,10 +416,7 @@ class _HomeDrawer extends StatelessWidget {
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(
-                Icons.person_outline,
-                color: AppColors.brand,
-              ),
+              leading: const Icon(Icons.person_outline, color: AppColors.brand),
               title: Text(s.t('Account', 'खाता')),
               onTap: () {
                 Navigator.of(context).pop();
@@ -557,10 +578,16 @@ class _HomeTab extends StatelessWidget {
         ),
         const SizedBox(height: AppSpace.sm),
         Text(
-          s.t(
-            '2 new opportunities match your business',
-            'आपके व्यवसाय से मेल खाने वाले 2 नए अवसर',
-          ),
+          s.unreadAlerts > 0
+              ? s.t(
+                  '{n} new bid alerts match your business',
+                  'आपके व्यवसाय से मेल खाते {n} नए बोली अलर्ट',
+                  vars: {'n': '${s.unreadAlerts}'},
+                )
+              : s.t(
+                  'Your GeM guide, bid feed and alerts in one place.',
+                  'आपकी GeM गाइड, बोली सूची और अलर्ट एक ही जगह।',
+                ),
           style: AppText.secondary(AppText.body),
         ),
         const SizedBox(height: AppSpace.lg),
@@ -617,7 +644,7 @@ class _HomeTab extends StatelessWidget {
                 index: 4,
                 child: _QuickAction(
                   icon: Icons.chat_bubble_outline,
-                  label: s.t('Ask\nBid2Scale', 'Bid2Scale\nसे पूछें'),
+                  label: s.t('Ask\nSaathi', 'साथी से\nपूछें'),
                   onTap: () => Navigator.of(context).pushNamed('/saathi'),
                 ),
               ),
@@ -735,26 +762,44 @@ class _NotificationsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(s.t('Notifications', 'सूचनाएं')),
-        // Dynamic saved-search alerts take priority when present.
-        if (searchAlerts.isNotEmpty) ...[
-          for (var i = 0; i < searchAlerts.length; i++) ...[
-            if (i > 0) const SizedBox(height: AppSpace.md),
-            _NotificationRow(
-              title: searchAlerts[i],
-              subtitle: s.t('New bid match', 'नया बोली मैच'),
-            ),
-          ],
-        ] else ...[
+        // Real bid alerts from the server first (the latest three), then
+        // any saved-search matches; never sample rows.
+        for (final alert in s.bidNotifications.take(3)) ...[
           _NotificationRow(
-            title: s.t('Office stationery supplies', 'ऑफिस स्टेशनरी सामग्री'),
+            title: alert['title'] as String? ?? '',
+            subtitle: alert['body'] as String? ?? '',
+            unread: alert['read_at'] == null,
+            onTap: () => Navigator.of(context).pushNamed('/alerts'),
+          ),
+          const SizedBox(height: AppSpace.md),
+        ],
+        for (final match in searchAlerts) ...[
+          _NotificationRow(
+            title: match,
             subtitle: s.t('New bid match', 'नया बोली मैच'),
           ),
           const SizedBox(height: AppSpace.md),
-          _NotificationRow(
-            title: s.t('IT hardware procurement', 'IT हार्डवेयर खरीद'),
-            subtitle: s.t('New bid match', 'नया बोली मैच'),
-          ),
         ],
+        if (s.bidNotifications.isEmpty && searchAlerts.isEmpty)
+          AppCard(
+            tone: AppCardTone.muted,
+            padding: const EdgeInsets.all(AppSpace.lg),
+            child: Text(
+              s.t(
+                'No bid alerts yet. Your matching opportunities will appear here.',
+                'अभी कोई बोली अलर्ट नहीं है। मेल खाते अवसर यहाँ दिखेंगे।',
+              ),
+              style: AppText.secondary(AppText.bodySmall),
+            ),
+          )
+        else
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pushNamed('/alerts'),
+              child: Text(s.t('See all alerts', 'सभी अलर्ट देखें')),
+            ),
+          ),
       ],
     );
   }
@@ -763,13 +808,23 @@ class _NotificationsSection extends StatelessWidget {
 class _NotificationRow extends StatelessWidget {
   final String title;
   final String subtitle;
-  const _NotificationRow({required this.title, required this.subtitle});
+  final bool unread;
+  final VoidCallback? onTap;
+  const _NotificationRow({
+    required this.title,
+    required this.subtitle,
+    this.unread = false,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) => AppCard(
     padding: const EdgeInsets.all(AppSpace.lg),
+    onTap: onTap,
     child: AppListTile(
-      icon: Icons.notifications_outlined,
+      icon: unread
+          ? Icons.notifications_active_outlined
+          : Icons.notifications_outlined,
       title: title,
       subtitle: subtitle,
     ),
@@ -964,7 +1019,7 @@ class _FinancialHubTab extends StatelessWidget {
         const SizedBox(height: AppSpace.lg),
         _ToolSection(
           icon: Icons.chat_bubble_outline,
-          title: s.t('Ask Bid2Scale', 'Bid2Scale से पूछें'),
+          title: s.t('Ask Saathi', 'साथी से पूछें'),
           onTap: () => Navigator.of(context).pushNamed('/saathi'),
           description: s.t(
             'Get clear answers about preparing for GeM.',
@@ -1237,7 +1292,10 @@ class _AccountSectionState extends State<_AccountSection> {
           ),
         ] else
           AppButton(
-            label: s.t('Sign in or create account', 'साइन इन करें या खाता बनाएँ'),
+            label: s.t(
+              'Sign in or create account',
+              'साइन इन करें या खाता बनाएँ',
+            ),
             icon: Icons.login,
             onPressed: () => Navigator.of(context).pushNamed('/auth'),
           ),
@@ -1597,6 +1655,71 @@ class _HomeNav extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The floating entry to Saathi: an ink pill with a lifted sparkle and the
+/// label, shrinking to a round icon button while the page scrolls down.
+class _SaathiButton extends StatelessWidget {
+  final AppStore store;
+  final bool expanded;
+  const _SaathiButton({required this.store, required this.expanded});
+
+  @override
+  Widget build(BuildContext context) {
+    final label = store.t('Ask Saathi', 'साथी से पूछें');
+    return Semantics(
+      button: true,
+      label: label,
+      child: ExcludeSemantics(
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(AppRadius.pill)),
+            boxShadow: AppShadow.floating,
+          ),
+          child: Material(
+            color: AppColors.ink,
+            shape: const StadiumBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () => Navigator.of(context).pushNamed('/saathi'),
+              child: AnimatedSize(
+                duration: Motion.of(context, Motion.fast),
+                curve: Motion.enter,
+                child: SizedBox(
+                  height: _saathiHeight,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: expanded ? AppSpace.lg : AppSpace.md + 2,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const DepthIcon(
+                          Icons.auto_awesome,
+                          size: AppIconSize.md,
+                          color: AppColors.surface,
+                          lifted: true,
+                        ),
+                        if (expanded) ...[
+                          const SizedBox(width: AppSpace.sm),
+                          Text(
+                            label,
+                            style: AppText.button.copyWith(
+                              color: AppColors.surface,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

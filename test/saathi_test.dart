@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gem/core/theme.dart';
 import 'package:gem/data/app_store.dart';
+import 'package:gem/features/home_page.dart';
 import 'package:gem/features/saathi_page.dart';
+import 'package:gem/features/scroll_hint.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SaathiStore extends AuthenticatedJourneyStore {
@@ -19,6 +21,7 @@ class SaathiStore extends AuthenticatedJourneyStore {
 }
 
 void main() {
+  ScrollMoreHint.debugDisableBounce = true;
   late SaathiStore store;
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -70,5 +73,25 @@ void main() {
     store.failWith = 'daily_limit';
     await open(tester, question: 'Hello');
     expect(find.textContaining('today’s question limit'), findsOneWidget);
+  });
+
+  testWidgets('the floating Ask Saathi button opens Saathi from Home', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: saathiTheme(),
+        home: HomePage(store: store),
+        routes: {'/saathi': (_) => SaathiPage(store: store)},
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Ask Saathi'), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel('Ask Saathi'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ask Saathi anything'), findsOneWidget);
   });
 }

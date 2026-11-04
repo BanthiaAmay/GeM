@@ -341,7 +341,7 @@ def push(db, make_sender, *, now, min_gap_minutes=60, respect_quiet_hours=True, 
 
 def build_email(jobs, language):
     """One digest email (subject, html, text) listing every bid in `jobs`."""
-    one, many, closes, *_ = PUSH_TEXT.get(language, PUSH_TEXT['en'])
+    one, many, closes, more, *_ = PUSH_TEXT.get(language, PUSH_TEXT['en'])
     intro, view, footer = EMAIL_TEXT.get(language, EMAIL_TEXT['en'])
     jobs = sorted(jobs, key=lambda j: j['closes_at'])
     subject = one if len(jobs) == 1 else many.format(n=len(jobs))
@@ -362,12 +362,16 @@ def build_email(jobs, language):
             f'font:bold 14px sans-serif;color:#22654C">{html.escape(view)} →</a></td></tr>')
         lines += [job['source_id'], _short(job['title'], 160), where, closes.format(date=deadline),
                   job['source_url'], '']
+    # The digest lists the 30 soonest-closing bids; the rest are in the app.
+    hidden = more.format(n=len(jobs) - 30) if len(jobs) > 30 else ''
     body = ('<div style="max-width:560px;margin:0 auto;padding:24px">'
             f'<h2 style="font:bold 22px sans-serif;color:#151515">{html.escape(subject)}</h2>'
             f'<p style="font:15px sans-serif;color:#5F6873">{html.escape(intro)}</p>'
             f'<table width="100%" cellspacing="0" cellpadding="0">{"".join(rows)}</table>'
-            f'<p style="font:12px sans-serif;color:#8A9199;margin-top:24px">{html.escape(footer)}</p></div>')
-    return {'subject': subject, 'html': body, 'text': '\n'.join(lines + [footer])}
+            + (f'<p style="font:bold 15px sans-serif;color:#22654C;margin-top:16px">'
+               f'{html.escape(hidden)} · Bid2Scale</p>' if hidden else '')
+            + f'<p style="font:12px sans-serif;color:#8A9199;margin-top:24px">{html.escape(footer)}</p></div>')
+    return {'subject': subject, 'html': body, 'text': '\n'.join(lines + ([hidden, ''] if hidden else []) + [footer])}
 
 
 def send_emails(db, make_sender, *, now, min_gap_hours=12, respect_quiet_hours=True, log=print):

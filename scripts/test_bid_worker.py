@@ -199,6 +199,13 @@ class EmailTest(unittest.TestCase):
         self.assertEqual(db.updates[0][0], ['job-1', 'job-2'])
         self.assertIn('Email stopped', lines[-1])
 
+    def test_long_digests_point_to_the_rest(self):
+        message = build_email([self.email_job(n) for n in range(35)], 'en')
+        self.assertEqual(message['html'].count('View on GeM'), 30)
+        self.assertIn('+5 more', message['html'])
+        self.assertIn('+5 more', message['text'])
+        self.assertNotIn('more', build_email([self.email_job(1)], 'en')['html'])
+
     def test_one_email_per_user(self):
         db = FakeDb([self.email_job(1), self.email_job(2)])
         mailer = FakeSender(('sent', 'email-1'))
