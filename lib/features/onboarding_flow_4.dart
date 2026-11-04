@@ -5,7 +5,10 @@ import '../data/app_store.dart';
 import 'components.dart';
 import 'onboarding_widgets.dart';
 import 'widgets.dart';
+import 'youtube_video.dart';
 import '../core/tokens.dart';
+
+const _gemVideoIds = ['EEToHsUxbyA', 'kU4pJKE9uqo'];
 
 /// Step 13 of 15: readiness checklist — the user ticks each item off
 /// themselves rather than having it computed for them. Items the
@@ -154,7 +157,7 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
   }
 }
 
-/// Step 14 of 15: registration video guide (placeholder).
+/// Step 14 of 15: registration video guide with in-app YouTube playback.
 class FlowVideoPage extends StatelessWidget {
   final AppStore store;
   const FlowVideoPage({super.key, required this.store});
@@ -173,33 +176,16 @@ class FlowVideoPage extends StatelessWidget {
         'This short guide will walk you through seller registration on the official GeM portal.',
         'यह छोटी गाइड आपको आधिकारिक GeM पोर्टल पर विक्रेता पंजीकरण के बारे में बताएगी।',
       ),
-      continueLabel: s.t('Continue without video', 'वीडियो के बिना जारी रखें'),
+      continueLabel: s.t('Continue', 'जारी रखें'),
       onContinue: () => Navigator.of(context).pushNamed('/flow-redirect'),
       children: [
-        AppCard(
-          padding: const EdgeInsets.fromLTRB(12, 24, 12, 28),
-          child: Column(
-            children: [
-              const OnboardingArt('video', topGap: 0),
-              const SizedBox(height: 16),
-              Text(s.t('VIDEO GUIDE', 'वीडियो गाइड'), style: AppText.overline),
-              const SizedBox(height: 6),
-              Text(
-                s.t('Video coming soon', 'वीडियो शीघ्र आ रहा है'),
-                style: AppText.title,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                s.t(
-                  'We’re preparing a clear, step-by-step walkthrough.',
-                  'हम एक स्पष्ट, चरण-दर-चरण गाइड तैयार कर रहे हैं।',
-                ),
-                textAlign: TextAlign.center,
-                style: AppText.secondary(AppText.bodySmall),
-              ),
-            ],
-          ),
-        ),
+        Text(s.t('VIDEO GUIDE', 'वीडियो गाइड'), style: AppText.overline),
+        const SizedBox(height: 12),
+        for (final id in _gemVideoIds) ...[
+          YouTubeVideoCard(videoId: id, store: s),
+          const SizedBox(height: 10),
+        ],
+        YouTubeSourceNote(store: s),
         const SizedBox(height: 28),
         Text(
           s.t('What the guide will cover', 'गाइड में क्या शामिल होगा'),

@@ -58,6 +58,11 @@ class AppStore extends ChangeNotifier {
   Map<String, dynamic> alertPreferences = {};
   List<Map<String, dynamic>> bidNotifications = [];
   String? alertsError;
+
+  /// GeM Weekly Bulletin videos (newest first) for Home and News.
+  List<Map<String, dynamic>> bulletins = [];
+  bool bulletinsLoading = false;
+  bool bulletinsFailed = false;
   bool? googleAvailable;
   bool? emailAvailable;
   String? authError;
@@ -247,6 +252,164 @@ class AppStore extends ChangeNotifier {
     save();
   }
 
+  // ─────────────────────── Module Trainings ────────────────────────
+  // Video-learning state for the Module Trainings section (6 modules of
+  // official GeM videos). Lives under profile['videoTraining'] so it
+  // round-trips through persist()/sync() alongside the rest of the
+  // profile — no new table, no new sync path.
+  //
+  // Shape:
+  //   {
+  //     'watched':         ['videoId', ...],        // unique list
+  //     'saved':           ['videoId', ...],
+  //     'lastVideoId':     'XCRwD-sqELE',
+  //     'lastWatchedAt':   ISO 8601 UTC timestamp,
+  //     'streakDays':      3,                       // consecutive-day run
+  //     'streakLastDate':  'YYYY-MM-DD',            // last day watched
+  //     'quizPassed':      ['trn-m1', 'trn-m3'],
+  //     'dismissedNudges': {'welcome': ISO ts, ...}, // auto-expires at 24h
+  //   }
+  //
+  // All reads defensively copy — callers mutate copies, never the backing
+  // map (the pattern used by `profile` above).
+
+  Map<String, dynamic> get trainingState =>
+      Map<String, dynamic>.from(profile['videoTraining'] as Map? ?? {});
+
+  void _setTrainingState(Map<String, dynamic> next) {
+    setProfile('videoTraining', next);
+  }
+
+  /// Videos the user has marked watched. Preserves insertion order so a
+  /// "recently watched" view stays stable.
+  List<String> get trainingWatched =>
+      List<String>.from(trainingState['watched'] as List? ?? const []);
+
+  /// Videos the user has bookmarked.
+  List<String> get trainingSaved =>
+      List<String>.from(trainingState['saved'] as List? ?? const []);
+
+  /// Modules whose quiz the user has passed.
+  List<String> get trainingQuizPassed =>
+      List<String>.from(trainingState['quizPassed'] as List? ?? const []);
+
+  int get trainingStreakDays => (trainingState['streakDays'] as int?) ?? 0;
+
+  String? get trainingLastVideoId => trainingState['lastVideoId'] as String?;
+
+  /// Record that the user tapped the "Watched" tick for [videoId]. Updates
+  /// the streak if today extends it, resets to 1 if there is a gap, keeps
+  /// the counter still if the user already watched something today.
+  void markVideoWatched(String videoId) {
+    final state = trainingState;
+    final watched = List<String>.from(state['watched'] as List? ?? const []);
+    if (!watched.contains(videoId)) watched.add(videoId);
+
+    final todayLocal = _todayLocalIsoDate();
+    final lastDate = state['streakLastDate'] as String?;
+    var streak = (state['streakDays'] as int?) ?? 0;
+    if (lastDate == null) {
+      streak = 1;
+    } else if (lastDate == todayLocal) {
+      // Same day — streak unchanged.
+      if (streak == 0) streak = 1;
+    } else if (lastDate == _yesterdayLocalIsoDate()) {
+      streak += 1;
+    } else {
+      streak = 1;
+    }
+
+    _setTrainingState({
+      ...state,
+      'watched': watched,
+      'lastVideoId': videoId,
+      'lastWatchedAt': DateTime.now().toUtc().toIso8601String(),
+      'streakDays': streak,
+      'streakLastDate': todayLocal,
+    });
+    event('video_watched', page: 'trainings', props: {'videoId': videoId});
+  }
+
+  /// Un-tick a video. The streak and lastVideoId are kept untouched; the
+  /// user hasn't lost a watch, they've only revised the tick.
+  void unmarkVideoWatched(String videoId) {
+    final state = trainingState;
+    final watched = List<String>.from(state['watched'] as List? ?? const [])
+      ..remove(videoId);
+    _setTrainingState({...state, 'watched': watched});
+    event('video_unwatched', page: 'trainings', props: {'videoId': videoId});
+  }
+
+  /// Flip the bookmark state for [videoId]. Returns the new saved flag.
+  bool toggleVideoSaved(String videoId) {
+    final state = trainingState;
+    final saved = List<String>.from(state['saved'] as List? ?? const []);
+    final nowSaved = !saved.contains(videoId);
+    if (nowSaved) {
+      saved.add(videoId);
+    } else {
+      saved.remove(videoId);
+    }
+    _setTrainingState({...state, 'saved': saved});
+    event(
+      nowSaved ? 'video_saved' : 'video_unsaved',
+      page: 'trainings',
+      props: {'videoId': videoId},
+    );
+    return nowSaved;
+  }
+
+  /// Mark a module's post-video quiz as passed. Idempotent.
+  void markQuizPassed(String moduleId, {int? score, int? total}) {
+    final state = trainingState;
+    final passed = List<String>.from(
+      state['quizPassed'] as List? ?? const [],
+    );
+    if (!passed.contains(moduleId)) passed.add(moduleId);
+    _setTrainingState({...state, 'quizPassed': passed});
+    event(
+      'module_quiz_passed',
+      page: moduleId,
+      props: {'score': score, 'total': total},
+    );
+  }
+
+  /// Dismiss an in-app nudge. The nudge stays hidden for 24h, then is
+  /// recomputed and shown again if its condition still holds.
+  void dismissTrainingNudge(String nudgeId) {
+    final state = trainingState;
+    final dismissed = Map<String, dynamic>.from(
+      state['dismissedNudges'] as Map? ?? const {},
+    );
+    dismissed[nudgeId] = DateTime.now().toUtc().toIso8601String();
+    _setTrainingState({...state, 'dismissedNudges': dismissed});
+    event('training_nudge_dismissed', page: 'trainings', props: {'id': nudgeId});
+  }
+
+  /// Timestamp (UTC ISO) that [nudgeId] was last dismissed, or null if
+  /// never dismissed.
+  DateTime? trainingNudgeDismissedAt(String nudgeId) {
+    final dismissed = trainingState['dismissedNudges'] as Map? ?? const {};
+    final raw = dismissed[nudgeId];
+    if (raw is! String) return null;
+    return DateTime.tryParse(raw);
+  }
+
+  // Helpers kept private so callers never do local-vs-UTC date math by hand.
+  static String _todayLocalIsoDate() {
+    final d = DateTime.now().toUtc();
+    return '${d.year.toString().padLeft(4, '0')}-'
+        '${d.month.toString().padLeft(2, '0')}-'
+        '${d.day.toString().padLeft(2, '0')}';
+  }
+
+  static String _yesterdayLocalIsoDate() {
+    final d = DateTime.now().toUtc().subtract(const Duration(days: 1));
+    return '${d.year.toString().padLeft(4, '0')}-'
+        '${d.month.toString().padLeft(2, '0')}-'
+        '${d.day.toString().padLeft(2, '0')}';
+  }
+
   Future<void> completeOnboarding() async {
     await prefs.setBool('saathi.v1.onboarded', true);
     notifyListeners();
@@ -412,7 +575,7 @@ class AppStore extends ChangeNotifier {
 
   Future<void> _adoptAuthenticatedSession() async {
     if (!signedIn) return;
-    if (_handlingAuth) return _authReady;
+    if (_handlingAuth) return _authReady!;
     final done = Completer<void>();
     _authReady = done.future;
     _handlingAuth = true;
@@ -615,6 +778,7 @@ class AppStore extends ChangeNotifier {
       outcomes = [];
       alertPreferences = {};
       bidNotifications = [];
+      _loadedCloud = false;
       await persist();
       notifyListeners();
     } finally {
@@ -659,6 +823,28 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Public, read-only table filled by scripts/bulletin_worker.py. Safe to
+  /// call from initState: it only notifies after the first await.
+  Future<void> loadBulletins() async {
+    final db = client;
+    if (db == null || bulletinsLoading) return;
+    bulletinsLoading = true;
+    try {
+      final rows = await db
+          .from('gem_bulletins')
+          .select('video_id,title,published_at')
+          .order('published_at', ascending: false)
+          .limit(20);
+      bulletins = List<Map<String, dynamic>>.from(rows);
+      bulletinsFailed = false;
+    } catch (_) {
+      bulletinsFailed = true;
+    } finally {
+      bulletinsLoading = false;
+    }
+    notifyListeners();
+  }
+
   Future<void> saveAlertPreferences({
     required String phone,
     required bool whatsapp,
@@ -690,8 +876,7 @@ class AppStore extends ChangeNotifier {
       'mobile': normalized.substring(3),
       'bidKeywords': keywords,
     };
-    await persist();
-    notifyListeners();
+    save();
   }
 
   /// Saves the products or services the business supplies (onboarding's

@@ -537,6 +537,13 @@ class _AccountPageState extends State<AccountPage> {
         ),
         const SizedBox(height: AppSpace.md),
         AppButton(
+          label: s.t('Module Trainings', 'मॉड्यूल प्रशिक्षण'),
+          icon: Icons.ondemand_video_outlined,
+          onPressed: () => Navigator.pushNamed(context, '/trainings'),
+          variant: AppButtonVariant.secondary,
+        ),
+        const SizedBox(height: AppSpace.md),
+        AppButton(
           label: s.t('Bid alerts & WhatsApp', 'बोली अलर्ट और WhatsApp'),
           icon: Icons.notifications_outlined,
           onPressed: () => Navigator.pushNamed(context, '/alerts'),

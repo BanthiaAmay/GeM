@@ -23,6 +23,30 @@ Use a production SMTP provider and test rate limits/deliverability. Copy `config
 
 No anonymous auth provider or service-role client key is required. RLS must stay enabled. Public data consists only of explicitly published benchmark rows. Review database grants in the migration before changing schemas.
 
+### GeM Weekly Bulletin (News)
+GeM uploads a "GeM Weekly Bulletin" video each week. A Render cron job, `bid2scale-gem-bulletins` in `render.yaml`, runs from the `Oct` branch on Friday at 06:47 IST and again at 12:47 IST. It saves any bulletin from the channel's latest 15 uploads into `gem_bulletins`, and the app shows them on Home and the News page.
+
+The worker reads GeM's channel (`UC1LaBWVVZv3k23BZApfDlsQ`, built into the script). An optional `GEM_YOUTUBE_CHANNEL_ID` environment variable overrides it.
+
+1. Apply `supabase/migrations/202611010001_gem_bulletins.sql`.
+2. In the Render dashboard, choose **New → Cron Job** and connect the GitHub repo. Create the job by hand rather than applying the whole Blueprint, because the Blueprint would also start the 15-minute bid-alert worker. Settings:
+   - **Branch:** `Oct`
+   - **Region:** Singapore
+   - **Runtime:** Python 3
+   - **Build command:** `python --version`
+   - **Command:** `python scripts/bulletin_worker.py run`
+   - **Schedule:** `17 1,7 * * 5` (UTC, which is 06:47 and 12:47 IST on Fridays)
+   - **Environment variables:** `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `PYTHON_VERSION=3.12.8`
+3. Click **Trigger Run** once. This backfills the bulletins currently in the feed. The log should end with `Saved N bulletin(s).`
+
+To check locally without writing anything:
+
+```bash
+python3 scripts/bulletin_worker.py run --dry-run
+```
+
+To hide a bulletin, set `published = false` on its row.
+
 ### Google sign-in
 
 Google signup is currently hidden. These steps are for a future integration and are not required for the active email-code login.

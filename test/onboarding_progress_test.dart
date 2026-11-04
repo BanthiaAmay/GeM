@@ -191,8 +191,8 @@ void main() {
       // 14. Video guide — Next step, 1 of 2.
       expect(find.text('How to register your business on GeM'), findsOneWidget);
       expectHeading('Next step', 'NEXT STEP · 1 OF 2');
-      await tester.ensureVisible(find.text('Continue without video'));
-      await tester.tap(find.text('Continue without video'));
+      await tester.ensureVisible(find.text('Continue'));
+      await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
       // 15. Redirect — Next step, 2 of 2 (final step).

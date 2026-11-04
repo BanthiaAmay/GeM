@@ -62,7 +62,7 @@ List<SearchItem> buildUserDataItems(AppStore store) {
         subtitleEn: businessName.isNotEmpty ? businessName : fullName,
         subtitleHi: businessName.isNotEmpty ? businessName : fullName,
         keywords: kws,
-        route: 'profile',
+        route: 'account',
         actionEn: 'View',
         actionHi: 'देखें',
       ),

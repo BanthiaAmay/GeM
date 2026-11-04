@@ -68,3 +68,5 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202611040001_keyword_stopwords.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/keyword_stopwords.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/push_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202611010001_gem_bulletins.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/gem_bulletins.sql

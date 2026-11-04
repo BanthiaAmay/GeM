@@ -1,20 +1,21 @@
 /// Static content definitions for the universal search index.
 ///
 /// Lessons → GeM 101 modules (derived from the 9-step path in core/models.dart).
-/// Finance → Financial Hub products shown in the Finance tab and Financing drawer.
+/// Finance → Finance tab products.
 /// Calculators → ROI and price calculators.
 /// Categories → product categories from core/models.dart.
 /// FAQs → common questions surfaced by the search engine.
 ///
-/// All routes must be registered in main.dart. Lessons and Finance items
-/// use 'home' because their content lives inside the Home page's tab system.
+/// All routes must be registered in main.dart. Lessons use 'trainings';
+/// Finance and FAQ items use 'home' (content in the Home tab system).
 library;
 
 import 'search_models.dart';
 
 // ── GeM 101 lesson modules ──────────────────────────────────────────────────
 
-/// Indexed as [SearchType.lesson]. Route 'home' navigates to the GeM 101 tab.
+/// Indexed as [SearchType.lesson]. Route 'trainings' opens Module Trainings,
+/// where these lessons map to the official-video modules.
 const kLessons = <SearchItem>[
   SearchItem(
     id: 'gem101-m1',
@@ -32,7 +33,7 @@ const kLessons = <SearchItem>[
       'authorised',
       'kyc',
     ],
-    route: 'home',
+    route: 'trainings',
     actionEn: 'Learn',
     actionHi: 'सीखें',
   ),
@@ -45,7 +46,7 @@ const kLessons = <SearchItem>[
         'Confirm GST obligations and applicable exemptions before registering.',
     subtitleHi: 'पंजीकरण से पहले GST आवश्यकता और छूट की पुष्टि करें।',
     keywords: ['gst', 'tax', 'registration', 'exemption', 'filing', 'bharna'],
-    route: 'home',
+    route: 'trainings',
     actionEn: 'Learn',
     actionHi: 'सीखें',
   ),
@@ -70,7 +71,7 @@ const kLessons = <SearchItem>[
       'bid',
       'caution',
     ],
-    route: 'home',
+    route: 'trainings',
     actionEn: 'Learn',
     actionHi: 'सीखें',
   ),
@@ -92,7 +93,7 @@ const kLessons = <SearchItem>[
       'micro',
       'small',
     ],
-    route: 'home',
+    route: 'trainings',
     actionEn: 'Learn',
     actionHi: 'सीखें',
   ),
@@ -114,7 +115,7 @@ const kLessons = <SearchItem>[
       'login',
       'otp',
     ],
-    route: 'home',
+    route: 'trainings',
     actionEn: 'Learn',
     actionHi: 'सीखें',
   ),
@@ -135,7 +136,7 @@ const kLessons = <SearchItem>[
       'specification',
       'photo',
     ],
-    route: 'home',
+    route: 'trainings',
     actionEn: 'Learn',
     actionHi: 'सीखें',
   ),
@@ -156,7 +157,7 @@ const kLessons = <SearchItem>[
       'terms',
       'deadline',
     ],
-    route: 'home',
+    route: 'trainings',
     actionEn: 'Learn',
     actionHi: 'सीखें',
   ),
@@ -176,7 +177,7 @@ const kLessons = <SearchItem>[
       'payment',
       'consignee',
     ],
-    route: 'home',
+    route: 'trainings',
     actionEn: 'Learn',
     actionHi: 'सीखें',
   ),
@@ -196,13 +197,13 @@ const kLessons = <SearchItem>[
       'delivery',
       'dashboard',
     ],
-    route: 'home',
+    route: 'trainings',
     actionEn: 'Learn',
     actionHi: 'सीखें',
   ),
 ];
 
-// ── Financial Hub products ──────────────────────────────────────────────────
+// ── Finance tab products ──────────────────────────────────────────────────
 
 /// Indexed as [SearchType.finance]. Route 'home' opens the Finance tab.
 const kFinanceItems = <SearchItem>[

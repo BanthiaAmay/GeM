@@ -19,6 +19,7 @@ import 'features/gem_check_page.dart';
 import 'features/home_page.dart';
 import 'features/insights_page.dart';
 import 'features/language_page.dart';
+import 'features/news_page.dart';
 import 'features/onboarding_flow_1.dart';
 import 'features/onboarding_flow_2.dart';
 import 'features/onboarding_flow_3.dart';
@@ -43,6 +44,8 @@ import 'features/search/bid_detail_page.dart';
 import 'features/search/search_page.dart';
 import 'features/search/search_store.dart';
 import 'features/shell.dart';
+import 'features/trainings/module_detail_page.dart';
+import 'features/trainings/trainings_page.dart';
 import 'features/welcome_page.dart';
 
 /// The seller readiness walkthrough, keyed by route
@@ -327,7 +330,14 @@ class SaathiApp extends StatelessWidget {
               .first;
           final requiresAccount =
               flowPages.containsKey(page) ||
-              {'', 'home', 'gem-check', 'gem-guide', 'register'}.contains(page);
+              {
+                '',
+                'home',
+                'news',
+                'gem-check',
+                'gem-guide',
+                'register',
+              }.contains(page);
           return ListenableBuilder(
             listenable: store,
             builder: (context, _) => requiresAccount && !store.signedIn
@@ -358,6 +368,8 @@ class SaathiApp extends StatelessWidget {
                 ? AlertsPage(store: store)
                 : page == 'bids'
                 ? BidsPage(store: store)
+                : page == 'news'
+                ? NewsPage(store: store)
                 : page == 'saathi'
                 ? SaathiPage(store: store)
                 : page == 'gem-guide'
@@ -469,6 +481,16 @@ class SaathiApp extends StatelessWidget {
                     bidId: settings.arguments is String
                         ? settings.arguments as String
                         : null,
+                  )
+                : page == 'trainings'
+                ? TrainingsPage(store: store)
+                : page == 'training-module'
+                ? ModuleDetailPage(
+                    store: store,
+                    // Empty string → findTrainingModule returns null → _UnknownModule.
+                    moduleId: settings.arguments is String
+                        ? settings.arguments as String
+                        : '',
                   )
                 : AppShell(store: store, page: page),
           );
