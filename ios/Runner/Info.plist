@@ -12,6 +12,16 @@
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Bid2Scale</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -23,20 +33,20 @@
 			</array>
 		</dict>
 	</array>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>Bid2Scale</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>$(FLUTTER_BUILD_NAME)</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Bid2Scale can use the camera to photograph a product for your MRP declaration.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Bid2Scale uses your microphone for voice search only — speech is recognised on-device and the raw audio is never stored or sent anywhere.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Bid2Scale lets you choose a product photo for your MRP declaration. Photos stay on your device until you share the document.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Bid2Scale uses on-device speech recognition to convert your spoken search query to text. No audio or transcript is sent to any server.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -82,9 +92,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>GeM BizReady uses your microphone for voice search only — speech is recognised on-device and the raw audio is never stored or sent anywhere.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>GeM BizReady uses on-device speech recognition to convert your spoken search query to text. No audio or transcript is sent to any server.</string>
 </dict>
 </plist>

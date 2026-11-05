@@ -554,6 +554,49 @@ class AppStore extends ChangeNotifier {
     await _adoptAuthenticatedSession();
   }
 
+  Future<void> signInWithPassword(String email, String password) async {
+    if (client == null) throw StateError('Supabase is not configured');
+    await _stashGuestState();
+    await client!.auth.signInWithPassword(
+      email: email.trim(),
+      password: password,
+    );
+    await _adoptAuthenticatedSession();
+  }
+
+  /// Returns true when email confirmation is required before signing in.
+  Future<bool> signUpWithPassword(String email, String password) async {
+    if (client == null) throw StateError('Supabase is not configured');
+    await _stashGuestState();
+    final response = await client!.auth.signUp(
+      email: email.trim(),
+      password: password,
+    );
+    if (response.session == null) return true;
+    await _adoptAuthenticatedSession();
+    return false;
+  }
+
+  Future<void> resendSignupCode(String email) async {
+    if (client == null) throw StateError('Supabase is not configured');
+    await client!.auth.resend(type: OtpType.signup, email: email.trim());
+  }
+
+  Future<void> sendPasswordReset(String email) async {
+    // Reuse the in-app email-code flow so recovery needs no browser callback
+    // or separate recovery template. Only an existing account may receive it.
+    await sendOtp(email, shouldCreateUser: false);
+  }
+
+  Future<void> verifyPasswordReset(String email, String token) async {
+    await verifyOtp(email, token);
+  }
+
+  Future<void> updatePassword(String password) async {
+    if (client == null) throw StateError('Supabase is not configured');
+    await client!.auth.updateUser(UserAttributes(password: password));
+  }
+
   /// Starts Supabase's Google OAuth flow. Web returns to the current origin;
   /// Android returns through the app-owned custom scheme declared in the
   /// manifest. Supabase uses PKCE and restores the resulting session.

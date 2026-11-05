@@ -27,16 +27,29 @@ class _AccountPageState extends State<AccountPage> {
   final email = TextEditingController();
   final code = TextEditingController();
   final phone = TextEditingController();
+  final password = TextEditingController();
+  final confirmPassword = TextEditingController();
   final form = GlobalKey<FormState>();
+  final passwordForm = GlobalKey<FormState>();
   late bool signUp = widget.entry;
   bool whatsapp = false;
   bool codeSent = false;
   bool navigating = false;
   bool busy = false;
+  bool passwordSignup = false;
+  bool recovering = false;
+  bool editingPassword = false;
+  bool showPassword = false;
+  bool validatePassword = false;
   String? error;
   String? notice;
 
   AppStore get s => widget.store;
+
+  String get passwordHelp => s.t(
+    'Use 8+ characters with uppercase, lowercase, a number and a symbol.',
+    '8 या अधिक अक्षर रखें, जिनमें बड़े और छोटे अंग्रेज़ी अक्षर, अंक और चिह्न हों।',
+  );
 
   @override
   void initState() {
@@ -50,7 +63,12 @@ class _AccountPageState extends State<AccountPage> {
   void onStoreChanged() {
     if (!mounted) return;
     setState(() {});
-    if (s.signedIn && !busy && !navigating && widget.continueTo != null) {
+    if (s.signedIn &&
+        !busy &&
+        !recovering &&
+        !editingPassword &&
+        !navigating &&
+        widget.continueTo != null) {
       navigating = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
@@ -67,11 +85,46 @@ class _AccountPageState extends State<AccountPage> {
     email.dispose();
     code.dispose();
     phone.dispose();
+    password.dispose();
+    confirmPassword.dispose();
     s.removeListener(onStoreChanged);
     super.dispose();
   }
 
   String friendlyError(Object value) {
+    if (value is AuthException) {
+      switch (value.code) {
+        case 'invalid_credentials':
+          return s.t(
+            'Email or password is incorrect.',
+            'ईमेल या पासवर्ड गलत है।',
+          );
+        case 'email_not_confirmed':
+          return s.t(
+            'Verify your email using an email code, then try again.',
+            'ईमेल कोड से अपना ईमेल सत्यापित करें, फिर कोशिश करें।',
+          );
+        case 'weak_password':
+          return passwordHelp;
+        case 'same_password':
+          return s.t(
+            'Choose a stronger, different password.',
+            'अधिक मजबूत, अलग पासवर्ड चुनें।',
+          );
+        case 'user_already_exists':
+        case 'email_exists':
+          return s.t(
+            'Try logging in or reset your password.',
+            'लॉग इन करें या अपना पासवर्ड रीसेट करें।',
+          );
+      }
+    }
+    if (editingPassword) {
+      return s.t(
+        'Could not save your password. Check your connection and try again.',
+        'पासवर्ड सहेजा नहीं गया। इंटरनेट जाँचकर फिर कोशिश करें।',
+      );
+    }
     if (s.signedIn) {
       return s.t(
         'You are signed in, but your details could not be saved. Check your connection and try again.',
@@ -127,6 +180,8 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   Future<void> sendCode() async {
+    if (busy) return;
+    validatePassword = false;
     if (!form.currentState!.validate()) return;
     await run(() async {
       await s.sendOtp(email.text, shouldCreateUser: signUp);
@@ -142,7 +197,93 @@ class _AccountPageState extends State<AccountPage> {
     });
   }
 
+  Future<void> submitPassword() async {
+    if (busy) return;
+    validatePassword = true;
+    if (!form.currentState!.validate()) return;
+    await run(() async {
+      if (signUp) {
+        final needsConfirmation = await s.signUpWithPassword(
+          email.text,
+          password.text,
+        );
+        if (!mounted) return;
+        TextInput.finishAutofillContext();
+        password.clear();
+        confirmPassword.clear();
+        if (needsConfirmation) {
+          setState(() {
+            passwordSignup = true;
+            codeSent = true;
+            notice = s.t(
+              'Check your email for a verification code.',
+              'सत्यापन कोड के लिए अपना ईमेल देखें।',
+            );
+          });
+          return;
+        }
+      } else {
+        await s.signInWithPassword(email.text, password.text);
+        if (!mounted) return;
+        TextInput.finishAutofillContext();
+        password.clear();
+        confirmPassword.clear();
+      }
+      await finishSignIn();
+    });
+  }
+
+  Future<void> requestPasswordReset() async {
+    if (busy) return;
+    validatePassword = false;
+    // Recovery needs only an email, regardless of the selected signup mode.
+    final address = email.text.trim();
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(address)) {
+      setState(
+        () => error = s.t('Enter a valid email address', 'सही ईमेल पता डालें'),
+      );
+      return;
+    }
+    await run(() async {
+      await s.sendPasswordReset(address);
+      if (!mounted) return;
+      setState(() {
+        recovering = true;
+        passwordSignup = false;
+        codeSent = true;
+        password.clear();
+        confirmPassword.clear();
+        notice = s.t(
+          'If an account exists, an email code will arrive. Verify it to set a new password.',
+          'यदि खाता मौजूद है, तो ईमेल कोड आएगा। नया पासवर्ड बनाने के लिए उसे सत्यापित करें।',
+        );
+      });
+    });
+  }
+
+  Future<void> resendCode() async {
+    if (busy) return;
+    await run(() async {
+      if (recovering) {
+        await s.sendPasswordReset(email.text);
+      } else if (passwordSignup) {
+        await s.resendSignupCode(email.text);
+      } else {
+        await s.sendOtp(email.text, shouldCreateUser: signUp);
+      }
+      if (mounted) {
+        setState(
+          () => notice = s.t(
+            'Check your email for a verification code.',
+            'सत्यापन कोड के लिए अपना ईमेल देखें।',
+          ),
+        );
+      }
+    });
+  }
+
   Future<void> verifyCode() async {
+    if (busy) return;
     if (!RegExp(r'^\d{6,10}$').hasMatch(code.text.trim())) {
       setState(() {
         error = s.t(
@@ -153,31 +294,63 @@ class _AccountPageState extends State<AccountPage> {
       return;
     }
     await run(() async {
-      await s.verifyOtp(email.text, code.text);
-      var contactSaved = true;
-      if (signUp && normalizeWhatsapp(phone.text) != null) {
-        final number = normalizeWhatsapp(phone.text)!;
-        s.setProfile('mobile', number.substring(3));
-        s.setProfile('whatsappNumber', number);
-        s.setProfile('whatsappOptIn', whatsapp);
-        try {
-          await saveContact();
-        } catch (_) {
-          // Email authentication is complete even if alert setup is unavailable.
-          contactSaved = false;
-        }
+      if (recovering) {
+        await s.verifyPasswordReset(email.text, code.text);
+        if (mounted) setState(() => editingPassword = true);
+      } else {
+        await s.verifyOtp(email.text, code.text);
+        await finishSignIn();
       }
+      code.clear();
+    });
+  }
+
+  Future<void> finishSignIn() async {
+    var contactSaved = true;
+    if (signUp && normalizeWhatsapp(phone.text) != null) {
+      final number = normalizeWhatsapp(phone.text)!;
+      s.setProfile('mobile', number.substring(3));
+      s.setProfile('whatsappNumber', number);
+      s.setProfile('whatsappOptIn', whatsapp);
+      try {
+        await saveContact();
+      } catch (_) {
+        // Email authentication is complete even if alert setup is unavailable.
+        contactSaved = false;
+      }
+    }
+    if (mounted) {
+      setState(() {
+        notice = contactSaved
+            ? s.t(
+                'Signed in. Your saved work is now connected to this account.',
+                'साइन इन हो गया। आपका सहेजा काम अब इस खाते से जुड़ा है।',
+              )
+            : s.t(
+                'Signed in. You can finish WhatsApp alert setup in Updates.',
+                'साइन इन हो गया। WhatsApp अलर्ट सेटअप सूचनाओं में पूरा कर सकते हैं।',
+              );
+      });
+    }
+  }
+
+  Future<void> savePassword() async {
+    if (busy || !passwordForm.currentState!.validate()) return;
+    await run(() async {
+      await s.updatePassword(password.text);
+      if (!mounted) return;
+      TextInput.finishAutofillContext();
+      password.clear();
+      confirmPassword.clear();
       if (mounted) {
         setState(() {
-          notice = contactSaved
-              ? s.t(
-                  'Signed in. Your saved work is now connected to this account.',
-                  'साइन इन हो गया। आपका सहेजा काम अब इस खाते से जुड़ा है।',
-                )
-              : s.t(
-                  'Signed in. You can finish WhatsApp alert setup in Updates.',
-                  'साइन इन हो गया। WhatsApp अलर्ट सेटअप सूचनाओं में पूरा कर सकते हैं।',
-                );
+          editingPassword = false;
+          recovering = false;
+          codeSent = false;
+          notice = s.t(
+            'Password saved. Use it next time you log in.',
+            'पासवर्ड सहेजा गया। अगली बार लॉग इन करने के लिए इसका उपयोग करें।',
+          );
         });
       }
     });
@@ -237,7 +410,9 @@ class _AccountPageState extends State<AccountPage> {
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 560),
-                child: s.signedIn ? signedInView() : signedOutView(),
+                child: s.signedIn
+                    ? (editingPassword ? passwordView() : signedInView())
+                    : signedOutView(),
               ),
             ),
           ),
@@ -299,6 +474,137 @@ class _AccountPageState extends State<AccountPage> {
     ],
   );
 
+  Widget passwordFields({bool settingPassword = false}) => Column(
+    children: [
+      TextFormField(
+        key: const ValueKey('account-password'),
+        controller: password,
+        enabled: !busy,
+        obscureText: !showPassword,
+        autocorrect: false,
+        enableSuggestions: false,
+        keyboardType: TextInputType.visiblePassword,
+        textInputAction: settingPassword || signUp
+            ? TextInputAction.next
+            : TextInputAction.done,
+        autofillHints: [
+          settingPassword || signUp
+              ? AutofillHints.newPassword
+              : AutofillHints.password,
+        ],
+        decoration: InputDecoration(
+          labelText: s.t('Password', 'पासवर्ड'),
+          helperText: settingPassword || signUp ? passwordHelp : null,
+          helperMaxLines: 4,
+          errorMaxLines: 4,
+          suffixIcon: IconButton(
+            tooltip: showPassword
+                ? s.t('Hide password', 'पासवर्ड छिपाएँ')
+                : s.t('Show password', 'पासवर्ड दिखाएँ'),
+            onPressed: busy
+                ? null
+                : () => setState(() => showPassword = !showPassword),
+            icon: Icon(
+              showPassword
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+            ),
+          ),
+        ),
+        validator: (value) {
+          if (!settingPassword && !validatePassword) return null;
+          if ((value ?? '').isEmpty) {
+            return s.t('Enter your password.', 'अपना पासवर्ड डालें।');
+          }
+          if (settingPassword || signUp) {
+            final candidate = value!;
+            if (candidate.length < 8 ||
+                !RegExp(r'[A-Z]').hasMatch(candidate) ||
+                !RegExp(r'[a-z]').hasMatch(candidate) ||
+                !RegExp(r'[0-9]').hasMatch(candidate) ||
+                !RegExp(r'[^A-Za-z0-9\s]').hasMatch(candidate)) {
+              return passwordHelp;
+            }
+          }
+          return null;
+        },
+        onFieldSubmitted: (_) {
+          if (!settingPassword && !signUp) submitPassword();
+        },
+      ),
+      if (settingPassword || signUp) ...[
+        const SizedBox(height: AppSpace.lg),
+        TextFormField(
+          key: const ValueKey('confirm-password'),
+          controller: confirmPassword,
+          enabled: !busy,
+          obscureText: !showPassword,
+          autocorrect: false,
+          enableSuggestions: false,
+          keyboardType: TextInputType.visiblePassword,
+          autofillHints: const [AutofillHints.newPassword],
+          textInputAction: settingPassword
+              ? TextInputAction.done
+              : TextInputAction.next,
+          decoration: InputDecoration(
+            labelText: s.t('Confirm password', 'पासवर्ड की पुष्टि करें'),
+          ),
+          validator: (value) {
+            if (!settingPassword && !validatePassword) return null;
+            return value != password.text
+                ? s.t('Passwords do not match.', 'पासवर्ड मेल नहीं खाते।')
+                : null;
+          },
+          onFieldSubmitted: (_) {
+            if (settingPassword) savePassword();
+          },
+        ),
+      ],
+    ],
+  );
+
+  Widget passwordView() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      heading(
+        s.t('Set your password', 'अपना पासवर्ड बनाएँ'),
+        s.t(
+          'Use this password with your email address to log in.',
+          'लॉग इन करने के लिए अपने ईमेल पते के साथ इस पासवर्ड का उपयोग करें।',
+        ),
+      ),
+      feedback(),
+      Form(
+        key: passwordForm,
+        child: AutofillGroup(child: passwordFields(settingPassword: true)),
+      ),
+      const SizedBox(height: AppSpace.xl),
+      AppButton(
+        label: s.t('Save password', 'पासवर्ड सहेजें'),
+        onPressed: busy ? null : savePassword,
+        loading: busy,
+      ),
+      AppButton(
+        label: s.t('Cancel', 'रद्द करें'),
+        variant: AppButtonVariant.tertiary,
+        onPressed: busy
+            ? null
+            : () {
+                password.clear();
+                confirmPassword.clear();
+                setState(() {
+                  editingPassword = false;
+                  recovering = false;
+                  codeSent = false;
+                  error = null;
+                  notice = null;
+                });
+                onStoreChanged();
+              },
+      ),
+    ],
+  );
+
   Widget signedOutView() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -336,6 +642,11 @@ class _AccountPageState extends State<AccountPage> {
                 ? null
                 : (value) => setState(() {
                     signUp = value.first;
+                    validatePassword = false;
+                    showPassword = false;
+                    password.clear();
+                    confirmPassword.clear();
+                    form.currentState?.reset();
                     error = null;
                     notice = null;
                   }),
@@ -364,10 +675,12 @@ class _AccountPageState extends State<AccountPage> {
                   controller: email,
                   enabled: !busy && !codeSent,
                   keyboardType: TextInputType.emailAddress,
-                  textInputAction: signUp
-                      ? TextInputAction.next
-                      : TextInputAction.done,
-                  autofillHints: const [AutofillHints.email],
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [
+                    AutofillHints.username,
+                    AutofillHints.email,
+                  ],
+                  autocorrect: false,
                   decoration: InputDecoration(
                     labelText: s.t('Email address', 'ईमेल पता'),
                     hintText: 'name@business.com',
@@ -382,10 +695,11 @@ class _AccountPageState extends State<AccountPage> {
                     }
                     return null;
                   },
-                  onFieldSubmitted: (_) {
-                    if (!codeSent) sendCode();
-                  },
                 ),
+                if (!codeSent) ...[
+                  const SizedBox(height: AppSpace.lg),
+                  passwordFields(),
+                ],
                 if (signUp && !codeSent) ...[
                   const SizedBox(height: AppSpace.lg),
                   ContactFields(
@@ -422,7 +736,7 @@ class _AccountPageState extends State<AccountPage> {
           const SizedBox(height: AppSpace.lg),
           AppButton(
             label: s.t('Resend code', 'कोड फिर भेजें'),
-            onPressed: busy ? null : sendCode,
+            onPressed: busy ? null : resendCode,
             variant: AppButtonVariant.tertiary,
           ),
           AppButton(
@@ -436,6 +750,9 @@ class _AccountPageState extends State<AccountPage> {
                 ? null
                 : () => setState(() {
                     codeSent = false;
+                    recovering = false;
+                    passwordSignup = false;
+                    validatePassword = false;
                     code.clear();
                     error = null;
                     notice = null;
@@ -445,16 +762,35 @@ class _AccountPageState extends State<AccountPage> {
         ] else ...[
           const SizedBox(height: AppSpace.lg),
           AppButton(
+            label: signUp
+                ? s.t('Create account', 'खाता बनाएँ')
+                : s.t('Log in with password', 'पासवर्ड से लॉग इन करें'),
+            onPressed: busy || s.emailAvailable == false
+                ? null
+                : submitPassword,
+            loading: busy,
+          ),
+          const SizedBox(height: AppSpace.md),
+          if (!signUp)
+            AppButton(
+              label: s.t('Forgot password?', 'पासवर्ड भूल गए?'),
+              onPressed: busy || s.emailAvailable == false
+                  ? null
+                  : requestPasswordReset,
+              variant: AppButtonVariant.tertiary,
+            ),
+          AppButton(
             label: s.t('Email me a code', 'मुझे ईमेल कोड भेजें'),
             onPressed: busy || s.emailAvailable == false ? null : sendCode,
             loading: busy,
+            variant: AppButtonVariant.secondary,
           ),
         ],
         const SizedBox(height: AppSpace.xxl),
         Text(
           s.t(
-            'Sign in with a code sent to your email. Research tracking stays off unless you separately opt in.',
-            'ईमेल पर भेजे गए कोड से साइन इन करें। शोध ट्रैकिंग आपकी अलग सहमति के बिना बंद रहती है।',
+            'Use your email and password, or an email code. Research tracking stays off unless you separately opt in.',
+            'ईमेल और पासवर्ड या ईमेल कोड का उपयोग करें। शोध ट्रैकिंग आपकी अलग सहमति के बिना बंद रहती है।',
           ),
           style: AppText.caption,
         ),
@@ -529,6 +865,21 @@ class _AccountPageState extends State<AccountPage> {
           ),
         ),
         const SizedBox(height: AppSpace.xxl),
+        AppButton(
+          label: s.t('Set your password', 'अपना पासवर्ड बनाएँ'),
+          icon: Icons.lock_outline,
+          variant: AppButtonVariant.secondary,
+          onPressed: busy
+              ? null
+              : () => setState(() {
+                  password.clear();
+                  confirmPassword.clear();
+                  editingPassword = true;
+                  error = null;
+                  notice = null;
+                }),
+        ),
+        const SizedBox(height: AppSpace.md),
         AppButton(
           label: s.t('GeM registration guide', 'GeM पंजीकरण गाइड'),
           icon: Icons.assignment_outlined,

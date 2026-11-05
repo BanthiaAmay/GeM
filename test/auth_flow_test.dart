@@ -19,6 +19,45 @@ class AuthTestStore extends AppStore {
   String? verifiedCode;
   bool? savedConsent;
   bool failContactSave = false;
+  int passwordSignIns = 0;
+  int passwordSignUps = 0;
+  int signupResends = 0;
+  String? submittedPassword;
+  String? updatedPassword;
+  String? submittedEmail;
+  bool confirmSignup = true;
+  Object? passwordError;
+
+  @override
+  Future<void> signInWithPassword(String email, String password) async {
+    passwordSignIns++;
+    if (passwordError != null) throw passwordError!;
+    submittedEmail = email;
+    submittedPassword = password;
+    authenticated = true;
+    notifyListeners();
+  }
+
+  @override
+  Future<bool> signUpWithPassword(String email, String password) async {
+    passwordSignUps++;
+    submittedPassword = password;
+    if (!confirmSignup) {
+      authenticated = true;
+      notifyListeners();
+    }
+    return confirmSignup;
+  }
+
+  @override
+  Future<void> resendSignupCode(String email) async => signupResends++;
+
+  @override
+  Future<void> updatePassword(String password) async {
+    if (passwordError != null) throw passwordError!;
+    updatedPassword = password;
+  }
+
   @override
   bool get configured => true;
   @override
@@ -96,10 +135,169 @@ void main() {
   }
 
   Future<void> tap(WidgetTester tester, String text) async {
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.text(text));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(text));
     await tester.pumpAndSettle();
   }
+
+  Future<void> fillPassword(WidgetTester tester, String value) async {
+    await tester.enterText(
+      find.byKey(const ValueKey('account-password')),
+      value,
+    );
+    final confirmation = find.byKey(const ValueKey('confirm-password'));
+    if (confirmation.evaluate().isNotEmpty) {
+      await tester.enterText(confirmation, value);
+    }
+  }
+
+  testWidgets(
+    'password login accepts existing passwords and reports bad credentials',
+    (tester) async {
+      await boot(tester, entry: false);
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        'seller@example.com',
+      );
+      await tap(tester, 'Log in with password');
+      expect(store.passwordSignIns, 0);
+      await fillPassword(
+        tester,
+        'short!',
+      ); // Existing backend passwords can be shorter than new ones.
+      store.passwordError = const AuthException(
+        'Invalid login credentials',
+        code: 'invalid_credentials',
+      );
+      await tap(tester, 'Log in with password');
+      expect(find.text('Email or password is incorrect.'), findsOneWidget);
+      expect(store.authenticated, isFalse);
+      store.passwordError = null;
+      await tap(tester, 'Log in with password');
+      expect(store.authenticated, isTrue);
+      expect(store.submittedPassword, 'short!');
+      expect(store.otpRequests, 0);
+      expect(find.text('Sync now'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'password signup validates confirmation then verifies email and resends signup code',
+    (tester) async {
+      await boot(tester);
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        'seller@example.com',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('whatsapp-number')),
+        '9876543210',
+      );
+      await fillPassword(tester, 'short');
+      await tap(tester, 'Create account');
+      expect(store.passwordSignUps, 0);
+      await fillPassword(tester, ' Strong password 1! ');
+      await tester.enterText(
+        find.byKey(const ValueKey('confirm-password')),
+        'different',
+      );
+      await tap(tester, 'Create account');
+      expect(find.text('Passwords do not match.'), findsOneWidget);
+      expect(store.passwordSignUps, 0);
+      await fillPassword(tester, ' Strong password 1! ');
+      await tap(tester, 'Create account');
+      expect(store.submittedPassword, ' Strong password 1! ');
+      expect(store.authenticated, isFalse);
+      expect(find.byKey(const ValueKey('account-password')), findsNothing);
+      await tap(tester, 'Resend code');
+      expect(store.signupResends, 1);
+      expect(store.otpRequests, 0);
+      await tester.enterText(find.byType(TextField).last, '123456');
+      await tap(tester, 'Verify and sign in');
+      expect(store.authenticated, isTrue);
+      expect(store.savedConsent, isFalse);
+    },
+  );
+
+  testWidgets(
+    'password signup handles automatic confirmation and unavailable contact storage',
+    (tester) async {
+      store.confirmSignup = false;
+      store.failContactSave = true;
+      await boot(tester);
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        'seller@example.com',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('whatsapp-number')),
+        '9876543210',
+      );
+      await fillPassword(tester, 'Some-password1!');
+      await tap(tester, 'Create account');
+      expect(store.authenticated, isTrue);
+      expect(find.text('Sync now'), findsOneWidget);
+      expect(store.profile['whatsappNumber'], '+919876543210');
+    },
+  );
+
+  testWidgets(
+    'forgot password verifies an existing account before updating and continuing',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: saathiTheme(),
+          routes: {'/next': (_) => const Scaffold(body: Text('Next screen'))},
+          home: AccountPage(store: store, continueTo: '/next'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        'seller@example.com',
+      );
+      await tap(tester, 'Forgot password?');
+      expect(store.createsUser, isFalse);
+      expect(store.authenticated, isFalse);
+      await tester.enterText(find.byType(TextField).last, '123456');
+      await tap(tester, 'Verify and sign in');
+      expect(find.text('Next screen'), findsNothing);
+      expect(find.text('Save password'), findsOneWidget);
+      await fillPassword(tester, 'Replacement-password1!');
+      store.passwordError = const AuthException(
+        'Too weak',
+        code: 'same_password',
+      );
+      await tap(tester, 'Save password');
+      expect(
+        find.text('Choose a stronger, different password.'),
+        findsOneWidget,
+      );
+      expect(find.text('Next screen'), findsNothing);
+      store.passwordError = null;
+      await tap(tester, 'Save password');
+      expect(store.updatedPassword, 'Replacement-password1!');
+      expect(find.text('Next screen'), findsOneWidget);
+    },
+  );
+
+  testWidgets('existing code users can set a password from their account', (
+    tester,
+  ) async {
+    store.authenticated = true;
+    await boot(tester, entry: false);
+    await tap(tester, 'Set your password');
+    await fillPassword(tester, 'New-password1!');
+    await tap(tester, 'Save password');
+    expect(store.updatedPassword, 'New-password1!');
+    expect(find.text('Sync now'), findsOneWidget);
+    expect(
+      find.text('Password saved. Use it next time you log in.'),
+      findsOneWidget,
+    );
+  });
 
   testWidgets(
     'welcome and language lead to app signup before the GeM question',

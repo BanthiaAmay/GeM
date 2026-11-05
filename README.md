@@ -1,6 +1,6 @@
 # Bid2Scale
 
-Flutter application for **Android and web**: GeM education, eligibility/classification, revenue scenarios, pricing, ROI, the existing onboarding journey and Supabase-backed private accounts with email-code sign-in. Google signup is not currently offered.
+Flutter application for **Android and web**: GeM education, eligibility/classification, revenue scenarios, pricing, ROI, the existing onboarding journey and Supabase-backed private accounts with email/password and email-code sign-in. Google signup is not currently offered.
 
 ## Run locally
 Requires Flutter 3.44.4 / Dart 3.12 or a compatible newer SDK.
@@ -16,7 +16,7 @@ The normal app journey requires a configured Supabase email provider: Welcome �
 
 ## Connect Supabase
 1. Create a Supabase project and run [the core migration](supabase/migrations/202609090001_initial.sql) followed by [the account-deletion migration](supabase/migrations/202610130001_account_deletion.sql), or use `supabase db push` from a linked CLI project.
-2. Enable email authentication and user signups. Configure **Authentication → Email Templates → Magic Link** to show the OTP using `{{ .Token }}`. The app verifies a code; it does not depend on a magic-link redirect. Configure production SMTP and suitable auth rate limits before rollout.
+2. Enable email authentication and user signups. Keep email confirmation enabled. Both **Authentication → Email Templates → Confirm signup** and **Magic Link** must show `{{ .Token }}` in the subject or body. Password signup verifies the confirmation code in the app. Password recovery uses an existing-account email code, then lets the authenticated user set a new password; no browser callback is needed. The connected project requires at least 8 characters with uppercase, lowercase, a digit and a symbol. Configure production SMTP and suitable auth rate limits before rollout.
 3. Copy `config/env.example.json` to `config/env.json`. Enter the project URL and **publishable/anon key**. Do not use a service-role key.
 4. Run:
 
@@ -43,7 +43,7 @@ Android release signing uses the ignored local upload key configuration (see [de
 - Responsive forest-green/cream UI, mobile drawer and English/Hindi toggle.
 - Validated financial models with dated official policy citations.
 - Editable revenue scenarios; no fabricated category data or order promises.
-- Local persistence and optional email-code cloud restoration.
+- Local persistence and email/password and email-code cloud restoration.
 - Combined UTF-8 text report: download/share, copy, WhatsApp handoff.
 - Explicit research consent, referral codes and idempotent queued events.
 - Support requests, self-reported milestones and server-only evidence review.
