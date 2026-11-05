@@ -4,6 +4,7 @@ import 'package:gem/core/theme.dart';
 import 'package:gem/features/home_page.dart';
 import 'package:gem/features/news_page.dart';
 import 'package:gem/features/scroll_hint.dart';
+import 'package:gem/features/trainings/trainings_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'support/authenticated_journey_store.dart';
 
@@ -11,7 +12,7 @@ class NewsStore extends AuthenticatedJourneyStore {
   NewsStore(super.prefs);
   int loads = 0;
   @override
-  Future<void> loadBulletins() async => loads++;
+  Future<void> loadGemVideos() async => loads++;
 }
 
 const _week4 = {
@@ -23,6 +24,20 @@ const _week3 = {
   'video_id': 'AbCdEfGh_-1',
   'title': 'GeM Bulletin October Week #3',
   'published_at': '2026-10-22T10:30:00+00:00',
+};
+const _story = {
+  'video_id': 'StOrY_12345',
+  'title': '#GeMSellerSpeak | A weaver from Varanasi',
+  'published_at': '2026-11-04T09:00:00+00:00',
+  'kind': 'story',
+  'duration_seconds': 95,
+};
+Map<String, dynamic> _tip(int day) => {
+  'video_id': 'TiP_video_$day',
+  'title': 'GeM tip $day #GeMShorts',
+  'published_at': '2026-11-0${day}T09:00:00+00:00',
+  'kind': 'tip',
+  'duration_seconds': 45,
 };
 
 void main() {
@@ -71,7 +86,7 @@ void main() {
   });
 
   testWidgets('News offers a retry when loading fails', (tester) async {
-    store.bulletinsFailed = true;
+    store.gemVideosFailed = true;
     await show(tester, NewsPage(store: store));
     expect(find.text('Could not load news'), findsOneWidget);
     await tester.tap(find.text('Retry'));
@@ -95,5 +110,43 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(NewsPage), findsOneWidget);
     expect(find.text('GeM Bulletin October Week #3'), findsOneWidget);
+  });
+
+  testWidgets('News shows success stories and earlier bulletins, not tips', (
+    tester,
+  ) async {
+    store.bulletins = [Map.of(_week4), Map.of(_week3)];
+    store.gemVideos = [Map.of(_story), _tip(1)];
+    await show(tester, NewsPage(store: store));
+    expect(find.text('Success stories'), findsOneWidget);
+    expect(find.text(_story['title']! as String), findsOneWidget);
+    expect(find.text('4 Nov 2026 · 1:35'), findsOneWidget);
+    expect(find.text('Earlier bulletins'), findsOneWidget);
+    expect(find.text('GeM tip 1 #GeMShorts'), findsNothing);
+  });
+
+  testWidgets('Trainings shows new GeM tips, three until expanded', (
+    tester,
+  ) async {
+    store.gemVideos = [_tip(4), _tip(3), _tip(2), _tip(1), Map.of(_story)];
+    await show(tester, TrainingsPage(store: store));
+    expect(store.loads, 1);
+    expect(find.text('New from GeM'), findsOneWidget);
+    expect(find.text('GeM tip 4 #GeMShorts'), findsOneWidget);
+    expect(find.text('GeM tip 2 #GeMShorts'), findsOneWidget);
+    expect(find.text('GeM tip 1 #GeMShorts'), findsNothing);
+    expect(find.text(_story['title']! as String), findsNothing);
+    await tester.tap(find.text('See all'));
+    await tester.pumpAndSettle();
+    expect(find.text('GeM tip 1 #GeMShorts'), findsOneWidget);
+    expect(find.text('Show fewer'), findsOneWidget);
+  });
+
+  testWidgets('Trainings hides New from GeM until videos exist', (
+    tester,
+  ) async {
+    await show(tester, TrainingsPage(store: store));
+    expect(find.text('New from GeM'), findsNothing);
+    expect(find.text('Modules'), findsOneWidget);
   });
 }

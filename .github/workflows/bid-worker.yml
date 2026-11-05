@@ -1,11 +1,10 @@
 name: Bid alerts worker
-# Collects new GeM bids, queues matches, sends app notifications and email digests.
-# Off until the repository variable BID_WORKER_ENABLED is set to "true".
-# Hourly keeps a private repo inside GitHub's free Actions minutes; switch
-# to '*/15 * * * *' (or Render, render.yaml) for faster alerts.
+# Manual runs only. The real schedule is the office Windows PC
+# (scripts/windows/install_task.ps1): GeM refuses connections from GitHub's
+# servers, so a scheduled run here failed every hour and emailed about it.
+# Kept for a one-off test from the Actions tab ("Run workflow"); still needs
+# the repository variable BID_WORKER_ENABLED set to "true".
 on:
-  schedule:
-    - cron: '7 * * * *'   # minute 7 of every hour (UTC), off the busy :00
   workflow_dispatch:
 concurrency:
   group: bid-worker

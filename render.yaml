@@ -1,7 +1,9 @@
 # Render Blueprint for the bid-alerts worker (scripts/bid_worker.py).
 # Every 15 minutes: collect new GeM bids, match them to users, then send app
 # notifications, email digests and WhatsApp digests. Channels whose keys are
-# not set are skipped. Secrets are entered in the Render dashboard (sync: false).
+# not set are skipped. Every 3 hours the same run also saves new videos from
+# the GeM YouTube channel (scripts/gem_videos.py). Secrets are entered in the
+# Render dashboard (sync: false). Not in use: the office PC runs the worker.
 services:
   - type: cron
     name: bid2scale-bid-alerts
@@ -33,23 +35,4 @@ services:
       - key: WHATSAPP_PHONE_NUMBER_ID
         sync: false
       - key: WHATSAPP_TEMPLATE
-        sync: false
-
-  # GeM Weekly Bulletin for the app's News page (scripts/bulletin_worker.py).
-  # Fridays 06:47 and 12:47 IST; re-runs never save a video twice.
-  - type: cron
-    name: bid2scale-gem-bulletins
-    runtime: python
-    region: singapore
-    plan: starter
-    branch: Oct
-    schedule: "17 1,7 * * 5"   # UTC = 06:47 and 12:47 IST on Friday
-    buildCommand: python --version   # standard library only
-    startCommand: python scripts/bulletin_worker.py run
-    envVars:
-      - key: PYTHON_VERSION
-        value: "3.12.8"
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false

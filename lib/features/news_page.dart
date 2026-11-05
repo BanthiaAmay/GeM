@@ -5,7 +5,8 @@ import '../data/app_store.dart';
 import 'components.dart';
 import 'youtube_video.dart';
 
-/// GeM Weekly Bulletins saved by the server's Friday bulletin worker.
+/// Official GeM videos saved by the server's video sync (every few hours):
+/// the weekly bulletin, success stories and earlier bulletins.
 class NewsPage extends StatefulWidget {
   final AppStore store;
   const NewsPage({super.key, required this.store});
@@ -18,7 +19,7 @@ class _NewsPageState extends State<NewsPage> {
   @override
   void initState() {
     super.initState();
-    unawaited(widget.store.loadBulletins());
+    unawaited(widget.store.loadGemVideos());
   }
 
   @override
@@ -31,7 +32,7 @@ class _NewsPageState extends State<NewsPage> {
         appBar: AppBar(title: Text(s.t('News', 'समाचार'))),
         body: SafeArea(
           child: RefreshIndicator(
-            onRefresh: s.loadBulletins,
+            onRefresh: s.loadGemVideos,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(AppSpace.gutter),
@@ -47,8 +48,8 @@ class _NewsPageState extends State<NewsPage> {
                         ),
                         Text(
                           s.t(
-                            'Official GeM Weekly Bulletins, updated every Friday.',
-                            'आधिकारिक GeM साप्ताहिक बुलेटिन, हर शुक्रवार अपडेट।',
+                            'Official GeM Weekly Bulletin, added here within hours of its release.',
+                            'आधिकारिक GeM साप्ताहिक बुलेटिन, जारी होने के कुछ घंटों में यहाँ।',
                           ),
                           style: AppText.secondary(AppText.body),
                         ),
@@ -69,42 +70,52 @@ class _NewsPageState extends State<NewsPage> {
   }
 
   List<Widget> _body(AppStore s) {
-    if (s.bulletins.isEmpty && s.bulletinsLoading) {
-      return [
-        StateView(
-          kind: StateKind.loading,
-          title: s.t('Loading news', 'समाचार लोड हो रहे हैं'),
-        ),
-      ];
-    }
-    if (s.bulletins.isEmpty && s.bulletinsFailed) {
-      return [
-        StateView(
-          kind: StateKind.error,
-          title: s.t('Could not load news', 'समाचार लोड नहीं हो सके'),
-          actionLabel: s.t('Retry', 'फिर कोशिश करें'),
-          onAction: s.loadBulletins,
-        ),
-      ];
-    }
-    if (s.bulletins.isEmpty) {
-      return [
-        StateView(
-          kind: StateKind.empty,
-          title: s.t('No bulletins yet', 'अभी कोई बुलेटिन नहीं'),
-          message: s.t(
-            'The new bulletin appears here every Friday.',
-            'नया बुलेटिन हर शुक्रवार यहाँ दिखेगा।',
-          ),
-        ),
-      ];
-    }
+    final stories = s.gemVideosOf(const {'story'});
     return [
-      for (final bulletin in s.bulletins)
-        Padding(
-          padding: const EdgeInsets.only(bottom: AppSpace.lg),
-          child: BulletinCard(store: s, bulletin: bulletin),
-        ),
+      if (s.bulletins.isEmpty)
+        _bulletinState(s)
+      else
+        BulletinCard(store: s, bulletin: s.bulletins.first),
+      if (stories.isNotEmpty) ...[
+        const SizedBox(height: AppSpace.xxl),
+        SectionHeader(s.t('Success stories', 'सफलता की कहानियाँ')),
+        for (final video in stories.take(6)) _tile(s, video),
+      ],
+      if (s.bulletins.length > 1) ...[
+        const SizedBox(height: AppSpace.xxl),
+        SectionHeader(s.t('Earlier bulletins', 'पिछले बुलेटिन')),
+        for (final video in s.bulletins.skip(1)) _tile(s, video),
+      ],
     ];
+  }
+
+  Widget _tile(AppStore s, Map<String, dynamic> video) => Padding(
+    padding: const EdgeInsets.only(bottom: AppSpace.sm),
+    child: GemVideoTile(store: s, video: video),
+  );
+
+  Widget _bulletinState(AppStore s) {
+    if (s.gemVideosLoading) {
+      return StateView(
+        kind: StateKind.loading,
+        title: s.t('Loading news', 'समाचार लोड हो रहे हैं'),
+      );
+    }
+    if (s.gemVideosFailed) {
+      return StateView(
+        kind: StateKind.error,
+        title: s.t('Could not load news', 'समाचार लोड नहीं हो सके'),
+        actionLabel: s.t('Retry', 'फिर कोशिश करें'),
+        onAction: s.loadGemVideos,
+      );
+    }
+    return StateView(
+      kind: StateKind.empty,
+      title: s.t('No bulletins yet', 'अभी कोई बुलेटिन नहीं'),
+      message: s.t(
+        'New bulletins appear here within hours of release.',
+        'नए बुलेटिन जारी होने के कुछ घंटों में यहाँ दिखेंगे।',
+      ),
+    );
   }
 }

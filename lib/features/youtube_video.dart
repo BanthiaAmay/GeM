@@ -23,11 +23,7 @@ class YouTubeVideoCard extends StatelessWidget {
     button: true,
     label: store.t('Play video', 'वीडियो चलाएँ'),
     child: GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => YouTubeVideoPage(videoId: videoId, store: store),
-        ),
-      ),
+      onTap: () => openYouTubeVideo(context, store, videoId),
       child: ClipRRect(
         borderRadius: AppRadius.card,
         child: AspectRatio(
@@ -52,6 +48,13 @@ class YouTubeVideoCard extends StatelessWidget {
     ),
   );
 }
+
+void openYouTubeVideo(BuildContext context, AppStore store, String videoId) =>
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => YouTubeVideoPage(videoId: videoId, store: store),
+      ),
+    );
 
 class _PlayButton extends StatelessWidget {
   const _PlayButton();
@@ -214,6 +217,88 @@ class BulletinCard extends StatelessWidget {
               style: AppText.caption,
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// A compact row for one saved GeM video: thumbnail, title, date and length.
+/// Tapping plays it in-app.
+class GemVideoTile extends StatelessWidget {
+  final AppStore store;
+  final Map<String, dynamic> video;
+  const GemVideoTile({super.key, required this.store, required this.video});
+
+  static String _length(int seconds) {
+    final h = seconds ~/ 3600, m = seconds % 3600 ~/ 60, sec = seconds % 60;
+    String two(int n) => n.toString().padLeft(2, '0');
+    return h > 0 ? '$h:${two(m)}:${two(sec)}' : '$m:${two(sec)}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final videoId = video['video_id'] as String;
+    final published = DateTime.tryParse(video['published_at'] as String? ?? '');
+    final seconds = video['duration_seconds'] as int?;
+    final details = [
+      if (published != null)
+        DateFormat('d MMM yyyy').format(published.toLocal()),
+      if (seconds != null && seconds > 0) _length(seconds),
+    ].join(' · ');
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpace.sm),
+      onTap: () => openYouTubeVideo(context, store, videoId),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: SizedBox(
+              width: 128,
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      'https://img.youtube.com/vi/$videoId/mqdefault.jpg',
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const ColoredBox(
+                        color: AppColors.disabled,
+                        child: Icon(Icons.video_library_outlined),
+                      ),
+                    ),
+                    const Center(
+                      child: Icon(
+                        Icons.play_circle_fill_rounded,
+                        size: AppIconSize.md,
+                        color: AppColors.surface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpace.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  video['title'] as String? ?? '',
+                  style: AppText.bodyStrong,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (details.isNotEmpty) ...[
+                  const SizedBox(height: AppSpace.xs),
+                  Text(details, style: AppText.caption),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );

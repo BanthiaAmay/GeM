@@ -23,29 +23,21 @@ Use a production SMTP provider and test rate limits/deliverability. Copy `config
 
 No anonymous auth provider or service-role client key is required. RLS must stay enabled. Public data consists only of explicitly published benchmark rows. Review database grants in the migration before changing schemas.
 
-### GeM Weekly Bulletin (News)
-GeM uploads a "GeM Weekly Bulletin" video each week. A Render cron job, `bid2scale-gem-bulletins` in `render.yaml`, runs from the `Oct` branch on Friday at 06:47 IST and again at 12:47 IST. It saves any bulletin from the channel's latest 15 uploads into `gem_bulletins`, and the app shows them on Home and the News page.
+### GeM YouTube videos (News, Home, Trainings)
+GeM uploads to its YouTube channel several times a week: the "GeM Weekly Bulletin" (usually Tuesday to Thursday), GeM Shorts tips, explainers and seller success stories. The bid worker saves new ones into `gem_bulletins`: every scheduled `python scripts/bid_worker.py run` also syncs the videos when 3 hours have passed since the last sync, so the office PC's 15-minute task (`scripts/windows/install_task.ps1`) needs no extra job.
 
-The worker reads GeM's channel (`UC1LaBWVVZv3k23BZApfDlsQ`, built into the script). An optional `GEM_YOUTUBE_CHANNEL_ID` environment variable overrides it.
+YouTube's RSS feeds no longer answer, so `scripts/gem_videos.py` reads the channel's public Videos page (its latest 30 uploads, no API key) and opens the watch page of each new video once for its exact upload time and length. Each video gets a `kind`: `bulletin` (Home and News), `story` (News, "Success stories") or `tip`/`learning` (Trainings, "New from GeM"). The channel is `UC1LaBWVVZv3k23BZApfDlsQ`; an optional `GEM_YOUTUBE_CHANNEL_ID` environment variable overrides it.
 
-1. Apply `supabase/migrations/202611010001_gem_bulletins.sql`.
-2. In the Render dashboard, choose **New → Cron Job** and connect the GitHub repo. Create the job by hand rather than applying the whole Blueprint, because the Blueprint would also start the 15-minute bid-alert worker. Settings:
-   - **Branch:** `Oct`
-   - **Region:** Singapore
-   - **Runtime:** Python 3
-   - **Build command:** `python --version`
-   - **Command:** `python scripts/bulletin_worker.py run`
-   - **Schedule:** `17 1,7 * * 5` (UTC, which is 06:47 and 12:47 IST on Fridays)
-   - **Environment variables:** `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `PYTHON_VERSION=3.12.8`
-3. Click **Trigger Run** once. This backfills the bulletins currently in the feed. The log should end with `Saved N bulletin(s).`
+1. Apply `supabase/migrations/202611010001_gem_bulletins.sql`, then `supabase/migrations/202611050001_gem_videos.sql`.
+2. Run `python3 scripts/bid_worker.py videos` once to save the current uploads. The log ends with `Videos: 30 on the GeM channel page, N new saved.`
 
-To check locally without writing anything:
+To check without writing anything:
 
 ```bash
-python3 scripts/bulletin_worker.py run --dry-run
+python3 scripts/bid_worker.py videos --dry-run
 ```
 
-To hide a bulletin, set `published = false` on its row.
+`--no-videos` on `run` skips the sync. A failed sync is logged as `Video sync failed: …`, never stops bid alerts, and is retried on the next run. To hide a video, set `published = false` on its row.
 
 ### Google sign-in
 

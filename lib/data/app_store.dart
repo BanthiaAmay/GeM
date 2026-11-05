@@ -59,10 +59,18 @@ class AppStore extends ChangeNotifier {
   List<Map<String, dynamic>> bidNotifications = [];
   String? alertsError;
 
-  /// GeM Weekly Bulletin videos (newest first) for Home and News.
+  /// Official GeM YouTube videos saved by the server (scripts/gem_videos.py),
+  /// newest first: weekly bulletins for Home and News, and the other uploads
+  /// (kind `tip`, `learning` or `story`) for Trainings and News.
   List<Map<String, dynamic>> bulletins = [];
-  bool bulletinsLoading = false;
-  bool bulletinsFailed = false;
+  List<Map<String, dynamic>> gemVideos = [];
+  bool gemVideosLoading = false;
+  bool gemVideosFailed = false;
+
+  List<Map<String, dynamic>> gemVideosOf(Set<String> kinds) => [
+    for (final video in gemVideos)
+      if (kinds.contains(video['kind'])) video,
+  ];
   bool? googleAvailable;
   bool? emailAvailable;
   String? authError;
@@ -362,9 +370,7 @@ class AppStore extends ChangeNotifier {
   /// Mark a module's post-video quiz as passed. Idempotent.
   void markQuizPassed(String moduleId, {int? score, int? total}) {
     final state = trainingState;
-    final passed = List<String>.from(
-      state['quizPassed'] as List? ?? const [],
-    );
+    final passed = List<String>.from(state['quizPassed'] as List? ?? const []);
     if (!passed.contains(moduleId)) passed.add(moduleId);
     _setTrainingState({...state, 'quizPassed': passed});
     event(
@@ -383,7 +389,11 @@ class AppStore extends ChangeNotifier {
     );
     dismissed[nudgeId] = DateTime.now().toUtc().toIso8601String();
     _setTrainingState({...state, 'dismissedNudges': dismissed});
-    event('training_nudge_dismissed', page: 'trainings', props: {'id': nudgeId});
+    event(
+      'training_nudge_dismissed',
+      page: 'trainings',
+      props: {'id': nudgeId},
+    );
   }
 
   /// Timestamp (UTC ISO) that [nudgeId] was last dismissed, or null if
@@ -823,24 +833,35 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Public, read-only table filled by scripts/bulletin_worker.py. Safe to
-  /// call from initState: it only notifies after the first await.
-  Future<void> loadBulletins() async {
+  /// Public, read-only `gem_bulletins` table. Safe to call from initState:
+  /// it only notifies after the first await.
+  Future<void> loadGemVideos() async {
     final db = client;
-    if (db == null || bulletinsLoading) return;
-    bulletinsLoading = true;
+    if (db == null || gemVideosLoading) return;
+    gemVideosLoading = true;
+    const columns = 'video_id,title,published_at,kind,duration_seconds';
     try {
-      final rows = await db
-          .from('gem_bulletins')
-          .select('video_id,title,published_at')
-          .order('published_at', ascending: false)
-          .limit(20);
-      bulletins = List<Map<String, dynamic>>.from(rows);
-      bulletinsFailed = false;
+      final rows = await Future.wait([
+        db
+            .from('gem_bulletins')
+            .select(columns)
+            .eq('kind', 'bulletin')
+            .order('published_at', ascending: false)
+            .limit(20),
+        db
+            .from('gem_bulletins')
+            .select(columns)
+            .neq('kind', 'bulletin')
+            .order('published_at', ascending: false)
+            .limit(30),
+      ]);
+      bulletins = List<Map<String, dynamic>>.from(rows[0]);
+      gemVideos = List<Map<String, dynamic>>.from(rows[1]);
+      gemVideosFailed = false;
     } catch (_) {
-      bulletinsFailed = true;
+      gemVideosFailed = true;
     } finally {
-      bulletinsLoading = false;
+      gemVideosLoading = false;
     }
     notifyListeners();
   }

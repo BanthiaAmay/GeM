@@ -73,7 +73,7 @@ flowchart LR
 - `support_requests`: own reads and inserts into allowed columns; clients cannot change operator status.
 - `outcomes`: own reads and self-reported submissions only. Column-level grants prevent changing verification status/timestamp/note. Verified records cannot be revised by client upsert.
 - `benchmarks`: public read of published rows only; operator writes.
-- `gem_bulletins`: public read of published rows only. Written only by `scripts/bulletin_worker.py` (service role), which reads the official GeM YouTube channel's public upload feed every Friday and keeps "Bulletin" titles. No API key; no page scraping. The app shows them on Home and the News page and plays them in-app.
+- `gem_bulletins`: public read of published rows only. Written only by the bid worker's video sync (`scripts/gem_videos.py`, service role), at most every 3 hours. It reads the official GeM YouTube channel's public Videos page (YouTube's RSS feeds no longer answer) and each new video's watch page, with no API key, and sorts videos by `kind`: `bulletin` for Home and News, `story` for News, `tip`/`learning` for Trainings. The app plays them in-app.
 - `research_assignments`: operator-only participant allocation and observation window.
 - `verification_audit`: operator-only review history.
 - `research_export`: operator-only view; no email/contact or raw business inputs. Includes only consented assigned participants.

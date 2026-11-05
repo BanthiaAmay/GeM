@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -10,16 +12,28 @@ import 'training_data.dart';
 import 'training_nudge.dart';
 
 /// Entry page for Module Trainings — a "Learning hub" layout:
-/// an optional resume hero, slim stat chips, and a 2-column module grid.
-class TrainingsPage extends StatelessWidget {
+/// an optional resume hero, slim stat chips, new official GeM videos, and a
+/// 2-column module grid.
+class TrainingsPage extends StatefulWidget {
   final AppStore store;
   const TrainingsPage({super.key, required this.store});
 
   @override
+  State<TrainingsPage> createState() => _TrainingsPageState();
+}
+
+class _TrainingsPageState extends State<TrainingsPage> {
+  @override
+  void initState() {
+    super.initState();
+    unawaited(widget.store.loadGemVideos());
+  }
+
+  @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: store,
+    listenable: widget.store,
     builder: (context, _) {
-      final s = store;
+      final s = widget.store;
       final watched = s.trainingWatched.toSet();
       final total = kTotalTrainingVideos;
       final saved = s.trainingSaved;
@@ -60,6 +74,7 @@ class TrainingsPage extends StatelessWidget {
                       streak: s.trainingStreakDays,
                     ),
                     const SizedBox(height: AppSpace.xxl),
+                    _NewFromGem(store: s),
                     if (saved.isNotEmpty) ...[
                       _SavedStrip(store: s, savedVideoIds: saved),
                       const SizedBox(height: AppSpace.xxl),
@@ -190,10 +205,7 @@ class _ContinueHero extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      s.t(mod.titleEn, mod.titleHi),
-                      style: AppText.caption,
-                    ),
+                    Text(s.t(mod.titleEn, mod.titleHi), style: AppText.caption),
                   ],
                 ),
               ),
@@ -202,10 +214,11 @@ class _ContinueHero extends StatelessWidget {
                 label: s.t('Play', 'चलाएं'),
                 icon: Icons.play_arrow_outlined,
                 onPressed: () {
-                  s.event('cta_clicked', page: 'trainings', props: {
-                    'destination': 'resume_video',
-                    'videoId': lastId,
-                  });
+                  s.event(
+                    'cta_clicked',
+                    page: 'trainings',
+                    props: {'destination': 'resume_video', 'videoId': lastId},
+                  );
                   _openModule(context, s, mod.id, from: 'continue_hero');
                 },
                 size: AppButtonSize.sm,
@@ -383,9 +396,17 @@ class _ModuleGridCard extends StatelessWidget {
               ),
               const Spacer(),
               if (quizPassed)
-                const Icon(Icons.verified_outlined, size: 18, color: AppColors.brand)
+                const Icon(
+                  Icons.verified_outlined,
+                  size: 18,
+                  color: AppColors.brand,
+                )
               else if (allWatched)
-                const Icon(Icons.check_circle_outline, size: 18, color: AppColors.brand)
+                const Icon(
+                  Icons.check_circle_outline,
+                  size: 18,
+                  color: AppColors.brand,
+                )
               else if (done > 0)
                 Text('$done/$total', style: AppText.tick),
             ],
@@ -452,6 +473,57 @@ class _SavedStrip extends StatelessWidget {
   }
 }
 
+/// Latest tips and explainers from the official GeM channel, kept fresh by
+/// the server's video sync. Hidden until there is at least one.
+class _NewFromGem extends StatefulWidget {
+  final AppStore store;
+  const _NewFromGem({required this.store});
+
+  @override
+  State<_NewFromGem> createState() => _NewFromGemState();
+}
+
+class _NewFromGemState extends State<_NewFromGem> {
+  static const _preview = 3;
+  bool _all = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.store;
+    final videos = s.gemVideosOf(const {'tip', 'learning'});
+    if (videos.isEmpty) return const SizedBox.shrink();
+    final more = videos.length > _preview;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          s.t('New from GeM', 'GeM से नया'),
+          actionLabel: !more
+              ? null
+              : _all
+              ? s.t('Show fewer', 'कम दिखाएँ')
+              : s.t('See all', 'सभी देखें'),
+          onAction: more ? () => setState(() => _all = !_all) : null,
+        ),
+        Text(
+          s.t(
+            'Latest tips and explainers from the official GeM channel.',
+            'आधिकारिक GeM चैनल से ताज़ा टिप्स और जानकारी।',
+          ),
+          style: AppText.secondary(AppText.bodySmall),
+        ),
+        const SizedBox(height: AppSpace.md),
+        for (final video in _all ? videos : videos.take(_preview))
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpace.sm),
+            child: GemVideoTile(store: s, video: video),
+          ),
+        const SizedBox(height: AppSpace.xxl),
+      ],
+    );
+  }
+}
+
 /// Push the module detail page.
 void _openModule(
   BuildContext context,
@@ -462,7 +534,11 @@ void _openModule(
   store.event(
     'cta_clicked',
     page: 'trainings',
-    props: {'destination': 'training-module', 'moduleId': moduleId, 'from': from},
+    props: {
+      'destination': 'training-module',
+      'moduleId': moduleId,
+      'from': from,
+    },
   );
   Navigator.of(context).pushNamed('/training-module', arguments: moduleId);
 }
@@ -486,8 +562,9 @@ Future<void> copyDeepLink(
       ),
     );
   }
-  store.event('cta_clicked', page: 'training-module', props: {
-    'destination': 'copy_link',
-    'moduleId': moduleId,
-  });
+  store.event(
+    'cta_clicked',
+    page: 'training-module',
+    props: {'destination': 'copy_link', 'moduleId': moduleId},
+  );
 }

@@ -107,7 +107,7 @@ class _HomePageState extends State<HomePage>
           (_snapTo - _snapFrom) * Motion.enter.transform(_snap.value),
     );
     _initAlerts();
-    unawaited(widget.store.loadBulletins());
+    unawaited(widget.store.loadGemVideos());
   }
 
   @override
@@ -1005,9 +1005,7 @@ class _FinancialHubTab extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _PageHeader(
-          title: s.t('Finance', 'वित्त'),
-        ),
+        _PageHeader(title: s.t('Finance', 'वित्त')),
         AppCard(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpace.lg,

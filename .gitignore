@@ -59,3 +59,5 @@ research/exports/
 
 # Windows bid-worker logs (scripts/windows/run_worker.bat)
 /logs/
+# When the bid worker last saved GeM YouTube videos (scripts/gem_videos.py)
+/.video-sync-stamp

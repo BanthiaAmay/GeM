@@ -7,7 +7,9 @@
   python3 scripts/bid_worker.py email               send queued email digests
   python3 scripts/bid_worker.py whatsapp            send queued WhatsApp digests
   python3 scripts/bid_worker.py whatsapp-stop +91…  record a STOP reply (opt-out)
-  python3 scripts/bid_worker.py run                 collect, then push, email, WhatsApp
+  python3 scripts/bid_worker.py videos              save new GeM YouTube videos now
+  python3 scripts/bid_worker.py run                 collect, then push, email, WhatsApp, and
+                                                    GeM videos when 3 hours have passed
   python3 scripts/bid_worker.py test-push USER_ID   one test notification to a user
 
 Server secrets only, never the Flutter app: SUPABASE_URL and
@@ -30,6 +32,7 @@ import urllib.request
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlparse
 
+from gem_videos import GEM_CHANNEL_ID
 from gem_source import IST, GemClient, GemError, enrich, gem_time, listing_record, read_pdf
 
 # New bids normally run for a week or more, while reverse auctions close within
@@ -616,7 +619,7 @@ def load_env_file(path):
     return values
 
 
-def main(argv=None, env=os.environ):
+def main(argv=None, env=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest='command', required=True)
     for name in ('collect', 'run'):
@@ -646,6 +649,10 @@ def main(argv=None, env=os.environ):
             command.add_argument('--ignore-quiet-hours', action='store_true')
     commands.add_parser('whatsapp-stop').add_argument('phone', help='+91… number that replied STOP')
     commands.add_parser('test-push').add_argument('user_id')
+    videos = commands.add_parser('videos', help='save new GeM YouTube videos now')
+    videos.add_argument('--dry-run', action='store_true', help='read YouTube only; writes nothing')
+    commands.choices['run'].add_argument('--no-videos', action='store_true',
+                                         help='skip the GeM YouTube video sync')
     args = parser.parse_args(argv)
     now = datetime.now(timezone.utc)
 
@@ -656,11 +663,22 @@ def main(argv=None, env=os.environ):
             print('The PDF reader is not installed. Run once:\n'
                   '  python3 -m pip install -r scripts/requirements-worker.txt', file=sys.stderr)
             return 2
+    if args.command == 'videos' and args.dry_run:
+        from gem_videos import VideoError, sync_videos
+        try:
+            sync_videos(None, dry_run=True)
+        except VideoError as error:
+            print(f'Video sync failed: {error}', file=sys.stderr)
+            return 1
+        return 0
     if args.command == 'collect' and args.dry_run:
         collect(GemClient(), None, now=now, lookback=timedelta(minutes=args.lookback_minutes),
                 max_pages=args.max_pages, max_documents=args.max_documents, dry_run=True)
         return 0
-    env = {**load_env_file(Path(__file__).resolve().parent.parent / '.env'), **env}
+    if env is None:
+        # Real runs: the git-ignored .env file, overridden by exported variables.
+        # Callers passing env (tests) never pick up a developer's real keys.
+        env = {**load_env_file(Path(__file__).resolve().parent.parent / '.env'), **os.environ}
     missing = [k for k in ('SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY') if not env.get(k)]
     if missing:
         print(f'Missing {", ".join(missing)}. Export them, or put them in a .env file '
@@ -710,6 +728,19 @@ def main(argv=None, env=os.environ):
         send_emails(db, make_mailer, now=datetime.now(timezone.utc),
                     min_gap_hours=args.email_gap_hours,
                     respect_quiet_hours=not args.ignore_quiet_hours)
+    if args.command == 'videos' or (args.command == 'run' and not args.no_videos):
+        # GeM's YouTube videos for the app's News and Trainings pages: every
+        # run of `videos`, and at most every 3 hours from the scheduled `run`.
+        from gem_videos import mark_synced, sync_due, sync_videos
+        if args.command == 'videos' or sync_due(now):
+            try:
+                sync_videos(db, channel_id=(env.get('GEM_YOUTUBE_CHANNEL_ID') or '').strip()
+                            or GEM_CHANNEL_ID)
+                mark_synced(now)
+            except Exception as error:  # Videos must never stop bid alerts.
+                print(f'Video sync failed: {error}', file=sys.stderr)
+                if args.command == 'videos':
+                    return 1
     return 1 if failed else 0
 
 
