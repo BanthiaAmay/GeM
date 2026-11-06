@@ -74,6 +74,20 @@ class WelcomePage extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: AppText.lead,
                       ),
+                      const SizedBox(height: AppSpace.xl),
+                      GemFact(
+                        icon: Icons.storefront_outlined,
+                        label: store.t('DID YOU KNOW?', 'क्या आप जानते हैं?'),
+                        figure: '68%',
+                        text: store.t(
+                          '68% of GeM orders are delivered by small businesses like yours.',
+                          'GeM के 68% ऑर्डर आप जैसे छोटे व्यवसाय पूरे करते हैं।',
+                        ),
+                        source: store.t(
+                          'Source: PIB, Apr 2026 (FY 2025-26)',
+                          'स्रोत: PIB, अप्रैल 2026 (वित्त वर्ष 2025-26)',
+                        ),
+                      ),
                     ],
                   ),
                 ),

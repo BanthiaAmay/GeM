@@ -632,6 +632,38 @@ class _AccountPageState extends State<AccountPage> {
         ),
       ),
       if (!codeSent) ...[
+        if (widget.entry) ...[
+          signUp
+              ? GemFact(
+                  key: const ValueKey('fact-signup'),
+                  icon: Icons.currency_rupee,
+                  label: s.t('DID YOU KNOW?', 'क्या आप जानते हैं?'),
+                  figure: s.t('₹5.4 lakh crore', '₹5.4 लाख करोड़'),
+                  text: s.t(
+                    '₹5.4 lakh crore of government orders went through GeM in 2024-25.',
+                    '2024-25 में GeM पर ₹5.4 लाख करोड़ के सरकारी ऑर्डर दिए गए।',
+                  ),
+                  source: s.t(
+                    'Source: PIB, Aug 2025',
+                    'स्रोत: PIB, अगस्त 2025',
+                  ),
+                )
+              : GemFact(
+                  key: const ValueKey('fact-login'),
+                  icon: Icons.event_available_outlined,
+                  label: s.t('DID YOU KNOW?', 'क्या आप जानते हैं?'),
+                  figure: s.t('10 days', '10 दिनों'),
+                  text: s.t(
+                    'GeM rules say buyers must pay you within 10 days of accepting delivery.',
+                    'GeM नियमों के अनुसार, डिलीवरी स्वीकार करने के 10 दिनों के भीतर खरीदार को भुगतान करना होता है।',
+                  ),
+                  source: s.t(
+                    'Source: GeM Terms & Conditions',
+                    'स्रोत: GeM नियम और शर्तें',
+                  ),
+                ),
+          const SizedBox(height: AppSpace.xl),
+        ],
         SizedBox(
           width: double.infinity,
           child: SegmentedButton<bool>(

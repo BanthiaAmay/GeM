@@ -1566,6 +1566,222 @@ class DepthIcon extends StatelessWidget {
 /// screen that asks for a sensitive-feeling figure (turnover, past
 /// orders): a green left accent on [AppColors.brandTint], flush with no
 /// radius so the accent reads as a rule rather than a card.
+/// A sourced "Did you know?" fact box. On first build it pops up into
+/// place, then the figure counts up and lands with a small pop.
+class GemFact extends StatefulWidget {
+  final String text;
+  final String figure;
+  final String source;
+  final String label;
+  final IconData icon;
+  const GemFact({
+    super.key,
+    required this.text,
+    required this.figure,
+    required this.source,
+    required this.label,
+    required this.icon,
+  });
+
+  @override
+  State<GemFact> createState() => _GemFactState();
+}
+
+class _GemFactState extends State<GemFact> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1780),
+  );
+  bool _started = false;
+
+  static const _landAt = 0.72;
+
+  // The first slice of the timeline is a pause, so the box appears just
+  // after the page settles without needing a separate timer.
+  static const _lead = 0.16;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (Motion.reduced(context)) {
+      _c.value = 1;
+    } else {
+      _c.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  String _countedFigure(double t) {
+    final m = RegExp(r'\d+(\.\d+)?').firstMatch(widget.figure);
+    if (m == null || t >= 1) return widget.figure;
+    final target = double.parse(m.group(0)!);
+    final decimals = m.group(1) == null ? 0 : m.group(1)!.length - 1;
+    return widget.figure.replaceRange(
+      m.start,
+      m.end,
+      (target * t).toStringAsFixed(decimals),
+    );
+  }
+
+  Animation<double> _seg(double a, double b, Curve curve) => CurvedAnimation(
+    parent: _c,
+    curve: Interval(
+      _lead + a * (1 - _lead),
+      _lead + b * (1 - _lead),
+      curve: curve,
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final enter = _seg(0, 0.4, Curves.easeOutBack);
+    final fade = _seg(0, 0.2, Curves.easeOut);
+    final count = _seg(0.3, _landAt, Curves.easeOutCubic);
+    final pop = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.0,
+          end: 1.12,
+        ).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 40,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.12,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
+        weight: 60,
+      ),
+    ]).animate(_seg(_landAt, 1, Curves.linear));
+
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final text = widget.text;
+        final i = text.indexOf(widget.figure);
+        final figureStyle = AppText.title.copyWith(
+          color: AppColors.brand,
+          fontWeight: FontWeight.w800,
+        );
+        final spans = i < 0
+            ? <InlineSpan>[TextSpan(text: text)]
+            : <InlineSpan>[
+                TextSpan(text: text.substring(0, i)),
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.baseline,
+                  baseline: TextBaseline.alphabetic,
+                  child: Transform.scale(
+                    scale: pop.value,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      _countedFigure(count.value),
+                      style: figureStyle,
+                    ),
+                  ),
+                ),
+                TextSpan(text: text.substring(i + widget.figure.length)),
+              ];
+        return Opacity(
+          opacity: fade.value.clamp(0.0, 1.0),
+          child: Transform.translate(
+            offset: Offset(0, 28 * (1 - enter.value)),
+            child: Transform.scale(
+              scale: 0.88 + 0.12 * enter.value,
+              child: Semantics(
+                container: true,
+                label: '${widget.label} $text ${widget.source}',
+                excludeSemantics: true,
+                child: ClipRRect(
+                  borderRadius: AppRadius.card,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(AppSpace.lg),
+                        decoration: BoxDecoration(
+                          color: AppColors.brandTint,
+                          border: Border(
+                            left: const BorderSide(
+                              color: AppColors.brand,
+                              width: 4,
+                            ),
+                            top: BorderSide(
+                              color: AppColors.brand.withValues(alpha: 0.18),
+                            ),
+                            right: BorderSide(
+                              color: AppColors.brand.withValues(alpha: 0.18),
+                            ),
+                            bottom: BorderSide(
+                              color: AppColors.brand.withValues(alpha: 0.18),
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                color: AppColors.brand,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                widget.icon,
+                                size: 20,
+                                color: AppColors.surface,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpace.md),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.label,
+                                    style: AppText.overline.copyWith(
+                                      color: AppColors.brand,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpace.xs),
+                                  Text.rich(
+                                    TextSpan(
+                                      style: AppText.body,
+                                      children: spans,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpace.xs),
+                                  Text(
+                                    widget.source,
+                                    style: AppText.tick.copyWith(
+                                      color: AppColors.textHint,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class ReassuranceNote extends StatelessWidget {
   final String text;
   const ReassuranceNote(this.text, {super.key});
