@@ -51,6 +51,11 @@ class _AccountPageState extends State<AccountPage> {
     '8 या अधिक अक्षर रखें, जिनमें बड़े और छोटे अंग्रेज़ी अक्षर, अंक और चिह्न हों।',
   );
 
+  String get signupsOff => s.t(
+    'New sign-ups are turned off right now. Please try again later.',
+    'अभी नए साइन-अप बंद हैं। कृपया बाद में फिर कोशिश करें।',
+  );
+
   @override
   void initState() {
     super.initState();
@@ -104,6 +109,9 @@ class _AccountPageState extends State<AccountPage> {
             'Verify your email using an email code, then try again.',
             'ईमेल कोड से अपना ईमेल सत्यापित करें, फिर कोशिश करें।',
           );
+        case 'signup_disabled':
+        case 'email_provider_disabled':
+          return signupsOff;
         case 'weak_password':
           return passwordHelp;
         case 'same_password':
@@ -151,6 +159,7 @@ class _AccountPageState extends State<AccountPage> {
         );
       }
       if (value.message.toLowerCase().contains('signup')) {
+        if (signUp) return signupsOff;
         return s.t(
           'This email may need an account. Choose Sign up to continue.',
           'इस ईमेल के लिए खाता बनाना पड़ सकता है। जारी रखने के लिए साइन अप चुनें।',
