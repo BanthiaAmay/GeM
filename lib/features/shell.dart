@@ -81,7 +81,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     ];
     Widget brand() => InkWell(
       onTap: () => go(context, s, ''),
-      child: const BrandLogo(variant: BrandLogoVariant.lockup, width: 68),
+      child: const BrandLogo(variant: BrandLogoVariant.lockup, width: 100),
     );
     return Scaffold(
       appBar: AppBar(
