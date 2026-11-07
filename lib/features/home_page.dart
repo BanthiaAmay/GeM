@@ -16,7 +16,7 @@ import 'onboarding_flow_4.dart' show gemRegistrationUrl;
 import 'onboarding_widgets.dart' show StaggeredEntrance;
 import 'scroll_hint.dart';
 import 'widgets.dart';
-import 'youtube_video.dart' show BulletinCard;
+import 'youtube_video.dart' show openYouTubeVideo;
 
 /// The five destinations in the persistent bottom nav. Each is its own
 /// full page body — switching tabs swaps only the middle scrollable
@@ -553,296 +553,22 @@ class _HomeTab extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StaggeredEntrance(index: 0, child: _DashboardCard(store: s)),
-        const SizedBox(height: AppSpace.xxxl),
-        Semantics(
-          header: true,
-          child: Text(
-            name.isEmpty
-                ? s.t('Hello.', 'नमस्ते.')
-                : s.t('Hello, {name}', 'नमस्ते, {name}', vars: {'name': name}),
-            style: AppText.h1,
-          ),
-        ),
-        const SizedBox(height: AppSpace.sm),
-        Text(
-          s.unreadAlerts > 0
-              ? s.t(
-                  '{n} new bid alerts match your business',
-                  'आपके व्यवसाय से मेल खाते {n} नए बोली अलर्ट',
-                  vars: {'n': '${s.unreadAlerts}'},
-                )
-              : s.t(
-                  'Your GeM guide, bid feed and alerts in one place.',
-                  'आपकी GeM गाइड, बोली सूची और अलर्ट एक ही जगह।',
-                ),
-          style: AppText.secondary(AppText.body),
-        ),
+        StaggeredEntrance(index: 0, child: _GreetingSection(store: s, name: name)),
         const SizedBox(height: AppSpace.lg),
-        StaggeredEntrance(
-          index: 1,
-          child: _NotificationsSection(store: s, searchAlerts: searchAlerts),
-        ),
-        const SizedBox(height: AppSpace.lg),
-        StaggeredEntrance(
-          index: 2,
-          child: AppCard(
-            padding: const EdgeInsets.all(AppSpace.lg),
-            onTap: () => Navigator.of(context).pushNamed('/trainings'),
-            child: AppListTile(
-              icon: Icons.ondemand_video_outlined,
-              title: s.t('Module Trainings', 'मॉड्यूल प्रशिक्षण'),
-              subtitle: s.t(
-                '34 official GeM videos in 6 modules',
-                '34 आधिकारिक GeM वीडियो, 6 मॉड्यूल में',
-              ),
-            ),
-          ),
-        ),
+        _UrgentBanner(store: s),
         const SizedBox(height: AppSpace.xxxl),
-        if (s.bulletins.isNotEmpty) ...[
-          SectionHeader(
-            s.t('GeM Weekly Bulletin', 'GeM साप्ताहिक बुलेटिन'),
-            actionLabel: s.t('See all', 'सभी देखें'),
-            onAction: () => Navigator.of(context).pushNamed('/news'),
-          ),
-          BulletinCard(store: s, bulletin: s.bulletins.first),
-          const SizedBox(height: AppSpace.xxxl),
-        ],
-        SectionHeader(s.t('Bids for you', 'आपके लिए बोलियाँ')),
-        StaggeredEntrance(
-          index: 3,
-          child: _FeaturedBid(
-            store: s,
-            onTap: () => Navigator.of(context).pushNamed('/bids'),
-          ),
-        ),
-        const SizedBox(height: AppSpace.lg),
-        Text(
-          s.t(
-            'This is a sample opportunity for preview. Confirm eligibility, specifications, and closing dates on the official GeM portal.',
-            'यह एक नमूना अवसर है। पात्रता, विनिर्देश और अंतिम तिथियाँ आधिकारिक GeM पोर्टल पर देखें।',
-          ),
-          style: AppText.caption,
-        ),
-        const SizedBox(height: AppSpace.md),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: AppButton(
-            label: s.t('Open official GeM portal', 'आधिकारिक GeM पोर्टल खोलें'),
-            onPressed: () => openLink(context, s, gemSource),
-            variant: AppButtonVariant.tertiary,
-            trailingIcon: Icons.open_in_new,
-            expand: false,
-            haptic: false,
-          ),
-        ),
+        StaggeredEntrance(index: 1, child: _BidAlertsSection(store: s)),
         const SizedBox(height: AppSpace.xxxl),
-        SectionHeader(s.t('Quick actions', 'त्वरित कार्य')),
-        Row(
-          children: [
-            Expanded(
-              child: StaggeredEntrance(
-                index: 4,
-                child: _QuickAction(
-                  icon: Icons.bar_chart_outlined,
-                  label: s.t('ROI\ncalculator', 'ROI\nकैलकुलेटर'),
-                  onTap: () => onNavigate(_Tab.financialHub),
-                ),
-              ),
-            ),
-            const SizedBox(width: AppSpace.md),
-            Expanded(
-              child: StaggeredEntrance(
-                index: 5,
-                child: _QuickAction(
-                  icon: Icons.chat_bubble_outline,
-                  label: s.t('Ask\nSaathi', 'साथी से\nपूछें'),
-                  onTap: () => Navigator.of(context).pushNamed('/saathi'),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpace.md),
-        StaggeredEntrance(
-          index: 6,
-          child: AppCard(
-            padding: const EdgeInsets.all(AppSpace.lg),
-            onTap: () => Navigator.of(context).pushNamed('/insights'),
-            child: AppListTile(
-              icon: Icons.insights,
-              title: s.t('Insights & analytics', 'इनसाइट्स और विश्लेषण'),
-              subtitle: s.t(
-                'Trends, categories and bid fit',
-                'रुझान, श्रेणियाँ और बोली उपयुक्तता',
-              ),
-            ),
-          ),
-        ),
+        StaggeredEntrance(index: 2, child: _BidsForYouSection(store: s)),
+        const SizedBox(height: AppSpace.xxxl),
+        _QuickActionsSection(store: s, onNavigate: onNavigate),
+        const SizedBox(height: AppSpace.xxxl),
+        StaggeredEntrance(index: 3, child: _LearnSection(store: s)),
       ],
     );
   }
 }
 
-class _DashboardCard extends StatelessWidget {
-  final AppStore store;
-  const _DashboardCard({required this.store});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = store;
-    return AppCard(
-      radius: AppRadius.xl,
-      padding: const EdgeInsets.all(AppSpace.xl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _PageHeader(
-            title: s.t('My Dashboard', 'मेरा डैशबोर्ड'),
-            subtitle: s.t(
-              'You have completed 7 of 9 preparation steps.',
-              'आपने 9 में से 7 तैयारी चरण पूरे कर लिए हैं।',
-            ),
-          ),
-          Center(
-            child: AppProgressRing(
-              value: 0.78,
-              label: s.t('78% complete', '78% पूर्ण'),
-              size: 104,
-            ),
-          ),
-          const SizedBox(height: AppSpace.xxl),
-          AppCard(
-            tone: AppCardTone.muted,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
-            child: DividedList(
-              children: [
-                StatusItem(
-                  label: s.t('Profile', 'प्रोफ़ाइल'),
-                  state: ItemState.done,
-                  trailing: s.t('Complete', 'पूर्ण'),
-                ),
-                StatusItem(
-                  label: s.t('Business details', 'व्यवसाय विवरण'),
-                  state: ItemState.done,
-                  trailing: s.t('Complete', 'पूर्ण'),
-                ),
-                StatusItem(
-                  label: s.t('Bank details', 'बैंक विवरण'),
-                  state: ItemState.attention,
-                  trailing: s.t('Next step', 'अगला कदम'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpace.lg),
-          Text(
-            s.t(
-              'Complete your business profile to apply for more bids.',
-              'अधिक बोलियों के लिए अपनी व्यवसाय प्रोफ़ाइल पूरी करें।',
-            ),
-            style: AppText.caption,
-          ),
-          const SizedBox(height: AppSpace.lg),
-          AppButton(
-            label: s.t('Continue setup', 'सेटअप जारी रखें'),
-            onPressed: () {},
-            variant: AppButtonVariant.secondary,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The notification list folded into the Home tab's scroll (previously
-/// its own "Updates" destination). Rows are informational only — the
-/// matching bid is already shown in the "Bids for you" section right
-/// below on the same page, so there is nowhere else for a tap to go.
-class _NotificationsSection extends StatelessWidget {
-  final AppStore store;
-  final List<String> searchAlerts;
-  const _NotificationsSection({
-    required this.store,
-    this.searchAlerts = const [],
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final s = store;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(s.t('Notifications', 'सूचनाएं')),
-        // Real bid alerts from the server first (the latest three), then
-        // any saved-search matches; never sample rows.
-        for (final alert in s.bidNotifications.take(3)) ...[
-          _NotificationRow(
-            title: alert['title'] as String? ?? '',
-            subtitle: alert['body'] as String? ?? '',
-            unread: alert['read_at'] == null,
-            onTap: () => Navigator.of(context).pushNamed('/alerts'),
-          ),
-          const SizedBox(height: AppSpace.md),
-        ],
-        for (final match in searchAlerts) ...[
-          _NotificationRow(
-            title: match,
-            subtitle: s.t('New bid match', 'नया बोली मैच'),
-          ),
-          const SizedBox(height: AppSpace.md),
-        ],
-        if (s.bidNotifications.isEmpty && searchAlerts.isEmpty)
-          AppCard(
-            tone: AppCardTone.muted,
-            padding: const EdgeInsets.all(AppSpace.lg),
-            child: Text(
-              s.t(
-                'No bid alerts yet. Your matching opportunities will appear here.',
-                'अभी कोई बोली अलर्ट नहीं है। मेल खाते अवसर यहाँ दिखेंगे।',
-              ),
-              style: AppText.secondary(AppText.bodySmall),
-            ),
-          )
-        else
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              onPressed: () => Navigator.of(context).pushNamed('/alerts'),
-              child: Text(s.t('See all alerts', 'सभी अलर्ट देखें')),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _NotificationRow extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final bool unread;
-  final VoidCallback? onTap;
-  const _NotificationRow({
-    required this.title,
-    required this.subtitle,
-    this.unread = false,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) => AppCard(
-    padding: const EdgeInsets.all(AppSpace.lg),
-    onTap: onTap,
-    child: AppListTile(
-      icon: unread
-          ? Icons.notifications_active_outlined
-          : Icons.notifications_outlined,
-      title: title,
-      subtitle: subtitle,
-    ),
-  );
-}
 
 class _ToolsTab extends StatelessWidget {
   final AppStore store;
@@ -1455,90 +1181,742 @@ class _NotificationBell extends StatelessWidget {
   );
 }
 
-class _FeaturedBid extends StatelessWidget {
+
+// ── Helper ───────────────────────────────────────────────────────────────────
+
+String _timeAgo(DateTime dt) {
+  final d = DateTime.now().difference(dt);
+  if (d.inMinutes < 1) return 'just now';
+  if (d.inMinutes < 60) return '${d.inMinutes}m';
+  if (d.inHours < 24) return '${d.inHours}h';
+  if (d.inDays < 7) return '${d.inDays}d';
+  if (d.inDays < 30) return '${(d.inDays / 7).floor()}w';
+  if (d.inDays < 365) return '${(d.inDays / 30).floor()}mo';
+  return '${(d.inDays / 365).floor()}y';
+}
+
+// ── Greeting ─────────────────────────────────────────────────────────────────
+
+class _GreetingSection extends StatelessWidget {
   final AppStore store;
-  final VoidCallback onTap;
-  const _FeaturedBid({required this.store, required this.onTap});
+  final String name;
+  const _GreetingSection({required this.store, required this.name});
 
   @override
   Widget build(BuildContext context) {
     final s = store;
-    return AppCard(
-      tone: AppCardTone.brand,
-      radius: AppRadius.xl,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            s.t('Bids for you', 'आपके लिए बोलियाँ').toUpperCase(),
-            style: AppText.overline.copyWith(color: AppColors.brand),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
+          header: true,
+          child: Text(
+            name.isEmpty
+                ? s.t('Hello.', 'नमस्ते.')
+                : s.t('Hello, {name}', 'नमस्ते, {name}', vars: {'name': name}),
+            style: AppText.h1,
           ),
-          const SizedBox(height: AppSpace.md),
-          InkWell(
-            onTap: onTap,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    s.t(
-                      'Office stationery\nsupplies',
-                      'ऑफिस स्टेशनरी\nसामग्री',
-                    ),
-                    style: AppText.h2,
-                  ),
-                ),
-                const Icon(Icons.chevron_right, size: AppIconSize.lg),
-              ],
-            ),
+        ),
+        const SizedBox(height: AppSpace.xs),
+        Text(
+          s.t(
+            'Your GeM journey, one bid at a time.',
+            'आपकी GeM यात्रा, एक बोली एक कदम।',
           ),
-          const SizedBox(height: AppSpace.md + 2),
-          Wrap(
-            spacing: AppSpace.sm,
-            runSpacing: AppSpace.sm,
-            children: [
-              StatusChip(
-                s.t('Department of Education', 'शिक्षा विभाग'),
-                icon: Icons.apartment_outlined,
+          style: AppText.secondary(AppText.body),
+        ),
+        const SizedBox(height: AppSpace.lg),
+        Row(
+          children: [
+            Expanded(
+              child: _MetricTile(
+                label: s.t('Alerts', 'अलर्ट'),
+                value: '${s.unreadAlerts}',
+                onTap: () => Navigator.of(context).pushNamed('/alerts'),
               ),
-              StatusChip(
-                s.t('Closes 25 Sep 2026', '25 सितंबर 2026 को बंद'),
-                icon: Icons.calendar_today_outlined,
+            ),
+            const SizedBox(width: AppSpace.sm),
+            Expanded(
+              child: _MetricTile(
+                label: s.t('Active Bids', 'सक्रिय बोलियाँ'),
+                value: '0',
+                onTap: null,
+              ),
+            ),
+            const SizedBox(width: AppSpace.sm),
+            Expanded(
+              child: _MetricTile(
+                label: s.t('Deadlines', 'समयसीमाएँ'),
+                value: '0',
+                onTap: null,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final VoidCallback? onTap;
+  const _MetricTile({required this.label, required this.value, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final r = AppRadius.card;
+    return Ink(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: r,
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppShadow.card,
+      ),
+      child: InkWell(
+        borderRadius: r,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.md,
+            vertical: AppSpace.lg,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: AppText.h2.copyWith(color: AppColors.brand),
+              ),
+              const SizedBox(height: AppSpace.xs),
+              Text(
+                label,
+                style: AppText.overline.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpace.lg),
-          AppButton(label: s.t('View bid', 'बोली देखें'), onPressed: onTap),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _QuickAction extends StatelessWidget {
+// ── Urgent Banner ────────────────────────────────────────────────────────────
+
+class _UrgentBanner extends StatelessWidget {
+  final AppStore store;
+  const _UrgentBanner({required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = store;
+    final notifications = s.bidNotifications;
+    if (notifications.isEmpty) return const SizedBox.shrink();
+    final first = notifications.firstWhere(
+      (n) => n['read_at'] == null,
+      orElse: () => notifications.first,
+    );
+    final title = first['title'] as String? ?? '';
+    if (title.isEmpty) return const SizedBox.shrink();
+    return AnimatedSize(
+      alignment: Alignment.topCenter,
+      duration: Motion.normal,
+      curve: Motion.standard,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.card,
+          boxShadow: AppShadow.card,
+        ),
+        child: ClipRRect(
+          borderRadius: AppRadius.card,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpace.lg,
+              vertical: AppSpace.md,
+            ),
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              border: Border(
+                left: BorderSide(color: AppColors.danger, width: 3),
+                top: BorderSide(color: AppColors.border),
+                right: BorderSide(color: AppColors.border),
+                bottom: BorderSide(color: AppColors.border),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  size: AppIconSize.md,
+                  color: AppColors.danger,
+                ),
+                const SizedBox(width: AppSpace.md),
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.bodyStrong,
+                  ),
+                ),
+                const SizedBox(width: AppSpace.sm),
+                AppButton(
+                  label: s.t('View', 'देखें'),
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed('/alerts'),
+                  variant: AppButtonVariant.tertiary,
+                  size: AppButtonSize.sm,
+                  expand: false,
+                  haptic: false,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Bid Alerts ───────────────────────────────────────────────────────────────
+
+class _BidAlertsSection extends StatefulWidget {
+  final AppStore store;
+  const _BidAlertsSection({required this.store});
+
+  @override
+  State<_BidAlertsSection> createState() => _BidAlertsSectionState();
+}
+
+class _BidAlertsSectionState extends State<_BidAlertsSection> {
+  bool _unreadOnly = false;
+  AppStore get s => widget.store;
+
+  List<Map<String, dynamic>> get _filtered {
+    final all = s.bidNotifications;
+    if (_unreadOnly) {
+      return all.where((n) => n['read_at'] == null).take(3).toList();
+    }
+    return all.take(3).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _filtered;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          s.t('Bid Alerts', 'बोली अलर्ट'),
+          actionLabel: s.t('See all', 'सभी देखें'),
+          onAction: () => Navigator.of(context).pushNamed('/alerts'),
+        ),
+        const SizedBox(height: AppSpace.sm),
+        Row(
+          children: [
+            _FilterPill(
+              label: s.t('All', 'सभी'),
+              selected: !_unreadOnly,
+              onTap: () => setState(() => _unreadOnly = false),
+            ),
+            const SizedBox(width: AppSpace.sm),
+            _FilterPill(
+              label: s.t('Unread', 'अपठित'),
+              selected: _unreadOnly,
+              onTap: () => setState(() => _unreadOnly = true),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpace.md),
+        if (rows.isEmpty)
+          AppCard(
+            tone: AppCardTone.muted,
+            padding: const EdgeInsets.all(AppSpace.lg),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.notifications_none_outlined,
+                  color: AppColors.textHint,
+                  size: AppIconSize.md,
+                ),
+                const SizedBox(width: AppSpace.md),
+                Text(
+                  _unreadOnly
+                      ? s.t('No unread alerts', 'कोई अपठित अलर्ट नहीं')
+                      : s.t('No alerts yet', 'अभी कोई अलर्ट नहीं'),
+                  style: AppText.secondary(AppText.bodySmall),
+                ),
+              ],
+            ),
+          )
+        else
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                for (int i = 0; i < rows.length; i++) ...[
+                  if (i > 0)
+                    const Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: AppColors.border,
+                    ),
+                  _BidAlertRow(
+                    alert: rows[i],
+                    onTap: () =>
+                        Navigator.of(context).pushNamed('/alerts'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _FilterPill extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _FilterPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpace.md,
+        vertical: AppSpace.xs + 2,
+      ),
+      decoration: BoxDecoration(
+        color: selected ? AppColors.brand : AppColors.surface,
+        borderRadius: const BorderRadius.all(Radius.circular(AppRadius.pill)),
+        border: Border.all(
+          color: selected ? AppColors.brand : AppColors.borderStrong,
+        ),
+      ),
+      child: Text(
+        label,
+        style: AppText.bodySmall.copyWith(
+          color: selected ? AppColors.surface : AppColors.textSecondary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+  );
+}
+
+class _BidAlertRow extends StatelessWidget {
+  final Map<String, dynamic> alert;
+  final VoidCallback onTap;
+  const _BidAlertRow({required this.alert, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final unread = alert['read_at'] == null;
+    final title = alert['title'] as String? ?? '';
+    final dept = alert['dept'] as String? ?? '';
+    final gemId = alert['gem_id'] as String? ?? '';
+    final createdRaw = alert['created_at'];
+    DateTime? created;
+    if (createdRaw is String) {
+      created = DateTime.tryParse(createdRaw);
+    } else if (createdRaw is DateTime) {
+      created = createdRaw;
+    }
+    final meta = [dept, gemId].where((v) => v.isNotEmpty).join(' · ');
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.lg,
+          vertical: AppSpace.md,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              unread
+                  ? Icons.notifications_active
+                  : Icons.notifications_none_outlined,
+              size: AppIconSize.md,
+              color: unread ? AppColors.brand : AppColors.textHint,
+            ),
+            const SizedBox(width: AppSpace.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: unread ? AppText.bodyStrong : AppText.bodySmall,
+                  ),
+                  if (meta.isNotEmpty)
+                    Text(
+                      meta,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.secondary(AppText.caption),
+                    ),
+                ],
+              ),
+            ),
+            if (created != null)
+              Padding(
+                padding: const EdgeInsets.only(left: AppSpace.sm),
+                child: Text(
+                  _timeAgo(created),
+                  style: AppText.caption.copyWith(color: AppColors.textHint),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Bids For You ─────────────────────────────────────────────────────────────
+
+class _BidsForYouSection extends StatelessWidget {
+  final AppStore store;
+  const _BidsForYouSection({required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = store;
+    final w = MediaQuery.sizeOf(context).width;
+    final cardWidth = (w * 0.75).clamp(0.0, 320.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(s.t('Bids for you', 'आपके लिए बोलियाँ')),
+        SizedBox(
+          height: 220,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            padding: const EdgeInsets.only(bottom: AppSpace.sm),
+            children: [
+              _BidCard(
+                store: s,
+                cardWidth: cardWidth,
+                title: s.t(
+                  'Office Supplies for Government Bureau',
+                  'सरकारी कार्यालय के लिए कार्यालय सामग्री',
+                ),
+                dept: s.t('CPWD', 'CPWD'),
+                closes: s.t('Closes 20 Nov 2026', '20 नवंबर 2026 को बंद'),
+              ),
+              const SizedBox(width: AppSpace.md),
+              _BidCard(
+                store: s,
+                cardWidth: cardWidth,
+                title: s.t(
+                  'Janitorial Services Annual Contract',
+                  'वार्षिक सफाई सेवा अनुबंध',
+                ),
+                dept: s.t('Ministry of Railways', 'रेल मंत्रालय'),
+                closes: s.t('Closes 15 Dec 2026', '15 दिसंबर 2026 को बंद'),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpace.sm),
+        Text(
+          s.t(
+            'This is a sample opportunity for preview. Confirm eligibility, specifications, and closing dates on the official GeM portal.',
+            'यह एक नमूना अवसर है। पात्रता, विनिर्देश और अंतिम तिथियाँ आधिकारिक GeM पोर्टल पर देखें।',
+          ),
+          style: AppText.caption,
+        ),
+        const SizedBox(height: AppSpace.sm),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: AppButton(
+            label: s.t('Open official GeM portal', 'आधिकारिक GeM पोर्टल खोलें'),
+            onPressed: () => openLink(context, s, gemSource),
+            variant: AppButtonVariant.tertiary,
+            trailingIcon: Icons.open_in_new,
+            expand: false,
+            haptic: false,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BidCard extends StatelessWidget {
+  final AppStore store;
+  final double cardWidth;
+  final String title;
+  final String dept;
+  final String closes;
+  const _BidCard({
+    required this.store,
+    required this.cardWidth,
+    required this.title,
+    required this.dept,
+    required this.closes,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final s = store;
+    return SizedBox(
+      width: cardWidth,
+      child: AppCard(
+        tone: AppCardTone.brand,
+        radius: AppRadius.xl,
+        padding: const EdgeInsets.all(AppSpace.lg),
+        onTap: () => Navigator.of(context).pushNamed('/bids'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              s.t('BIDS FOR YOU', 'आपके लिए'),
+              style: AppText.overline.copyWith(color: AppColors.brand),
+            ),
+            const SizedBox(height: AppSpace.sm),
+            Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.h3,
+            ),
+            const SizedBox(height: AppSpace.sm),
+            Wrap(
+              spacing: AppSpace.sm,
+              runSpacing: AppSpace.xs,
+              children: [
+                StatusChip(dept, icon: Icons.apartment_outlined),
+                StatusChip(closes, icon: Icons.calendar_today_outlined),
+              ],
+            ),
+            const SizedBox(height: AppSpace.md),
+            AppButton(
+              label: s.t('View bid', 'बोली देखें'),
+              onPressed: () => Navigator.of(context).pushNamed('/bids'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Quick Actions ────────────────────────────────────────────────────────────
+
+class _QuickActionsSection extends StatelessWidget {
+  final AppStore store;
+  final ValueChanged<_Tab> onNavigate;
+  const _QuickActionsSection({
+    required this.store,
+    required this.onNavigate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final s = store;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(s.t('Quick actions', 'त्वरित कार्य')),
+        const SizedBox(height: AppSpace.sm),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _QuickActionTile(
+              icon: Icons.bar_chart_outlined,
+              label: s.t('ROI Calc', 'ROI कैल्क'),
+              onTap: () => onNavigate(_Tab.financialHub),
+            ),
+            _QuickActionTile(
+              icon: Icons.chat_bubble_outline,
+              label: s.t('Ask Saathi', 'साथी से पूछें'),
+              onTap: () => Navigator.of(context).pushNamed('/saathi'),
+            ),
+            _QuickActionTile(
+              icon: Icons.trending_up_outlined,
+              label: s.t('Analytics', 'एनालिटिक्स'),
+              onTap: () => Navigator.of(context).pushNamed('/insights'),
+            ),
+            _QuickActionTile(
+              icon: Icons.gavel_outlined,
+              label: s.t('Find Bids', 'बोलियाँ खोजें'),
+              onTap: () => Navigator.of(context).pushNamed('/bids'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _QuickAction({
+  const _QuickActionTile({
     required this.icon,
     required this.label,
     required this.onTap,
   });
 
   @override
-  Widget build(BuildContext context) => AppCard(
-    onTap: onTap,
-    padding: const EdgeInsets.symmetric(
-      vertical: AppSpace.lg,
-      horizontal: AppSpace.sm,
-    ),
-    child: Column(
-      children: [
-        DepthIcon(icon, size: AppIconSize.lg - 4, color: AppColors.brand),
-        const SizedBox(height: AppSpace.sm),
-        Text(label, textAlign: TextAlign.center, style: AppText.bodySmall),
-      ],
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    child: GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: AppSize.tap,
+            height: AppSize.tap,
+            decoration: BoxDecoration(
+              color: AppColors.brandTint,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            child: Icon(icon, size: AppIconSize.md, color: AppColors.brand),
+          ),
+          const SizedBox(height: AppSpace.xs),
+          Text(
+            label,
+            style: AppText.caption,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+          ),
+        ],
+      ),
     ),
   );
+}
+
+// ── Learn & Stay Current ─────────────────────────────────────────────────────
+
+class _LearnSection extends StatelessWidget {
+  final AppStore store;
+  const _LearnSection({required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = store;
+    final w = MediaQuery.sizeOf(context).width;
+    final cardWidth = w * 0.60;
+    final bulletin = s.bulletins.isNotEmpty ? s.bulletins.first : null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          s.t('Learn & Stay Current', 'सीखें और अपडेट रहें'),
+          actionLabel: s.t('See all', 'सभी देखें'),
+          onAction: () => Navigator.of(context).pushNamed('/news'),
+        ),
+        SizedBox(
+          height: 110,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            children: [
+              SizedBox(
+                width: cardWidth,
+                child: AppCard(
+                  tone: AppCardTone.outlined,
+                  onTap: () =>
+                      Navigator.of(context).pushNamed('/trainings'),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.ondemand_video_outlined,
+                        size: AppIconSize.md,
+                        color: AppColors.brand,
+                      ),
+                      const SizedBox(width: AppSpace.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              s.t('Module Trainings', 'मॉड्यूल प्रशिक्षण'),
+                              style: AppText.bodyStrong,
+                            ),
+                            const SizedBox(height: AppSpace.xs),
+                            Text(
+                              s.t('34 videos · 6 modules', '34 वीडियो · 6 मॉड्यूल'),
+                              style: AppText.secondary(AppText.caption),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpace.md),
+              SizedBox(
+                width: cardWidth,
+                child: AppCard(
+                  tone: AppCardTone.outlined,
+                  onTap: bulletin != null
+                      ? () {
+                          final vid = bulletin['video_id'] as String?;
+                          if (vid != null && vid.isNotEmpty) {
+                            openYouTubeVideo(context, s, vid);
+                          } else {
+                            Navigator.of(context).pushNamed('/news');
+                          }
+                        }
+                      : null,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        s.t('GEM WEEKLY', 'GEM साप्ताहिक'),
+                        style: AppText.overline.copyWith(
+                          color: AppColors.brand,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpace.xs),
+                      Text(
+                        bulletin != null
+                            ? (bulletin['title'] as String? ?? '')
+                            : s.t('Coming soon', 'जल्द आ रहा है'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.bodySmall,
+                      ),
+                      const SizedBox(height: AppSpace.xs),
+                      Text(
+                        s.t('Watch →', 'देखें →'),
+                        style: AppText.caption.copyWith(
+                          color: AppColors.brand,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _HomeNav extends StatelessWidget {
