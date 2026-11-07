@@ -684,7 +684,7 @@ class StateView extends StatelessWidget {
 /// Horizontal progress track. Animates to [value] (0–1); jumps under
 /// reduced motion. [color] defaults to [AppColors.brand]; pass
 /// [AppColors.ink] where a neutral bar is preferred.
-class AppProgressBar extends StatelessWidget {
+class AppProgressBar extends StatefulWidget {
   final double value;
   final double height;
   final Color color;
@@ -705,30 +705,66 @@ class AppProgressBar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    label: semanticLabel,
-    value: '${(value.clamp(0, 1) * 100).round()}%',
-    child: ExcludeSemantics(
-      child: animated
-          ? TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: value, end: value),
-              duration: Motion.of(context, duration ?? Motion.slow),
-              curve: Motion.enter,
-              builder: (context, v, _) => _track(v),
-            )
-          : _track(value),
+  State<AppProgressBar> createState() => _AppProgressBarState();
+}
+
+class _AppProgressBarState extends State<AppProgressBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shimmer;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmer = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!Motion.reduced(context) && !_shimmer.isAnimating) {
+      _shimmer.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _shimmer.dispose();
+    super.dispose();
+  }
+
+  Widget _track(double v) => SizedBox(
+    height: widget.height * 2.4,
+    width: double.infinity,
+    child: AnimatedBuilder(
+      animation: _shimmer,
+      builder:
+          (context, _) => CustomPaint(
+            painter: _ProgressTrackPainter(
+              value: v.clamp(0.0, 1.0),
+              color: widget.color,
+              trackHeight: widget.height,
+              shimmerPosition: _shimmer.value,
+            ),
+          ),
     ),
   );
 
-  Widget _track(double v) => SizedBox(
-    height: height * 2.4,
-    width: double.infinity,
-    child: CustomPaint(
-      painter: _ProgressTrackPainter(
-        value: v.clamp(0.0, 1.0),
-        color: color,
-        trackHeight: height,
-      ),
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: widget.semanticLabel,
+    value: '${(widget.value.clamp(0, 1) * 100).round()}%',
+    child: ExcludeSemantics(
+      child: widget.animated
+          ? TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: widget.value, end: widget.value),
+              duration: Motion.of(context, widget.duration ?? Motion.slow),
+              curve: Motion.enter,
+              builder: (context, v, _) => _track(v),
+            )
+          : _track(widget.value),
     ),
   );
 }
@@ -737,11 +773,13 @@ class _ProgressTrackPainter extends CustomPainter {
   final double value;
   final Color color;
   final double trackHeight;
+  final double shimmerPosition;
 
   const _ProgressTrackPainter({
     required this.value,
     required this.color,
     required this.trackHeight,
+    this.shimmerPosition = 0.0,
   });
 
   @override
@@ -762,7 +800,7 @@ class _ProgressTrackPainter extends CustomPainter {
 
     if (fillW <= 0) return;
 
-    // Gradient fill
+    // Gradient fill (tint → full color, left → right)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(0, cy - br, fillW, th),
@@ -779,6 +817,33 @@ class _ProgressTrackPainter extends CustomPainter {
         ),
     );
 
+    // Shimmer sweep — a bright beam sliding left to right across the fill
+    if (fillW > 1) {
+      const halfW = 56.0; // beam half-width in logical pixels
+      final cx = fillW * shimmerPosition;
+      canvas.save();
+      canvas.clipRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, cy - br, fillW, th),
+          Radius.circular(br),
+        ),
+      );
+      canvas.drawRect(
+        Rect.fromLTWH(cx - halfW, cy - br, halfW * 2, th),
+        Paint()
+          ..shader = LinearGradient(
+            colors: [
+              Colors.transparent,
+              Colors.white.withValues(alpha: 0.55),
+              Colors.transparent,
+            ],
+          ).createShader(
+            Rect.fromLTWH(cx - halfW, cy - br, halfW * 2, th),
+          ),
+      );
+      canvas.restore();
+    }
+
     // Glowing bubble head at fill frontier
     final bubbleR = size.height / 2 - 0.5;
     // Soft glow ring
@@ -786,7 +851,7 @@ class _ProgressTrackPainter extends CustomPainter {
       Offset(fillW, cy),
       bubbleR,
       Paint()
-        ..color = color.withValues(alpha: 0.22)
+        ..color = color.withValues(alpha: 0.25)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
     );
     // Solid dot
@@ -799,7 +864,10 @@ class _ProgressTrackPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _ProgressTrackPainter old) =>
-      old.value != value || old.color != color || old.trackHeight != trackHeight;
+      old.value != value ||
+      old.color != color ||
+      old.trackHeight != trackHeight ||
+      old.shimmerPosition != shimmerPosition;
 }
 
 /// Circular progress with a centred label (e.g. "7 of 9").
