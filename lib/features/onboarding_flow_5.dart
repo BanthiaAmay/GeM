@@ -297,6 +297,7 @@ class _FlowExperiencePageState extends State<FlowExperiencePage> {
   Future<void> _finishSection(BuildContext context) async {
     await showSectionComplete(
       context,
+      widget.store,
       widget.store.t('GeM bidding complete', 'GeM बोली पूर्ण'),
     );
     if (!context.mounted) return;
@@ -405,6 +406,7 @@ class _FlowExperienceDetailPageState extends State<FlowExperienceDetailPage> {
         );
         await showSectionComplete(
           context,
+          s,
           s.t('GeM bidding complete', 'GeM बोली पूर्ण'),
         );
         if (!context.mounted) return;

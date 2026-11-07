@@ -126,6 +126,7 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
         // never reaches this screen).
         await showSectionComplete(
           context,
+          s,
           s.t('Get ready complete', 'तैयार हो जाएँ पूर्ण'),
         );
         if (!context.mounted) return;

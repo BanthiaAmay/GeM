@@ -1223,17 +1223,22 @@ class _OnboardingCheckOptionState extends State<OnboardingCheckOption>
   );
 }
 
-/// Shows a brief, full-screen checkpoint when the user finishes a
-/// section of onboarding: a circle draws itself, a tick draws inside
-/// it, then [message] (already translated by the caller — e.g.
-/// `s.t('Getting started complete', 'शुरुआत पूर्ण')`) fades in below.
-/// Returns once the sequence finishes or the user taps to skip it.
+/// Shows a brief checkpoint card when the user finishes a section of
+/// onboarding: a dark scrim fades in behind a white card, a filled
+/// brand-green circle appears and its white checkmark draws itself,
+/// then [message] (already translated by the caller) and a soft
+/// subtitle fade in. Returns once the sequence finishes or the user
+/// taps to skip it.
 ///
 /// An [OverlayEntry] rather than a route: this is a transient
 /// decoration on top of whatever screen triggered it, not a real
 /// navigation destination — it shouldn't appear in history or affect
 /// back-button behaviour.
-Future<void> showSectionComplete(BuildContext context, String message) {
+Future<void> showSectionComplete(
+  BuildContext context,
+  AppStore store,
+  String message,
+) {
   final completer = Completer<void>();
   final overlayState = Overlay.of(context);
   late OverlayEntry entry;
@@ -1246,8 +1251,11 @@ Future<void> showSectionComplete(BuildContext context, String message) {
   }
 
   entry = OverlayEntry(
-    builder: (context) =>
-        _SectionCompleteOverlay(message: message, onFinished: remove),
+    builder: (context) => _SectionCompleteOverlay(
+      message: message,
+      store: store,
+      onFinished: remove,
+    ),
   );
   overlayState.insert(entry);
   return completer.future;
@@ -1255,9 +1263,11 @@ Future<void> showSectionComplete(BuildContext context, String message) {
 
 class _SectionCompleteOverlay extends StatefulWidget {
   final String message;
+  final AppStore store;
   final VoidCallback onFinished;
   const _SectionCompleteOverlay({
     required this.message,
+    required this.store,
     required this.onFinished,
   });
 
@@ -1268,26 +1278,21 @@ class _SectionCompleteOverlay extends StatefulWidget {
 
 class _SectionCompleteOverlayState extends State<_SectionCompleteOverlay>
     with TickerProviderStateMixin {
-  static const _circleDraw = Duration(milliseconds: 300);
-  static const _checkDraw = Duration(milliseconds: 300);
-  static const _textFade = Duration(milliseconds: 160);
-  static const _hold = Duration(milliseconds: 400);
-  static const _fadeOut = Duration(milliseconds: 160);
+  static const _scrimIn = Duration(milliseconds: 220);
+  static const _checkDraw = Duration(milliseconds: 320);
+  static const _textFade = Duration(milliseconds: 180);
+  static const _hold = Duration(milliseconds: 520);
+  static const _fadeOut = Duration(milliseconds: 200);
   static const _reducedHold = Duration(milliseconds: 500);
 
-  late final AnimationController _circle;
+  late final AnimationController _scrim;
   late final AnimationController _check;
   late final AnimationController _text;
   late final AnimationController _fade;
-  // Drives the pause between the text appearing and the fade-out
-  // starting. Deliberately a ticking AnimationController rather than
-  // a bare Future.delayed: nothing is visually changing during the
-  // hold, but a plain timer schedules no frames, so widget tests'
-  // pumpAndSettle() (which stops once nothing more is scheduled)
-  // would consider the sequence "settled" and never advance the
-  // clock far enough for it to fire — exactly the gap a ticking
-  // controller (which keeps requesting frames for its own duration)
-  // doesn't have.
+  // Deliberately a ticking AnimationController for the hold, not a
+  // bare Future.delayed: widget tests' pumpAndSettle() stops once
+  // nothing is scheduled, so a plain timer would stall the test
+  // clock before it could fire.
   late final AnimationController _holdTimer;
   bool _reduced = false;
   bool _decided = false;
@@ -1296,7 +1301,7 @@ class _SectionCompleteOverlayState extends State<_SectionCompleteOverlay>
   @override
   void initState() {
     super.initState();
-    _circle = AnimationController(vsync: this, duration: _circleDraw);
+    _scrim = AnimationController(vsync: this, duration: _scrimIn);
     _check = AnimationController(vsync: this, duration: _checkDraw);
     _text = AnimationController(vsync: this, duration: _textFade);
     _fade = AnimationController(vsync: this, duration: _fadeOut);
@@ -1314,7 +1319,7 @@ class _SectionCompleteOverlayState extends State<_SectionCompleteOverlay>
 
   Future<void> _run() async {
     if (_reduced) {
-      _circle.value = 1;
+      _scrim.value = 1;
       _check.value = 1;
       _text.value = 1;
       HapticFeedback.mediumImpact();
@@ -1322,7 +1327,7 @@ class _SectionCompleteOverlayState extends State<_SectionCompleteOverlay>
       _finish();
       return;
     }
-    await _circle.forward();
+    await _scrim.forward();
     if (_finished || !mounted) return;
     await _check.forward();
     if (_finished || !mounted) return;
@@ -1335,8 +1340,6 @@ class _SectionCompleteOverlayState extends State<_SectionCompleteOverlay>
     _finish();
   }
 
-  // Tapping anywhere skips straight to the end — used both by the
-  // skip gesture and by _run() finishing normally.
   void _finish() {
     if (_finished) return;
     _finished = true;
@@ -1345,7 +1348,7 @@ class _SectionCompleteOverlayState extends State<_SectionCompleteOverlay>
 
   @override
   void dispose() {
-    _circle.dispose();
+    _scrim.dispose();
     _check.dispose();
     _text.dispose();
     _fade.dispose();
@@ -1354,92 +1357,107 @@ class _SectionCompleteOverlayState extends State<_SectionCompleteOverlay>
   }
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    behavior: HitTestBehavior.opaque,
-    onTap: _finish,
-    // FadeTransition, not a raw Opacity, over this full-screen
-    // Material — ReverseAnimation gives the 1-value fade-out for
-    // free without an extra AnimatedBuilder rebuilding the subtree.
-    child: FadeTransition(
-      opacity: ReverseAnimation(_fade),
-      child: Material(
-        color: AppColors.surface,
-        child: SizedBox.expand(
+  Widget build(BuildContext context) {
+    final cardScale = Tween<double>(begin: 0.82, end: 1.0).animate(
+      CurvedAnimation(parent: _scrim, curve: Curves.easeOutBack),
+    );
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _finish,
+      child: FadeTransition(
+        opacity: ReverseAnimation(_fade),
+        child: AnimatedBuilder(
+          animation: _scrim,
+          builder: (context, child) => ColoredBox(
+            color: Colors.black.withValues(alpha: _scrim.value * 0.5),
+            child: child,
+          ),
           child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RepaintBoundary(
-                  child: AnimatedBuilder(
-                    animation: Listenable.merge([_circle, _check]),
-                    builder: (context, _) => CustomPaint(
-                      size: const Size(56, 56),
-                      painter: _SectionCirclePainter(
-                        circleProgress: _reduced ? 1 : _circle.value,
-                        checkProgress: _reduced ? 1 : _check.value,
+            child: ScaleTransition(
+              scale: cardScale,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 300),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  boxShadow: AppShadow.floating,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.xxxl,
+                  vertical: 36,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    RepaintBoundary(
+                      child: AnimatedBuilder(
+                        animation: _check,
+                        builder: (context, _) => CustomPaint(
+                          size: const Size(80, 80),
+                          painter: _SectionCirclePainter(
+                            checkProgress: _reduced ? 1 : _check.value,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: AppSpace.xl),
+                    FadeTransition(
+                      opacity: _text,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            widget.message,
+                            style: AppText.h3,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: AppSpace.xs),
+                          Text(
+                            widget.store.t(
+                              'Section complete',
+                              'अनुभाग पूर्ण',
+                            ),
+                            style: AppText.secondary(AppText.caption),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                FadeTransition(
-                  opacity: _text,
-                  child: Text(widget.message, style: AppText.title),
-                ),
-              ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
-/// The 56px circle outline (sweeping in as a growing arc) with
-/// [_CheckTickPainter]'s tick reused inside it, in black rather than
-/// the checkbox's white-on-dark treatment.
+/// 80×80 filled brand-green circle with a white checkmark that draws
+/// itself progressively — [checkProgress] runs from 0 to 1.
 class _SectionCirclePainter extends CustomPainter {
-  final double circleProgress;
   final double checkProgress;
-  const _SectionCirclePainter({
-    required this.circleProgress,
-    required this.checkProgress,
-  });
-
-  static const _strokeWidth = 2.6;
+  const _SectionCirclePainter({required this.checkProgress});
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (circleProgress > 0) {
-      final rect = Rect.fromLTWH(
-        _strokeWidth / 2,
-        _strokeWidth / 2,
-        size.width - _strokeWidth,
-        size.height - _strokeWidth,
-      );
-      canvas.drawArc(
-        rect,
-        -pi / 2,
-        2 * pi * circleProgress,
-        false,
-        Paint()
-          ..color = AppColors.ink
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = _strokeWidth
-          ..strokeCap = StrokeCap.round,
-      );
-    }
+    canvas.drawCircle(
+      Offset(size.width / 2, size.height / 2),
+      size.width / 2,
+      Paint()..color = AppColors.brand,
+    );
     if (checkProgress > 0) {
       _CheckTickPainter(
         progress: checkProgress,
-        color: AppColors.ink,
-        strokeWidth: _strokeWidth,
+        color: Colors.white,
+        strokeWidth: 4.0,
       ).paint(canvas, size);
     }
   }
 
   @override
   bool shouldRepaint(covariant _SectionCirclePainter oldDelegate) =>
-      oldDelegate.circleProgress != circleProgress ||
       oldDelegate.checkProgress != checkProgress;
 }

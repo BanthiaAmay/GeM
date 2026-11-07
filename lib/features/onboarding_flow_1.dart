@@ -397,6 +397,7 @@ class _FlowLocationPageState extends State<FlowLocationPage> {
               // before moving into the next section.
               await showSectionComplete(
                 context,
+                s,
                 s.t('Getting started complete', 'शुरुआत पूर्ण'),
               );
               if (!context.mounted) return;

@@ -40,6 +40,7 @@ class _FlowAuthorisedPageState extends State<FlowAuthorisedPage> {
               // before moving into the next section.
               await showSectionComplete(
                 context,
+                s,
                 s.t('Your business complete', 'आपका व्यवसाय पूर्ण'),
               );
               if (!context.mounted) return;
