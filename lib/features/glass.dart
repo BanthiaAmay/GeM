@@ -147,7 +147,7 @@ class AppTopBar extends StatelessWidget {
               const SizedBox(width: AppSize.tap),
             const Expanded(
               child: Center(
-                child: BrandLogo(variant: BrandLogoVariant.lockup, width: 68),
+                child: BrandLogo(variant: BrandLogoVariant.lockup, width: 110),
               ),
             ),
             const SizedBox(width: AppSize.tap),
