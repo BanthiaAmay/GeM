@@ -131,6 +131,7 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
         if (!context.mounted) return;
         Navigator.of(context).pushNamed('/flow-video');
       },
+      fact: FactMini(key: const ValueKey('fact-checklist'), store: s, factIndex: 4),
       children: [
         const OnboardingArt('checklist', topGap: 0),
         const SizedBox(height: 16),
@@ -153,8 +154,6 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
           ),
           style: AppText.caption,
         ),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-checklist'), store: s, factIndex: 4),
       ],
     );
   }
@@ -181,6 +180,7 @@ class FlowVideoPage extends StatelessWidget {
       ),
       continueLabel: s.t('Continue', 'जारी रखें'),
       onContinue: () => Navigator.of(context).pushNamed('/flow-redirect'),
+      fact: FactMini(key: const ValueKey('fact-video'), store: s, factIndex: 0),
       children: [
         Text(s.t('VIDEO GUIDE', 'वीडियो गाइड'), style: AppText.overline),
         const SizedBox(height: 12),
@@ -228,8 +228,6 @@ class FlowVideoPage extends StatelessWidget {
             haptic: false,
           ),
         ),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-video'), store: s, factIndex: 0),
       ],
     );
   }
@@ -289,6 +287,7 @@ class FlowRedirectPage extends StatelessWidget {
         await openLink(context, s, gemRegistrationUrl);
         if (context.mounted) _finish(context);
       },
+      fact: FactMini(key: const ValueKey('fact-redirect'), store: s, factIndex: 1),
       children: [
         AppCard(
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
@@ -362,8 +361,6 @@ class FlowRedirectPage extends StatelessWidget {
             haptic: false,
           ),
         ),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-redirect'), store: s, factIndex: 1),
       ],
     );
   }

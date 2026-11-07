@@ -93,6 +93,7 @@ class _FlowFullNamePageState extends State<FlowFullNamePage> {
                     : '/flow-phone',
               );
             },
+      fact: FactMini(key: const ValueKey('fact-name'), store: s, factIndex: 2),
       children: [
         OnboardingTextField(
           label: s.t('Full name', 'पूरा नाम'),
@@ -114,8 +115,6 @@ class _FlowFullNamePageState extends State<FlowFullNamePage> {
             color: AppColors.ink,
           ),
         ),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-name'), store: s, factIndex: 2),
       ],
     );
   }
@@ -163,6 +162,7 @@ class _FlowPhonePageState extends State<FlowPhonePage> {
               Navigator.of(context).pushNamed('/flow-location');
             }
           : null,
+      fact: FactMini(key: const ValueKey('fact-phone'), store: s, factIndex: 3),
       children: [
         OnboardingTextField(
           label: s.t('Mobile number', 'मोबाइल नंबर'),
@@ -181,8 +181,6 @@ class _FlowPhonePageState extends State<FlowPhonePage> {
           style: AppText.secondary(AppText.bodySmall),
         ),
         const OnboardingArt('phone_shop', topGap: 28),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-phone'), store: s, factIndex: 3),
       ],
     );
   }
@@ -295,6 +293,7 @@ class _FlowOtpPageState extends State<FlowOtpPage>
       ),
       continueLabel: s.t('Continue', 'जारी रखें'),
       onContinue: _complete ? _proceed : null,
+      fact: FactMini(key: const ValueKey('fact-otp'), store: s, factIndex: 4),
       children: [
         Text(
           s.t('Demo verification code', 'डेमो सत्यापन कोड'),
@@ -349,8 +348,6 @@ class _FlowOtpPageState extends State<FlowOtpPage>
           ),
         ),
         const OnboardingArt('otp_shop', topGap: 12),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-otp'), store: s, factIndex: 4),
       ],
     );
   }
@@ -405,6 +402,7 @@ class _FlowLocationPageState extends State<FlowLocationPage> {
               if (!context.mounted) return;
               Navigator.of(context).pushNamed('/flow-bizname');
             },
+      fact: FactMini(key: const ValueKey('fact-location'), store: s, factIndex: 0),
       children: [
         const OnboardingArt('location_map', topGap: 0),
         const SizedBox(height: 20),
@@ -432,8 +430,6 @@ class _FlowLocationPageState extends State<FlowLocationPage> {
           textAlign: TextAlign.center,
           style: AppText.caption,
         ),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-location'), store: s, factIndex: 0),
       ],
     );
   }

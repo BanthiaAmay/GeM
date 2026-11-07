@@ -80,6 +80,7 @@ class _FlowTurnoverPageState extends State<FlowTurnoverPage> {
               s.setProfile('turnoverLatest', selected);
               Navigator.of(context).pushNamed('/flow-turnover-history');
             },
+      fact: FactMini(key: const ValueKey('fact-turnover'), store: s, factIndex: 2),
       children: [
         for (final band in _kTurnoverBands)
           OnboardingRadioOption(
@@ -95,8 +96,6 @@ class _FlowTurnoverPageState extends State<FlowTurnoverPage> {
             'सटीक आँकड़ा या दस्तावेज़ों की ज़रूरत नहीं है। यह तैयारी मार्गदर्शन है—पात्रता का निर्णय नहीं।',
           ),
         ),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-turnover'), store: s, factIndex: 2),
       ],
     );
   }
@@ -151,6 +150,7 @@ class _FlowTurnoverHistoryPageState extends State<FlowTurnoverHistoryPage> {
               Navigator.of(context).pushNamed('/flow-experience');
             }
           : null,
+      fact: FactMini(key: const ValueKey('fact-turnover-history'), store: s, factIndex: 3),
       children: [
         Text('FY 2024–25', style: AppText.secondary(AppText.bodySmall)),
         const SizedBox(height: 8),
@@ -200,8 +200,6 @@ class _FlowTurnoverHistoryPageState extends State<FlowTurnoverHistoryPage> {
             'श्रेणियाँ पर्याप्त हैं। यह तैयारी मार्गदर्शन है, पात्रता का निर्णय नहीं।',
           ),
         ),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-turnover-history'), store: s, factIndex: 3),
       ],
     );
   }
@@ -330,6 +328,7 @@ class _FlowExperiencePageState extends State<FlowExperiencePage> {
                 await _finishSection(context);
               }
             },
+      fact: FactMini(key: const ValueKey('fact-experience'), store: s, factIndex: 0),
       children: [
         OnboardingRadioOption(
           icon: Icons.check_circle_outline,
@@ -350,8 +349,6 @@ class _FlowExperiencePageState extends State<FlowExperiencePage> {
             'यह बोली शर्तें समझने और उपयुक्त बोलियों की तैयारी में मदद करता है। यह GeM पंजीकरण फ़ॉर्म नहीं है और इसके लिए प्रमाण या दस्तावेज़ आवश्यक नहीं हैं।',
           ),
         ),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-experience'), store: s, factIndex: 0),
       ],
     );
   }
@@ -413,6 +410,7 @@ class _FlowExperienceDetailPageState extends State<FlowExperienceDetailPage> {
         if (!context.mounted) return;
         Navigator.of(context).pushNamed('/flow-privacy');
       },
+      fact: FactMini(key: const ValueKey('fact-exp-detail'), store: s, factIndex: 1),
       children: [
         OnboardingTextField(
           label: s.t('Number of orders', 'ऑर्डर की संख्या'),
@@ -443,8 +441,6 @@ class _FlowExperienceDetailPageState extends State<FlowExperienceDetailPage> {
             'केवल वैकल्पिक तैयारी। यहाँ किसी प्रमाण या दस्तावेज़ की आवश्यकता नहीं है।',
           ),
         ),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-exp-detail'), store: s, factIndex: 1),
       ],
     );
   }

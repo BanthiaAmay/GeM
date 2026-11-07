@@ -224,6 +224,7 @@ class OnboardingStepScaffold extends StatefulWidget {
   final VoidCallback onBack;
   final String headline;
   final String? subtitle;
+  final Widget? fact;
   final List<Widget> children;
   final String continueLabel;
   final VoidCallback? onContinue;
@@ -234,6 +235,7 @@ class OnboardingStepScaffold extends StatefulWidget {
     required this.onBack,
     required this.headline,
     this.subtitle,
+    this.fact,
     required this.children,
     required this.continueLabel,
     required this.onContinue,
@@ -412,10 +414,14 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                           ),
                         ),
                       ],
+                      if (widget.fact != null) ...[
+                        const SizedBox(height: 20),
+                        StaggeredEntrance(index: 2, child: widget.fact!),
+                      ],
                       const SizedBox(height: 28),
                       for (var i = 0; i < widget.children.length; i++)
                         StaggeredEntrance(
-                          index: (i + 2).clamp(0, 7),
+                          index: (i + (widget.fact != null ? 3 : 2)).clamp(0, 7),
                           child: widget.children[i],
                         ),
                     ],

@@ -47,6 +47,7 @@ class _FlowBusinessNamePageState extends State<FlowBusinessNamePage> {
               s.setProfile('businessName', controller.text.trim());
               Navigator.of(context).pushNamed('/flow-bizform');
             },
+      fact: FactMini(key: const ValueKey('fact-bizname'), store: s, factIndex: 1),
       children: [
         OnboardingTextField(
           label: s.t('Business name', 'व्यवसाय का नाम'),
@@ -63,8 +64,6 @@ class _FlowBusinessNamePageState extends State<FlowBusinessNamePage> {
           placeholder: s.t('Asha Textiles', 'आशा टेक्सटाइल्स'),
           style: AppText.bodySmall,
         ),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-bizname'), store: s, factIndex: 1),
       ],
     );
   }
@@ -114,6 +113,7 @@ class _FlowBusinessFormPageState extends State<FlowBusinessFormPage> {
               }
               Navigator.of(context).pushNamed('/flow-sector');
             },
+      fact: FactMini(key: const ValueKey('fact-bizform'), store: s, factIndex: 2),
       children: [
         OnboardingRadioOption(
           iconAsset: 'form_proprietorship',
@@ -147,8 +147,6 @@ class _FlowBusinessFormPageState extends State<FlowBusinessFormPage> {
             controller: otherController,
           ),
         ),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-bizform'), store: s, factIndex: 2),
       ],
     );
   }
@@ -198,6 +196,7 @@ class _FlowSectorPageState extends State<FlowSectorPage> {
               }
               Navigator.of(context).pushNamed('/flow-products');
             },
+      fact: FactMini(key: const ValueKey('fact-sector'), store: s, factIndex: 3),
       children: [
         OnboardingRadioOption(
           iconAsset: 'sector_manufacturing',
@@ -248,8 +247,6 @@ class _FlowSectorPageState extends State<FlowSectorPage> {
             controller: otherController,
           ),
         ),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-sector'), store: s, factIndex: 3),
       ],
     );
   }
@@ -348,6 +345,7 @@ class _FlowProductsPageState extends State<FlowProductsPage> {
           ? s.t('Skip for now', 'अभी छोड़ें')
           : s.t('Continue', 'जारी रखें'),
       onContinue: saving ? null : _continue,
+      fact: FactMini(key: const ValueKey('fact-products'), store: s, factIndex: 4),
       children: [
         if (inferred && answers.isNotEmpty) ...[
           ReassuranceNote(
@@ -396,8 +394,6 @@ class _FlowProductsPageState extends State<FlowProductsPage> {
             onTap: () => setState(() => notify = !notify),
           ),
         ],
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-products'), store: s, factIndex: 4),
       ],
     );
   }
@@ -447,6 +443,7 @@ class _FlowRolePageState extends State<FlowRolePage> {
               }
               Navigator.of(context).pushNamed('/flow-authorised');
             },
+      fact: FactMini(key: const ValueKey('fact-role'), store: s, factIndex: 0),
       children: [
         OnboardingRadioOption(
           iconAsset: 'role_owner',
@@ -496,8 +493,6 @@ class _FlowRolePageState extends State<FlowRolePage> {
           ),
           style: AppText.caption,
         ),
-        const SizedBox(height: AppSpace.lg),
-        FactMini(key: const ValueKey('fact-role'), store: s, factIndex: 0),
       ],
     );
   }
