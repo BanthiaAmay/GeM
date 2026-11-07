@@ -90,7 +90,7 @@ _StepInfo _stepInfoFor(String? route, {bool hasWhatsappNumber = false}) {
     entry.sectionHi,
     step,
     total,
-    (index + 1) / steps.length,
+    step / total,
   );
 }
 
