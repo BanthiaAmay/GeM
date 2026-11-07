@@ -303,6 +303,9 @@ enum AppCardTone {
 
   /// Brand-tinted fill (featured / highlighted).
   brand,
+
+  /// Deep forest green surface — hero sections with inverted (white) text.
+  hero,
 }
 
 /// The card surface: radius 16, hairline border, soft resting shadow. Tappable when
@@ -333,12 +336,17 @@ class AppCard extends StatelessWidget {
           AppCardTone.outlined => AppColors.surface,
           AppCardTone.muted => AppColors.surfaceMuted,
           AppCardTone.brand => AppColors.brandTint,
+          AppCardTone.hero => AppColors.brandDeep,
         },
         borderRadius: r,
         border: tone == AppCardTone.outlined
             ? Border.all(color: AppColors.border)
             : null,
-        boxShadow: tone == AppCardTone.outlined ? AppShadow.card : null,
+        boxShadow: switch (tone) {
+          AppCardTone.outlined => AppShadow.card,
+          AppCardTone.hero => AppShadow.floating,
+          _ => null,
+        },
       ),
       child: Padding(padding: padding, child: child),
     );

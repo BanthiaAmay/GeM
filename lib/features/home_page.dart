@@ -1201,55 +1201,64 @@ class _GreetingSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = store;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Semantics(
-          header: true,
-          child: Text(
-            name.isEmpty
-                ? s.t('Hello.', 'नमस्ते.')
-                : s.t('Hello, {name}', 'नमस्ते, {name}', vars: {'name': name}),
-            style: AppText.h1,
+    return AppCard(
+      tone: AppCardTone.hero,
+      padding: const EdgeInsets.all(AppSpace.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            header: true,
+            child: Text(
+              name.isEmpty
+                  ? s.t('Hello.', 'नमस्ते.')
+                  : s.t('Hello, {name}', 'नमस्ते, {name}', vars: {'name': name}),
+              style: AppText.h1.copyWith(color: AppColors.surface),
+            ),
           ),
-        ),
-        const SizedBox(height: AppSpace.xs),
-        Text(
-          s.t(
-            'Your GeM journey, one bid at a time.',
-            'आपकी GeM यात्रा, एक बोली एक कदम।',
+          const SizedBox(height: AppSpace.xs),
+          Text(
+            s.t(
+              'Your GeM journey, one bid at a time.',
+              'आपकी GeM यात्रा, एक बोली एक कदम।',
+            ),
+            style: AppText.body.copyWith(
+              color: AppColors.surface.withValues(alpha: 0.72),
+            ),
           ),
-          style: AppText.secondary(AppText.body),
-        ),
-        const SizedBox(height: AppSpace.lg),
-        Row(
-          children: [
-            Expanded(
-              child: _MetricTile(
-                label: s.t('Alerts', 'अलर्ट'),
-                value: '${s.unreadAlerts}',
-                onTap: () => Navigator.of(context).pushNamed('/alerts'),
+          const SizedBox(height: AppSpace.lg),
+          Row(
+            children: [
+              Expanded(
+                child: _MetricTile(
+                  label: s.t('Alerts', 'अलर्ट'),
+                  value: '${s.unreadAlerts}',
+                  dark: true,
+                  onTap: () => Navigator.of(context).pushNamed('/alerts'),
+                ),
               ),
-            ),
-            const SizedBox(width: AppSpace.sm),
-            Expanded(
-              child: _MetricTile(
-                label: s.t('Active Bids', 'सक्रिय बोलियाँ'),
-                value: '0',
-                onTap: null,
+              const SizedBox(width: AppSpace.sm),
+              Expanded(
+                child: _MetricTile(
+                  label: s.t('Active Bids', 'सक्रिय बोलियाँ'),
+                  value: '0',
+                  dark: true,
+                  onTap: null,
+                ),
               ),
-            ),
-            const SizedBox(width: AppSpace.sm),
-            Expanded(
-              child: _MetricTile(
-                label: s.t('Deadlines', 'समयसीमाएँ'),
-                value: '0',
-                onTap: null,
+              const SizedBox(width: AppSpace.sm),
+              Expanded(
+                child: _MetricTile(
+                  label: s.t('Deadlines', 'समयसीमाएँ'),
+                  value: '0',
+                  dark: true,
+                  onTap: null,
+                ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1258,17 +1267,37 @@ class _MetricTile extends StatelessWidget {
   final String label;
   final String value;
   final VoidCallback? onTap;
-  const _MetricTile({required this.label, required this.value, this.onTap});
+  final bool dark;
+  const _MetricTile({
+    required this.label,
+    required this.value,
+    this.onTap,
+    this.dark = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final r = AppRadius.card;
+    final bgColor = dark
+        ? AppColors.surface.withValues(alpha: 0.14)
+        : AppColors.surface;
+    final borderColor = dark
+        ? AppColors.surface.withValues(alpha: 0.2)
+        : AppColors.border;
+    final valueStyle = dark
+        ? AppText.h2.copyWith(color: AppColors.surface)
+        : AppText.h2.copyWith(color: AppColors.brand);
+    final labelStyle = dark
+        ? AppText.overline.copyWith(
+            color: AppColors.surface.withValues(alpha: 0.72),
+          )
+        : AppText.overline.copyWith(color: AppColors.textSecondary);
     return Ink(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: bgColor,
         borderRadius: r,
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppShadow.card,
+        border: Border.all(color: borderColor),
+        boxShadow: dark ? null : AppShadow.card,
       ),
       child: InkWell(
         borderRadius: r,
@@ -1281,17 +1310,9 @@ class _MetricTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                value,
-                style: AppText.h2.copyWith(color: AppColors.brand),
-              ),
+              Text(value, style: valueStyle),
               const SizedBox(height: AppSpace.xs),
-              Text(
-                label,
-                style: AppText.overline.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
+              Text(label, style: labelStyle),
             ],
           ),
         ),
@@ -1325,74 +1346,84 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
   @override
   Widget build(BuildContext context) {
     final rows = _filtered;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(
-          s.t('Bid Alerts', 'बोली अलर्ट'),
-          actionLabel: s.t('See all', 'सभी देखें'),
-          onAction: () => Navigator.of(context).pushNamed('/alerts'),
-        ),
-        const SizedBox(height: AppSpace.sm),
-        Row(
-          children: [
-            _FilterPill(
-              label: s.t('All', 'सभी'),
-              selected: !_unreadOnly,
-              onTap: () => setState(() => _unreadOnly = false),
-            ),
-            const SizedBox(width: AppSpace.sm),
-            _FilterPill(
-              label: s.t('Unread', 'अपठित'),
-              selected: _unreadOnly,
-              onTap: () => setState(() => _unreadOnly = true),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpace.md),
-        if (rows.isEmpty)
-          AppCard(
-            tone: AppCardTone.muted,
-            padding: const EdgeInsets.all(AppSpace.lg),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.notifications_none_outlined,
-                  color: AppColors.textHint,
-                  size: AppIconSize.md,
-                ),
-                const SizedBox(width: AppSpace.md),
-                Text(
-                  _unreadOnly
-                      ? s.t('No unread alerts', 'कोई अपठित अलर्ट नहीं')
-                      : s.t('No alerts yet', 'अभी कोई अलर्ट नहीं'),
-                  style: AppText.secondary(AppText.bodySmall),
-                ),
-              ],
-            ),
-          )
-        else
-          AppCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                for (int i = 0; i < rows.length; i++) ...[
-                  if (i > 0)
-                    const Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: AppColors.border,
-                    ),
-                  _BidAlertRow(
-                    alert: rows[i],
-                    onTap: () =>
-                        Navigator.of(context).pushNamed('/alerts'),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceMuted,
+        borderRadius: AppRadius.card,
+      ),
+      padding: const EdgeInsets.all(AppSpace.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionHeader(
+            s.t('Bid Alerts', 'बोली अलर्ट'),
+            actionLabel: s.t('See all', 'सभी देखें'),
+            onAction: () => Navigator.of(context).pushNamed('/alerts'),
+          ),
+          const SizedBox(height: AppSpace.sm),
+          Row(
+            children: [
+              _FilterPill(
+                label: s.t('All', 'सभी'),
+                selected: !_unreadOnly,
+                onTap: () => setState(() => _unreadOnly = false),
+              ),
+              const SizedBox(width: AppSpace.sm),
+              _FilterPill(
+                label: s.t('Unread', 'अपठित'),
+                selected: _unreadOnly,
+                onTap: () => setState(() => _unreadOnly = true),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpace.md),
+          if (rows.isEmpty)
+            AppCard(
+              tone: AppCardTone.outlined,
+              padding: const EdgeInsets.all(AppSpace.lg),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.notifications_none_outlined,
+                    color: AppColors.textHint,
+                    size: AppIconSize.md,
+                  ),
+                  const SizedBox(width: AppSpace.md),
+                  Text(
+                    _unreadOnly
+                        ? s.t('No unread alerts', 'कोई अपठित अलर्ट नहीं')
+                        : s.t('No alerts yet', 'अभी कोई अलर्ट नहीं'),
+                    style: AppText.secondary(AppText.bodySmall),
                   ),
                 ],
-              ],
+              ),
+            )
+          else
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: ClipRRect(
+                borderRadius: AppRadius.card,
+                child: Column(
+                  children: [
+                    for (int i = 0; i < rows.length; i++) ...[
+                      if (i > 0)
+                        const Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: AppColors.border,
+                        ),
+                      _BidAlertRow(
+                        alert: rows[i],
+                        onTap: () =>
+                            Navigator.of(context).pushNamed('/alerts'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -1453,55 +1484,68 @@ class _BidAlertRow extends StatelessWidget {
       created = createdRaw;
     }
     final meta = [dept, gemId].where((v) => v.isNotEmpty).join(' · ');
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpace.lg,
-          vertical: AppSpace.md,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              unread
-                  ? Icons.notifications_active
-                  : Icons.notifications_none_outlined,
-              size: AppIconSize.md,
-              color: unread ? AppColors.brand : AppColors.textHint,
-            ),
-            const SizedBox(width: AppSpace.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+    final rowContent = Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpace.lg,
+        vertical: AppSpace.md,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            unread
+                ? Icons.notifications_active
+                : Icons.notifications_none_outlined,
+            size: AppIconSize.md,
+            color: unread ? AppColors.brand : AppColors.textHint,
+          ),
+          const SizedBox(width: AppSpace.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: unread ? AppText.bodyStrong : AppText.bodySmall,
+                ),
+                if (meta.isNotEmpty)
                   Text(
-                    title,
+                    meta,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: unread ? AppText.bodyStrong : AppText.bodySmall,
+                    style: AppText.secondary(AppText.caption),
                   ),
-                  if (meta.isNotEmpty)
-                    Text(
-                      meta,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.secondary(AppText.caption),
-                    ),
-                ],
+              ],
+            ),
+          ),
+          if (created != null)
+            Padding(
+              padding: const EdgeInsets.only(left: AppSpace.sm),
+              child: Text(
+                _timeAgo(created),
+                style: AppText.caption.copyWith(color: AppColors.textHint),
               ),
             ),
-            if (created != null)
-              Padding(
-                padding: const EdgeInsets.only(left: AppSpace.sm),
-                child: Text(
-                  _timeAgo(created),
-                  style: AppText.caption.copyWith(color: AppColors.textHint),
-                ),
-              ),
-          ],
-        ),
+        ],
       ),
     );
+    // Unread rows get a branded left accent bar + subtle tint.
+    if (unread) {
+      return InkWell(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.brandTint.withValues(alpha: 0.5),
+            border: const Border(
+              left: BorderSide(color: AppColors.brand, width: 3),
+            ),
+          ),
+          child: rowContent,
+        ),
+      );
+    }
+    return InkWell(onTap: onTap, child: rowContent);
   }
 }
 
@@ -1530,21 +1574,29 @@ class _QuickActionsSection extends StatelessWidget {
             _QuickActionTile(
               icon: Icons.bar_chart_outlined,
               label: s.t('ROI Calc', 'ROI कैल्क'),
+              tileColor: AppColors.infoTint,
+              iconColor: AppColors.info,
               onTap: () => onNavigate(_Tab.financialHub),
             ),
             _QuickActionTile(
               icon: Icons.chat_bubble_outline,
               label: s.t('Ask Saathi', 'साथी से पूछें'),
+              tileColor: AppColors.brandTint,
+              iconColor: AppColors.brand,
               onTap: () => Navigator.of(context).pushNamed('/saathi'),
             ),
             _QuickActionTile(
               icon: Icons.trending_up_outlined,
               label: s.t('Analytics', 'एनालिटिक्स'),
+              tileColor: AppColors.warningTint,
+              iconColor: AppColors.warning,
               onTap: () => Navigator.of(context).pushNamed('/insights'),
             ),
             _QuickActionTile(
               icon: Icons.gavel_outlined,
               label: s.t('Find Bids', 'बोलियाँ खोजें'),
+              tileColor: AppColors.violetTint,
+              iconColor: AppColors.violet,
               onTap: () => Navigator.of(context).pushNamed('/bids'),
             ),
           ],
@@ -1557,10 +1609,14 @@ class _QuickActionsSection extends StatelessWidget {
 class _QuickActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Color tileColor;
+  final Color iconColor;
   final VoidCallback onTap;
   const _QuickActionTile({
     required this.icon,
     required this.label,
+    required this.tileColor,
+    required this.iconColor,
     required this.onTap,
   });
 
@@ -1576,10 +1632,10 @@ class _QuickActionTile extends StatelessWidget {
             width: AppSize.tap,
             height: AppSize.tap,
             decoration: BoxDecoration(
-              color: AppColors.brandTint,
+              color: tileColor,
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
-            child: Icon(icon, size: AppIconSize.md, color: AppColors.brand),
+            child: Icon(icon, size: AppIconSize.md, color: iconColor),
           ),
           const SizedBox(height: AppSpace.xs),
           Text(
@@ -1615,7 +1671,7 @@ class _LearnSection extends StatelessWidget {
           onAction: () => Navigator.of(context).pushNamed('/news'),
         ),
         SizedBox(
-          height: 110,
+          height: 120,
           child: ListView(
             scrollDirection: Axis.horizontal,
             clipBehavior: Clip.none,
@@ -1623,7 +1679,7 @@ class _LearnSection extends StatelessWidget {
               SizedBox(
                 width: cardWidth,
                 child: AppCard(
-                  tone: AppCardTone.outlined,
+                  tone: AppCardTone.brand,
                   onTap: () =>
                       Navigator.of(context).pushNamed('/trainings'),
                   child: Row(

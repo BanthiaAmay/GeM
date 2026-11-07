@@ -47,6 +47,13 @@ abstract final class AppColors {
   static const brand = Color(0xFF22654C);
   static const brandTint = Color(0xFFE5F1EA);
 
+  /// Deep forest — hero card surface for the greeting section.
+  static const brandDeep = Color(0xFF164030);
+
+  /// Violet tint / icon for the Find Bids quick-action tile.
+  static const violetTint = Color(0xFFF0EAF7);
+  static const violet = Color(0xFF6A4C93);
+
   /// Urgent / error / destructive. 6.5:1 on [surface].
   static const danger = Color(0xFFB3261E);
   static const dangerTint = Color(0xFFFCE9E7);
