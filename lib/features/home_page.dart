@@ -1987,6 +1987,8 @@ class _HomeNav extends StatelessWidget {
                               const SizedBox(height: AppSpace.xs),
                               Text(
                                 label,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: AppText.label.copyWith(
                                   fontWeight: tab == current
                                       ? FontWeight.w700
