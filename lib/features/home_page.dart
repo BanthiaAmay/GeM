@@ -554,8 +554,6 @@ class _HomeTab extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         StaggeredEntrance(index: 0, child: _GreetingSection(store: s, name: name)),
-        const SizedBox(height: AppSpace.lg),
-        _UrgentBanner(store: s),
         const SizedBox(height: AppSpace.xxxl),
         StaggeredEntrance(index: 1, child: _BidAlertsSection(store: s)),
         const SizedBox(height: AppSpace.xxxl),
@@ -1302,83 +1300,6 @@ class _MetricTile extends StatelessWidget {
   }
 }
 
-// ── Urgent Banner ────────────────────────────────────────────────────────────
-
-class _UrgentBanner extends StatelessWidget {
-  final AppStore store;
-  const _UrgentBanner({required this.store});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = store;
-    final notifications = s.bidNotifications;
-    if (notifications.isEmpty) return const SizedBox.shrink();
-    final first = notifications.firstWhere(
-      (n) => n['read_at'] == null,
-      orElse: () => notifications.first,
-    );
-    final title = first['title'] as String? ?? '';
-    if (title.isEmpty) return const SizedBox.shrink();
-    return AnimatedSize(
-      alignment: Alignment.topCenter,
-      duration: Motion.normal,
-      curve: Motion.standard,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: AppRadius.card,
-          boxShadow: AppShadow.card,
-        ),
-        child: ClipRRect(
-          borderRadius: AppRadius.card,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpace.lg,
-              vertical: AppSpace.md,
-            ),
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              border: Border(
-                left: BorderSide(color: AppColors.danger, width: 3),
-                top: BorderSide(color: AppColors.border),
-                right: BorderSide(color: AppColors.border),
-                bottom: BorderSide(color: AppColors.border),
-              ),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.warning_amber_rounded,
-                  size: AppIconSize.md,
-                  color: AppColors.danger,
-                ),
-                const SizedBox(width: AppSpace.md),
-                Expanded(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.bodyStrong,
-                  ),
-                ),
-                const SizedBox(width: AppSpace.sm),
-                AppButton(
-                  label: s.t('View', 'देखें'),
-                  onPressed: () =>
-                      Navigator.of(context).pushNamed('/alerts'),
-                  variant: AppButtonVariant.tertiary,
-                  size: AppButtonSize.sm,
-                  expand: false,
-                  haptic: false,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // ── Bid Alerts ───────────────────────────────────────────────────────────────
 
 class _BidAlertsSection extends StatefulWidget {
@@ -1395,18 +1316,10 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
 
   List<Map<String, dynamic>> get _filtered {
     final all = s.bidNotifications;
-    // The urgent banner already shows the first unread alert; skip it here
-    // so the same item doesn't appear twice on the screen.
-    final bannerAlert = all.isNotEmpty
-        ? all.firstWhere((n) => n['read_at'] == null, orElse: () => {})
-        : <String, dynamic>{};
-    final rest = bannerAlert.isNotEmpty
-        ? all.where((n) => n != bannerAlert).toList()
-        : all;
     if (_unreadOnly) {
-      return rest.where((n) => n['read_at'] == null).take(3).toList();
+      return all.where((n) => n['read_at'] == null).take(3).toList();
     }
-    return rest.take(3).toList();
+    return all.take(3).toList();
   }
 
   @override
