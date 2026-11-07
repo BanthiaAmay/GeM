@@ -3,6 +3,29 @@ import 'package:gem/core/models.dart';
 
 void main() {
   const langs = ['en', 'hi', 'mr', 'bn', 'pa', 'gu', 'ta', 'te', 'kn'];
+
+  // Fact Deck UI labels — just check that non-en languages are translated.
+  const labels = [
+    ('GeM FACT', 'GeM तथ्य'),
+    ('OFFICIAL DATA', 'आधिकारिक आँकड़े'),
+    ('WHY GeM?', 'GeM क्यों?'),
+    ('Swipe', 'स्वाइप करें'),
+  ];
+
+  test('Fact Deck UI labels are translated in every language', () {
+    for (final (en, hi) in labels) {
+      for (final lang in langs) {
+        final val = tr(lang, en, hi);
+        expect(val.isNotEmpty, isTrue, reason: '$lang label empty for "$en"');
+        if (lang != 'en') {
+          expect(val, isNot(equals(en)), reason: '$lang untranslated for "$en"');
+        }
+      }
+    }
+  });
+
+  // Fact figures — the figure string must be a substring of the full sentence
+  // shown in the old GemFact boxes (still used as keys in kTranslations).
   const facts = [
     (
       figure: ('68%', '68%'),
@@ -40,6 +63,27 @@ void main() {
           isTrue,
           reason: '$lang: "$figure" in "$text"',
         );
+      }
+    }
+  });
+
+  // Fact Deck sources — just check they are non-empty and translated.
+  const sources = [
+    ('Source: PIB, Aug 2025', 'स्रोत: PIB, अगस्त 2025'),
+    ('Source: PIB, Apr 2026', 'स्रोत: PIB, अप्रैल 2026'),
+    ('Source: DD News, Jan 2025', 'स्रोत: DD News, जनवरी 2025'),
+    ('Source: Ministry of MSME', 'स्रोत: MSME मंत्रालय'),
+    ('Source: GeM Terms & Conditions', 'स्रोत: GeM नियम और शर्तें'),
+  ];
+
+  test('Fact Deck sources are translated in every language', () {
+    for (final (en, hi) in sources) {
+      for (final lang in langs) {
+        final val = tr(lang, en, hi);
+        expect(val.isNotEmpty, isTrue, reason: '$lang source empty for "$en"');
+        if (lang != 'en') {
+          expect(val, isNot(equals(en)), reason: '$lang untranslated for "$en"');
+        }
       }
     }
   });

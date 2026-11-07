@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../core/motion.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
 import 'brand_logo.dart';
 import 'components.dart';
+import 'fact_deck.dart';
 import 'glass.dart';
 import 'scroll_hint.dart';
 
@@ -42,21 +42,12 @@ class WelcomePage extends StatelessWidget {
                         tag: 'brand-logo',
                         child: BrandLogo(
                           variant: BrandLogoVariant.full,
-                          width: 220,
+                          width: 170,
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      Depth(
-                        lift: 10,
-                        tilt: 0.1,
-                        delay: Motion.normal,
-                        child: Image.asset(
-                          'assets/welcome_illustration.png',
-                          width: double.infinity,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: AppSpace.lg),
+                      FactDeck(store: store),
+                      const SizedBox(height: AppSpace.xxl),
                       Text(
                         store.t(
                           'Your shop.\nNationwide.',
@@ -65,7 +56,7 @@ class WelcomePage extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: AppText.display,
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppSpace.md),
                       Text(
                         store.t(
                           'Get your business ready for GeM—and reach buyers across India.',
@@ -73,20 +64,6 @@ class WelcomePage extends StatelessWidget {
                         ),
                         textAlign: TextAlign.center,
                         style: AppText.lead,
-                      ),
-                      const SizedBox(height: AppSpace.xl),
-                      GemFact(
-                        icon: Icons.storefront_outlined,
-                        label: store.t('DID YOU KNOW?', 'क्या आप जानते हैं?'),
-                        figure: '68%',
-                        text: store.t(
-                          '68% of GeM orders are delivered by small businesses like yours.',
-                          'GeM के 68% ऑर्डर आप जैसे छोटे व्यवसाय पूरे करते हैं।',
-                        ),
-                        source: store.t(
-                          'Source: PIB, Apr 2026 (FY 2025-26)',
-                          'स्रोत: PIB, अप्रैल 2026 (वित्त वर्ष 2025-26)',
-                        ),
                       ),
                     ],
                   ),
@@ -96,6 +73,7 @@ class WelcomePage extends StatelessWidget {
             FloatingActionArea(
               child: AppButton(
                 label: store.t('Get started', 'शुरू करें'),
+                trailingIcon: Icons.arrow_forward,
                 onPressed: () => _goToLanguage(context),
                 size: AppButtonSize.lg,
               ),
