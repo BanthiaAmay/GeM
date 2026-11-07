@@ -3,6 +3,7 @@ import '../core/models.dart';
 import '../core/transitions.dart';
 import '../data/app_store.dart';
 import 'components.dart';
+import 'fact_deck.dart';
 import 'onboarding_widgets.dart';
 import 'widgets.dart';
 import 'youtube_video.dart';
@@ -152,6 +153,8 @@ class _FlowChecklistPageState extends State<FlowChecklistPage> {
           ),
           style: AppText.caption,
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-checklist'), store: s, factIndex: 4),
       ],
     );
   }
@@ -225,6 +228,8 @@ class FlowVideoPage extends StatelessWidget {
             haptic: false,
           ),
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-video'), store: s, factIndex: 0),
       ],
     );
   }
@@ -357,6 +362,8 @@ class FlowRedirectPage extends StatelessWidget {
             haptic: false,
           ),
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-redirect'), store: s, factIndex: 1),
       ],
     );
   }

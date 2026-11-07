@@ -181,6 +181,8 @@ class _FlowPhonePageState extends State<FlowPhonePage> {
           style: AppText.secondary(AppText.bodySmall),
         ),
         const OnboardingArt('phone_shop', topGap: 28),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-phone'), store: s, factIndex: 3),
       ],
     );
   }
@@ -347,6 +349,8 @@ class _FlowOtpPageState extends State<FlowOtpPage>
           ),
         ),
         const OnboardingArt('otp_shop', topGap: 12),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-otp'), store: s, factIndex: 4),
       ],
     );
   }
@@ -428,6 +432,8 @@ class _FlowLocationPageState extends State<FlowLocationPage> {
           textAlign: TextAlign.center,
           style: AppText.caption,
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-location'), store: s, factIndex: 0),
       ],
     );
   }

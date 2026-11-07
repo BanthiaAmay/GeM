@@ -66,6 +66,8 @@ class _FlowAuthorisedPageState extends State<FlowAuthorisedPage> {
           selected: selected == 'unsure',
           onTap: () => setState(() => selected = 'unsure'),
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-authorised'), store: s, factIndex: 1),
       ],
     );
   }
@@ -269,6 +271,8 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
           ),
           style: AppText.caption,
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-records'), store: s, factIndex: 2),
       ],
     );
   }
@@ -327,6 +331,8 @@ class _FlowPanPageState extends State<FlowPanPage> {
           selected: selected == 'unsure',
           onTap: () => setState(() => selected = 'unsure'),
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-pan'), store: s, factIndex: 3),
       ],
     );
   }

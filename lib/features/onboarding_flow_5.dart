@@ -95,6 +95,8 @@ class _FlowTurnoverPageState extends State<FlowTurnoverPage> {
             'सटीक आँकड़ा या दस्तावेज़ों की ज़रूरत नहीं है। यह तैयारी मार्गदर्शन है—पात्रता का निर्णय नहीं।',
           ),
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-turnover'), store: s, factIndex: 2),
       ],
     );
   }
@@ -198,6 +200,8 @@ class _FlowTurnoverHistoryPageState extends State<FlowTurnoverHistoryPage> {
             'श्रेणियाँ पर्याप्त हैं। यह तैयारी मार्गदर्शन है, पात्रता का निर्णय नहीं।',
           ),
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-turnover-history'), store: s, factIndex: 3),
       ],
     );
   }
@@ -439,6 +443,8 @@ class _FlowExperienceDetailPageState extends State<FlowExperienceDetailPage> {
             'केवल वैकल्पिक तैयारी। यहाँ किसी प्रमाण या दस्तावेज़ की आवश्यकता नहीं है।',
           ),
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-exp-detail'), store: s, factIndex: 1),
       ],
     );
   }

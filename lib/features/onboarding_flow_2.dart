@@ -147,6 +147,8 @@ class _FlowBusinessFormPageState extends State<FlowBusinessFormPage> {
             controller: otherController,
           ),
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-bizform'), store: s, factIndex: 2),
       ],
     );
   }
@@ -246,6 +248,8 @@ class _FlowSectorPageState extends State<FlowSectorPage> {
             controller: otherController,
           ),
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-sector'), store: s, factIndex: 3),
       ],
     );
   }
@@ -392,6 +396,8 @@ class _FlowProductsPageState extends State<FlowProductsPage> {
             onTap: () => setState(() => notify = !notify),
           ),
         ],
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-products'), store: s, factIndex: 4),
       ],
     );
   }
@@ -490,6 +496,8 @@ class _FlowRolePageState extends State<FlowRolePage> {
           ),
           style: AppText.caption,
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-role'), store: s, factIndex: 0),
       ],
     );
   }
