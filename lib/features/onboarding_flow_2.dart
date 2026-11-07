@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/keywords.dart';
 import '../data/app_store.dart';
 import 'components.dart';
+import 'fact_deck.dart';
 import 'onboarding_widgets.dart';
 import '../core/tokens.dart';
 
@@ -62,6 +63,8 @@ class _FlowBusinessNamePageState extends State<FlowBusinessNamePage> {
           placeholder: s.t('Asha Textiles', 'आशा टेक्सटाइल्स'),
           style: AppText.bodySmall,
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-bizname'), store: s, factIndex: 1),
       ],
     );
   }

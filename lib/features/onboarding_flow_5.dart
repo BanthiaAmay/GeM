@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/tokens.dart';
 import '../data/app_store.dart';
 import 'components.dart';
+import 'fact_deck.dart';
 import 'onboarding_widgets.dart';
 
 /// The "GeM bidding" section — inserted between "Your business" and
@@ -345,6 +346,8 @@ class _FlowExperiencePageState extends State<FlowExperiencePage> {
             'यह बोली शर्तें समझने और उपयुक्त बोलियों की तैयारी में मदद करता है। यह GeM पंजीकरण फ़ॉर्म नहीं है और इसके लिए प्रमाण या दस्तावेज़ आवश्यक नहीं हैं।',
           ),
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-experience'), store: s, factIndex: 0),
       ],
     );
   }

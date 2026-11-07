@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/transitions.dart';
 import '../data/app_store.dart';
+import 'fact_deck.dart';
 import 'onboarding_widgets.dart';
 import '../core/tokens.dart';
 
@@ -148,6 +149,8 @@ class _FlowPrivacyPageState extends State<FlowPrivacyPage> {
             ],
           ),
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-privacy'), store: s, factIndex: 4),
       ],
     );
   }

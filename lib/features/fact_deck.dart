@@ -677,10 +677,13 @@ class _FactCarouselState extends State<FactCarousel>
   }
 }
 
-/// Log-in: one compact ticket that counts up once.
+/// Log-in / onboarding: one compact ticket that counts up once.
+/// [factIndex] selects which fact to show (0–4); defaults to 4 (10-day
+/// payment fact), keeping the existing log-in screen behaviour unchanged.
 class FactMini extends StatefulWidget {
   final AppStore store;
-  const FactMini({super.key, required this.store});
+  final int factIndex;
+  const FactMini({super.key, required this.store, this.factIndex = 4});
 
   @override
   State<FactMini> createState() => _FactMiniState();
@@ -713,13 +716,17 @@ class _FactMiniState extends State<FactMini>
   }
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: _count,
-    builder: (context, _) => FactTicket(
-      fact: gemFacts(widget.store).last,
-      store: widget.store,
-      compact: true,
-      count: _count.value,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final facts = gemFacts(widget.store);
+    final fact = facts[widget.factIndex.clamp(0, facts.length - 1)];
+    return AnimatedBuilder(
+      animation: _count,
+      builder: (context, _) => FactTicket(
+        fact: fact,
+        store: widget.store,
+        compact: true,
+        count: _count.value,
+      ),
+    );
+  }
 }

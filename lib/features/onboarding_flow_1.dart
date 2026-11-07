@@ -6,6 +6,7 @@ import '../core/motion.dart';
 import '../core/phone.dart';
 import '../data/app_store.dart';
 import 'components.dart';
+import 'fact_deck.dart';
 import 'onboarding_widgets.dart';
 import '../core/tokens.dart';
 
@@ -113,6 +114,8 @@ class _FlowFullNamePageState extends State<FlowFullNamePage> {
             color: AppColors.ink,
           ),
         ),
+        const SizedBox(height: AppSpace.lg),
+        FactMini(key: const ValueKey('fact-name'), store: s, factIndex: 2),
       ],
     );
   }
