@@ -1659,8 +1659,6 @@ class _LearnSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = store;
-    final w = MediaQuery.sizeOf(context).width;
-    final cardWidth = w * 0.60;
     final bulletin = s.bulletins.isNotEmpty ? s.bulletins.first : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1670,91 +1668,69 @@ class _LearnSection extends StatelessWidget {
           actionLabel: s.t('See all', 'सभी देखें'),
           onAction: () => Navigator.of(context).pushNamed('/news'),
         ),
-        SizedBox(
-          height: 120,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none,
+        AppCard(
+          tone: AppCardTone.brand,
+          onTap: () => Navigator.of(context).pushNamed('/trainings'),
+          child: Row(
             children: [
-              SizedBox(
-                width: cardWidth,
-                child: AppCard(
-                  tone: AppCardTone.brand,
-                  onTap: () =>
-                      Navigator.of(context).pushNamed('/trainings'),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.ondemand_video_outlined,
-                        size: AppIconSize.md,
-                        color: AppColors.brand,
-                      ),
-                      const SizedBox(width: AppSpace.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              s.t('Module Trainings', 'मॉड्यूल प्रशिक्षण'),
-                              style: AppText.bodyStrong,
-                            ),
-                            const SizedBox(height: AppSpace.xs),
-                            Text(
-                              s.t('34 videos · 6 modules', '34 वीडियो · 6 मॉड्यूल'),
-                              style: AppText.secondary(AppText.caption),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              const Icon(
+                Icons.ondemand_video_outlined,
+                size: AppIconSize.md,
+                color: AppColors.brand,
               ),
               const SizedBox(width: AppSpace.md),
-              SizedBox(
-                width: cardWidth,
-                child: AppCard(
-                  tone: AppCardTone.outlined,
-                  onTap: bulletin != null
-                      ? () {
-                          final vid = bulletin['video_id'] as String?;
-                          if (vid != null && vid.isNotEmpty) {
-                            openYouTubeVideo(context, s, vid);
-                          } else {
-                            Navigator.of(context).pushNamed('/news');
-                          }
-                        }
-                      : null,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        s.t('GEM WEEKLY', 'GEM साप्ताहिक'),
-                        style: AppText.overline.copyWith(
-                          color: AppColors.brand,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpace.xs),
-                      Text(
-                        bulletin != null
-                            ? (bulletin['title'] as String? ?? '')
-                            : s.t('Coming soon', 'जल्द आ रहा है'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.bodySmall,
-                      ),
-                      const SizedBox(height: AppSpace.xs),
-                      Text(
-                        s.t('Watch →', 'देखें →'),
-                        style: AppText.caption.copyWith(
-                          color: AppColors.brand,
-                        ),
-                      ),
-                    ],
-                  ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.t('Module Trainings', 'मॉड्यूल प्रशिक्षण'),
+                      style: AppText.bodyStrong,
+                    ),
+                    const SizedBox(height: AppSpace.xs),
+                    Text(
+                      s.t('34 videos · 6 modules', '34 वीडियो · 6 मॉड्यूल'),
+                      style: AppText.secondary(AppText.caption),
+                    ),
+                  ],
                 ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpace.md),
+        AppCard(
+          tone: AppCardTone.outlined,
+          onTap: bulletin != null
+              ? () {
+                  final vid = bulletin['video_id'] as String?;
+                  if (vid != null && vid.isNotEmpty) {
+                    openYouTubeVideo(context, s, vid);
+                  } else {
+                    Navigator.of(context).pushNamed('/news');
+                  }
+                }
+              : null,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                s.t('GEM WEEKLY', 'GEM साप्ताहिक'),
+                style: AppText.overline.copyWith(color: AppColors.brand),
+              ),
+              const SizedBox(height: AppSpace.xs),
+              Text(
+                bulletin != null
+                    ? (bulletin['title'] as String? ?? '')
+                    : s.t('Coming soon', 'जल्द आ रहा है'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.bodySmall,
+              ),
+              const SizedBox(height: AppSpace.xs),
+              Text(
+                s.t('Watch →', 'देखें →'),
+                style: AppText.caption.copyWith(color: AppColors.brand),
               ),
             ],
           ),
