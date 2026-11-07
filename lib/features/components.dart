@@ -682,7 +682,8 @@ class StateView extends StatelessWidget {
 // ─────────────────────────── Progress ───────────────────────────
 
 /// Horizontal progress track. Animates to [value] (0–1); jumps under
-/// reduced motion. [color] defaults to ink (flows) — use brand for status.
+/// reduced motion. [color] defaults to [AppColors.brand]; pass
+/// [AppColors.ink] where a neutral bar is preferred.
 class AppProgressBar extends StatelessWidget {
   final double value;
   final double height;
@@ -697,7 +698,7 @@ class AppProgressBar extends StatelessWidget {
     super.key,
     required this.value,
     this.height = 5,
-    this.color = AppColors.ink,
+    this.color = AppColors.brand,
     this.semanticLabel,
     this.duration,
     this.animated = true,
@@ -719,24 +720,86 @@ class AppProgressBar extends StatelessWidget {
     ),
   );
 
-  Widget _track(double v) => ClipRRect(
-    borderRadius: BorderRadius.circular(height),
-    child: SizedBox(
-      height: height,
-      width: double.infinity,
-      child: Stack(
-        children: [
-          const Positioned.fill(child: ColoredBox(color: AppColors.chartTrack)),
-          FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: v.clamp(0.0, 1.0),
-            heightFactor: 1,
-            child: ColoredBox(color: color),
-          ),
-        ],
+  Widget _track(double v) => SizedBox(
+    height: height * 2.4,
+    width: double.infinity,
+    child: CustomPaint(
+      painter: _ProgressTrackPainter(
+        value: v.clamp(0.0, 1.0),
+        color: color,
+        trackHeight: height,
       ),
     ),
   );
+}
+
+class _ProgressTrackPainter extends CustomPainter {
+  final double value;
+  final Color color;
+  final double trackHeight;
+
+  const _ProgressTrackPainter({
+    required this.value,
+    required this.color,
+    required this.trackHeight,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cy = size.height / 2;
+    final th = trackHeight * 0.75;
+    final br = th / 2;
+    final fillW = size.width * value;
+
+    // Track background
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, cy - br, size.width, th),
+        Radius.circular(br),
+      ),
+      Paint()..color = AppColors.chartTrack,
+    );
+
+    if (fillW <= 0) return;
+
+    // Gradient fill
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, cy - br, fillW, th),
+        Radius.circular(br),
+      ),
+      Paint()
+        ..shader = LinearGradient(
+          colors: [
+            Color.lerp(color, Colors.white, 0.5)!,
+            color,
+          ],
+        ).createShader(
+          Rect.fromLTWH(0, cy - br, fillW.clamp(1.0, double.infinity), th),
+        ),
+    );
+
+    // Glowing bubble head at fill frontier
+    final bubbleR = size.height / 2 - 0.5;
+    // Soft glow ring
+    canvas.drawCircle(
+      Offset(fillW, cy),
+      bubbleR,
+      Paint()
+        ..color = color.withValues(alpha: 0.22)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+    );
+    // Solid dot
+    canvas.drawCircle(
+      Offset(fillW, cy),
+      bubbleR * 0.68,
+      Paint()..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ProgressTrackPainter old) =>
+      old.value != value || old.color != color || old.trackHeight != trackHeight;
 }
 
 /// Circular progress with a centred label (e.g. "7 of 9").
