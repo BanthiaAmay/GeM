@@ -1397,10 +1397,18 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
 
   List<Map<String, dynamic>> get _filtered {
     final all = s.bidNotifications;
+    // The urgent banner already shows the first unread alert; skip it here
+    // so the same item doesn't appear twice on the screen.
+    final bannerAlert = all.isNotEmpty
+        ? all.firstWhere((n) => n['read_at'] == null, orElse: () => {})
+        : <String, dynamic>{};
+    final rest = bannerAlert.isNotEmpty
+        ? all.where((n) => n != bannerAlert).toList()
+        : all;
     if (_unreadOnly) {
-      return all.where((n) => n['read_at'] == null).take(3).toList();
+      return rest.where((n) => n['read_at'] == null).take(3).toList();
     }
-    return all.take(3).toList();
+    return rest.take(3).toList();
   }
 
   @override
