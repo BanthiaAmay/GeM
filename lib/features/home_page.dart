@@ -1241,7 +1241,10 @@ class _GreetingSection extends StatelessWidget {
               Expanded(
                 child: _MetricTile(
                   label: s.t('Active Bids', 'सक्रिय बोलियाँ'),
-                  value: '0',
+                  value: s.gemActiveBids != null
+                      ? _fmtCount(s.gemActiveBids!)
+                      : '--',
+                  subtitle: s.t('GeM · today 12 AM', 'GeM · आज 12 AM'),
                   dark: true,
                   onTap: null,
                 ),
@@ -1250,7 +1253,10 @@ class _GreetingSection extends StatelessWidget {
               Expanded(
                 child: _MetricTile(
                   label: s.t('Deadlines', 'समयसीमाएँ'),
-                  value: '0',
+                  value: s.gemDeadlinesCount != null
+                      ? _fmtCount(s.gemDeadlinesCount!)
+                      : '--',
+                  subtitle: s.t('2-day expiring', '2-दिन समाप्त'),
                   dark: true,
                   onTap: null,
                 ),
@@ -1263,14 +1269,23 @@ class _GreetingSection extends StatelessWidget {
   }
 }
 
+String _fmtCount(int n) {
+  if (n >= 10000000) return '${(n / 10000000).toStringAsFixed(1)}Cr';
+  if (n >= 100000) return '${(n / 100000).toStringAsFixed(1)}L';
+  if (n >= 1000) return '${(n / 1000).toStringAsFixed(0)}K';
+  return '$n';
+}
+
 class _MetricTile extends StatelessWidget {
   final String label;
   final String value;
+  final String? subtitle;
   final VoidCallback? onTap;
   final bool dark;
   const _MetricTile({
     required this.label,
     required this.value,
+    this.subtitle,
     this.onTap,
     this.dark = false,
   });
@@ -1313,6 +1328,20 @@ class _MetricTile extends StatelessWidget {
               Text(value, style: valueStyle),
               const SizedBox(height: AppSpace.xs),
               Text(label, style: labelStyle),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle!,
+                  style: dark
+                      ? AppText.caption.copyWith(
+                          color: AppColors.surface.withValues(alpha: 0.5),
+                          fontSize: 10,
+                        )
+                      : AppText.caption.copyWith(fontSize: 10),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ],
           ),
         ),
