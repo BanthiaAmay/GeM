@@ -414,7 +414,12 @@ class _HomeDrawer extends StatelessWidget {
                 AppSpace.xl,
                 AppSpace.lg,
               ),
-              child: BrandLogo(variant: BrandLogoVariant.lockup, width: 150),
+              child: Center(
+                child: BrandLogo(
+                  variant: BrandLogoVariant.lockup,
+                  width: 150,
+                ),
+              ),
             ),
             const Divider(),
             ListTile(
