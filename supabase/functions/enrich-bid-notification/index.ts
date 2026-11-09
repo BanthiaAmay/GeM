@@ -160,8 +160,22 @@ Deno.serve(async (req: Request) => {
     // Non-fatal — still update the row with nulls so we don't retry endlessly
   }
 
+  // Parse ministry + delivery_area from body field as a reliable fallback.
+  // body format: "Buyer · [Location · ] GEM/YYYY/B/NNNNNNN"
+  const bodyStr = (record["body"] as string | undefined) ?? "";
+  const bodyParts = bodyStr.split(" · ");
+  const bodyMinistry =
+    bodyParts.length >= 1 && !bodyParts[0].startsWith("GEM/")
+      ? bodyParts[0].trim()
+      : null;
+  const bodyLocation =
+    bodyParts.length >= 3 && !bodyParts[1].startsWith("GEM/")
+      ? bodyParts[1].trim()
+      : null;
+
   const updates: Record<string, string | null> = {
-    ministry: extractMinistry(pdfText),
+    // PDF/HTML extraction first; fall back to body parsing if null
+    ministry: extractMinistry(pdfText) ?? bodyMinistry,
     bid_start_date: extractDate(pdfText, [
       "Bid Start Date", "Start Date", "Opening Date", "Bid Opening",
     ]),
@@ -169,7 +183,7 @@ Deno.serve(async (req: Request) => {
       "Bid End Date", "End Date", "Closing Date", "Bid Closing", "Last Date",
     ]),
     eligibility: extractEligibility(pdfText),
-    delivery_area: extractDeliveryArea(pdfText),
+    delivery_area: extractDeliveryArea(pdfText) ?? bodyLocation,
   };
 
   const { error } = await supabase

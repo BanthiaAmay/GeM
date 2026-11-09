@@ -883,11 +883,86 @@ class AppStore extends ChangeNotifier {
       alertPreferences = Map<String, dynamic>.from(preferences ?? {});
       bidNotifications = List<Map<String, dynamic>>.from(notifications);
       alertsError = null;
+      // Background: enrich any rows that are missing dates by fetching
+      // their bid document page from the app (the app can reach GeM servers).
+      unawaited(_enrichMissingDates());
     } catch (_) {
       if (currentUser?.id != userId) return;
       alertsError = 'Could not load alerts. Check your connection and retry.';
     }
     notifyListeners();
+  }
+
+  /// Fetches bid document pages for rows missing dates and updates Supabase.
+  /// Runs entirely in the background — never throws.
+  Future<void> _enrichMissingDates() async {
+    if (client == null || !signedIn) return;
+    final toEnrich = bidNotifications.where((n) =>
+      n['bid_start_date'] == null &&
+      n['source_url'] != null &&
+      (n['source_url'] as String).isNotEmpty,
+    ).toList();
+    for (final bid in toEnrich) {
+      unawaited(_fetchDatesForBid(
+        bid['id'] as String,
+        bid['source_url'] as String,
+      ));
+    }
+  }
+
+  Future<void> _fetchDatesForBid(String id, String sourceUrl) async {
+    try {
+      final resp = await http
+          .get(Uri.parse(sourceUrl), headers: {'User-Agent': 'Bid2Scale/1.0'})
+          .timeout(const Duration(seconds: 15));
+      if (resp.statusCode != 200) return;
+      // Strip HTML tags to get searchable plain text
+      final text = resp.body
+          .replaceAll(RegExp(r'<[^>]+>'), ' ')
+          .replaceAll(RegExp(r'\s+'), ' ');
+      final startDate = _extractBidDate(text, [
+        'Bid Opening Date', 'Start Date', 'Opening Date', 'Bid Start Date',
+      ]);
+      final endDate = _extractBidDate(text, [
+        'Bid Closing Date', 'End Date', 'Closing Date', 'Last Date', 'Bid End Date',
+      ]);
+      if (startDate == null && endDate == null) return;
+      final updates = <String, String>{
+        if (startDate != null) 'bid_start_date': startDate,
+        if (endDate != null) 'bid_end_date': endDate,
+      };
+      await client!.from('bid_notifications').update(updates).eq('id', id);
+      final idx = bidNotifications.indexWhere((n) => n['id'] == id);
+      if (idx >= 0) {
+        updates.forEach((k, v) => bidNotifications[idx][k] = v);
+        notifyListeners();
+      }
+    } catch (_) {
+      // Non-fatal — dates stay null and show "Not available"
+    }
+  }
+
+  static String? _extractBidDate(String text, List<String> labels) {
+    for (final label in labels) {
+      final re = RegExp(
+        '$label[:\\s]+([\\d]{1,2}[\\s\\/\\-][A-Za-z\\d]{2,3}[\\s\\/\\-][\\d]{4})',
+        caseSensitive: false,
+      );
+      final m = re.firstMatch(text);
+      if (m != null) return _normalizeToIso(m.group(1)!.trim());
+    }
+    return null;
+  }
+
+  static String? _normalizeToIso(String raw) {
+    // dd/mm/yyyy or dd-mm-yyyy
+    final dmy = RegExp(r'^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$').firstMatch(raw);
+    if (dmy != null) {
+      return '${dmy.group(3)}-${dmy.group(2)!.padLeft(2, '0')}-${dmy.group(1)!.padLeft(2, '0')}';
+    }
+    // Already ISO
+    if (RegExp(r'^\d{4}-\d{2}-\d{2}').hasMatch(raw)) return raw.substring(0, 10);
+    return null;
   }
 
   /// Public, read-only `gem_bulletins` table. Safe to call from initState:

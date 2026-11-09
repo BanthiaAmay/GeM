@@ -1516,19 +1516,30 @@ class _BidAlertRow extends StatelessWidget {
     final unread = alert['read_at'] == null;
     final title = alert['title'] as String? ?? '';
 
-    // Buyer: ministry field → dept field → 'Not specified'
+    // Buyer: ministry field → first segment of body → 'Not specified'
     final buyer = (() {
       final m = alert['ministry'] as String?;
       if (m != null && m.isNotEmpty) return m;
-      final d = alert['dept'] as String?;
-      if (d != null && d.isNotEmpty) return d;
+      final b = alert['body'] as String? ?? '';
+      if (b.contains(' · ')) {
+        final first = b.split(' · ').first.trim();
+        if (first.isNotEmpty && !first.startsWith('GEM/')) return first;
+      }
       return 'Not specified';
     })();
 
-    // Delivery location → 'Not specified'
-    final deliveryRaw = alert['delivery_area'] as String?;
-    final delivery =
-        (deliveryRaw != null && deliveryRaw.isNotEmpty) ? deliveryRaw : 'Not specified';
+    // Delivery: delivery_area → second body segment (if not GEM ID) → 'Not specified'
+    final delivery = (() {
+      final d = alert['delivery_area'] as String?;
+      if (d != null && d.isNotEmpty) return d;
+      final b = alert['body'] as String? ?? '';
+      final parts = b.split(' · ');
+      if (parts.length >= 3) {
+        final second = parts[1].trim();
+        if (second.isNotEmpty && !second.startsWith('GEM/')) return second;
+      }
+      return 'Not specified';
+    })();
 
     final startDisplay = _fmtDate(alert['bid_start_date'] as String?);
     final endDisplay = _fmtDate(alert['bid_end_date'] as String?);
