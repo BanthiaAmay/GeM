@@ -1897,13 +1897,23 @@ class _LearnSection extends StatelessWidget {
                 style: AppText.overline.copyWith(color: AppColors.brand),
               ),
               const SizedBox(height: AppSpace.xs),
-              Text(
-                bulletin != null
-                    ? (bulletin['title'] as String? ?? '')
-                    : s.t('Coming soon', 'जल्द आ रहा है'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.bodySmall,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.sm,
+                  vertical: AppSpace.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.brandTint,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Text(
+                  bulletin != null
+                      ? (bulletin['title'] as String? ?? '')
+                      : s.t('Coming soon', 'जल्द आ रहा है'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.bodyStrong.copyWith(color: AppColors.brand),
+                ),
               ),
               const SizedBox(height: AppSpace.xs),
               Text(
