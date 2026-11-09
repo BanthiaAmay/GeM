@@ -1526,7 +1526,7 @@ class _BidAlertRow extends StatelessWidget {
         final second = parts[1].trim();
         if (second.isNotEmpty && !second.startsWith('GEM/')) return second;
       }
-      return 'Not specified';
+      return 'All India';
     })();
 
     final startDisplay = _fmtDate(alert['bid_start_date'] as String?);
@@ -1541,7 +1541,7 @@ class _BidAlertRow extends StatelessWidget {
     }
 
 
-    // Small pill chip with icon + label text.
+    // Pill chip: icon + label, single line, truncates inside Flexible.
     Widget chip(IconData icon, String text, Color bg, Color iconColor) =>
         Container(
           padding: const EdgeInsets.symmetric(
@@ -1569,12 +1569,52 @@ class _BidAlertRow extends StatelessWidget {
           ),
         );
 
+    // Date block: a surfaceMuted cell with a small label above the date value.
+    Widget dateBlock(IconData icon, String label, String value) => Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.sm,
+          vertical: AppSpace.sm,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 10, color: AppColors.textHint),
+                const SizedBox(width: AppSpace.xs),
+                Text(
+                  label,
+                  style: AppText.caption.copyWith(
+                    color: AppColors.textHint,
+                    fontSize: 10,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.bodyStrong.copyWith(color: AppColors.ink),
+            ),
+          ],
+        ),
+      ),
+    );
+
     final cardContent = Padding(
-      padding: const EdgeInsets.all(AppSpace.md),
+      padding: const EdgeInsets.all(AppSpace.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Title area ─────────────────────────────────────────────────────
+          // ── Title + time-ago ───────────────────────────────────────────────
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1584,111 +1624,65 @@ class _BidAlertRow extends StatelessWidget {
                   unread
                       ? Icons.notifications_active
                       : Icons.notifications_none_outlined,
-                  size: AppIconSize.sm,
+                  size: AppIconSize.md,
                   color: unread ? AppColors.brand : AppColors.textHint,
                 ),
               ),
               const SizedBox(width: AppSpace.sm),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: unread ? AppText.bodyStrong : AppText.body,
-                          ),
-                        ),
-                        if (created != null) ...[
-                          const SizedBox(width: AppSpace.sm),
-                          Text(
-                            _timeAgo(created),
-                            style: AppText.caption
-                                .copyWith(color: AppColors.textHint),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: AppSpace.sm),
-                    // ── Chips: buyer + delivery (always one line) ────────
-                    Row(
-                      children: [
-                        Flexible(
-                          child: chip(
-                            Icons.account_balance_outlined,
-                            buyer,
-                            AppColors.infoTint,
-                            AppColors.info,
-                          ),
-                        ),
-                        if (delivery != 'Not specified') ...[
-                          const SizedBox(width: AppSpace.xs),
-                          Flexible(
-                            child: chip(
-                              Icons.location_on_outlined,
-                              delivery,
-                              AppColors.surfaceMuted,
-                              AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
+                child: Text(
+                  title,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: unread ? AppText.title : AppText.body,
+                ),
+              ),
+              if (created != null) ...[
+                const SizedBox(width: AppSpace.sm),
+                Text(
+                  _timeAgo(created),
+                  style: AppText.caption.copyWith(color: AppColors.textHint),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: AppSpace.md),
+          // ── Chips: buyer + location (always both) ─────────────────────────
+          Row(
+            children: [
+              Flexible(
+                child: chip(
+                  Icons.account_balance_outlined,
+                  buyer,
+                  AppColors.infoTint,
+                  AppColors.info,
+                ),
+              ),
+              const SizedBox(width: AppSpace.xs),
+              Flexible(
+                child: chip(
+                  Icons.location_on_outlined,
+                  delivery,
+                  AppColors.surfaceMuted,
+                  AppColors.textSecondary,
                 ),
               ),
             ],
           ),
-          // ── Thin divider ───────────────────────────────────────────────────
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSpace.sm),
-            child: Divider(height: 1, thickness: 1, color: AppColors.border),
-          ),
-          // ── Date range ─────────────────────────────────────────────────────
+          const SizedBox(height: AppSpace.md),
+          // ── Date blocks: start + end side by side ─────────────────────────
           Row(
             children: [
-              Icon(
+              dateBlock(
                 Icons.calendar_today_outlined,
-                size: 12,
-                color: AppColors.textHint,
+                'STARTS',
+                startDisplay,
               ),
               const SizedBox(width: AppSpace.xs),
-              Flexible(
-                child: Text(
-                  startDisplay,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style:
-                      AppText.caption.copyWith(color: AppColors.textSecondary),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpace.xs),
-                child: Icon(
-                  Icons.arrow_forward,
-                  size: 11,
-                  color: AppColors.textHint,
-                ),
-              ),
-              Icon(
+              dateBlock(
                 Icons.event_available_outlined,
-                size: 12,
-                color: AppColors.textHint,
-              ),
-              const SizedBox(width: AppSpace.xs),
-              Flexible(
-                child: Text(
-                  endDisplay,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style:
-                      AppText.caption.copyWith(color: AppColors.textSecondary),
-                ),
+                'ENDS',
+                endDisplay,
               ),
             ],
           ),
