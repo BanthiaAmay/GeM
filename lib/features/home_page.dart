@@ -577,7 +577,7 @@ class _ToolsTab extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _PageHeader(
-          title: s.t('Tools', 'टूल'),
+          title: s.t('Documentation Assist', 'दस्तावेज़ सहायक'),
           subtitle: s.t(
             'Find and prepare the documents your tender requires.',
             'अपनी निविदा के लिए आवश्यक दस्तावेज़ खोजें और तैयार करें।',
