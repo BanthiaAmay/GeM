@@ -912,7 +912,7 @@ class AppStore extends ChangeNotifier {
   Future<void> _fetchDatesForBid(
       String id, String sourceUrl, String body) async {
     try {
-      // Extract GEM bid number from body: last segment starting with "GEM/"
+      // Extract GEM bid number from body
       String? gemBidNum;
       for (final part in body.split(' · ')) {
         if (part.trim().startsWith('GEM/')) {
@@ -920,55 +920,99 @@ class AppStore extends ChangeNotifier {
           break;
         }
       }
+      if (gemBidNum == null) return;
 
-      // Browser-like headers to avoid bot blocks
-      const headers = {
-        'User-Agent':
-            'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 '
+      final encoded = Uri.encodeComponent(gemBidNum);
+
+      // JSON API headers — signals an AJAX call, which the GeM Angular app
+      // routes to its backend API rather than the HTML shell.
+      final jsonHeaders = {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 '
             '(KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
+        'Accept': 'application/json, text/plain, */*',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Referer': 'https://bidplus.gem.gov.in/bidlists',
+        'Origin': 'https://bidplus.gem.gov.in',
       };
 
-      String? rawHtml;
+      // Googlebot UA can trigger Angular Universal / SSR on some portals
+      final botHeaders = {
+        'User-Agent': 'Googlebot/2.1 (+http://www.google.com/bot.html)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9',
+      };
 
-      // 1. Try the public GeM bid listing search page (no login required)
-      if (gemBidNum != null) {
-        final searchUrl =
-            'https://bidplus.gem.gov.in/bidlists?search_bid_number='
-            '${Uri.encodeComponent(gemBidNum)}&page_no=1';
-        final r = await http
-            .get(Uri.parse(searchUrl), headers: headers)
-            .timeout(const Duration(seconds: 15));
-        if (r.statusCode == 200 && r.body.length > 2000) rawHtml = r.body;
+      String? rawContent;
+
+      // 1. Try known GeM internal JSON API patterns
+      final jsonApis = [
+        'https://bidplus.gem.gov.in/gem-portal/api/getBidDetailsByBidNumber?bidNo=$encoded',
+        'https://bidplus.gem.gov.in/api/getBidsByBidNumber?bidNumber=$encoded',
+        'https://bidplus.gem.gov.in/gem-portal-api/api/v1/bidLists?searchBidNumber=$encoded',
+        'https://bidplus.gem.gov.in/api/bidLists/searchByBidNumber?bidNo=$encoded',
+      ];
+      for (final url in jsonApis) {
+        try {
+          final r = await http.get(Uri.parse(url), headers: jsonHeaders)
+              .timeout(const Duration(seconds: 12));
+          final ct = r.headers['content-type'] ?? '';
+          if (r.statusCode == 200 &&
+              (ct.contains('json') || r.body.trim().startsWith('{'))) {
+            rawContent = r.body;
+            break;
+          }
+        } catch (_) {}
       }
 
-      // 2. Fallback: try the original source URL
-      if (rawHtml == null && sourceUrl.isNotEmpty) {
-        final r = await http
-            .get(Uri.parse(sourceUrl), headers: headers)
-            .timeout(const Duration(seconds: 15));
-        if (r.statusCode == 200 && r.body.length > 2000) rawHtml = r.body;
+      // 2. HTML fallback: Googlebot UA to try triggering SSR
+      if (rawContent == null) {
+        try {
+          final r = await http.get(
+            Uri.parse('https://bidplus.gem.gov.in/bidlists'
+                '?search_bid_number=$encoded&page_no=1'),
+            headers: botHeaders,
+          ).timeout(const Duration(seconds: 20));
+          if (r.statusCode == 200 && r.body.length > 1000) {
+            rawContent = r.body;
+          }
+        } catch (_) {}
       }
 
-      if (rawHtml == null) return;
+      if (rawContent == null) return;
 
-      final text = rawHtml
-          .replaceAll(RegExp(r'<[^>]+>'), ' ')
-          .replaceAll(RegExp(r'\s+'), ' ');
+      // Extract from JSON key-value patterns first (API response or embedded JSON)
+      String? startDate = _extractJsonDate(rawContent, [
+        'startDate', 'start_date', 'bidStartDate', 'bid_start_date',
+        'openingDate', 'opening_date', 'BidStartDate', 'StartDate',
+        'bidOpeningDate', 'publishDate', 'publish_date',
+      ]);
+      String? endDate = _extractJsonDate(rawContent, [
+        'endDate', 'end_date', 'bidEndDate', 'bid_end_date',
+        'closingDate', 'closing_date', 'lastDate', 'last_date',
+        'BidEndDate', 'EndDate', 'LastDate', 'bidClosingDate',
+      ]);
 
-      final startDate = _extractBidDate(text, [
-        'Bid Opening Date and Time', 'Bid Opening Date',
-        'Start Date and Time', 'Start Date',
-        'Opening Date and Time', 'Opening Date',
-        'Bid Start Date',
-      ]);
-      final endDate = _extractBidDate(text, [
-        'Bid Closing Date and Time', 'Bid Closing Date',
-        'End Date and Time', 'End Date',
-        'Closing Date and Time', 'Closing Date',
-        'Last Date and Time', 'Last Date',
-        'Bid End Date',
-      ]);
+      // Fall back to labelled text in HTML
+      if (startDate == null || endDate == null) {
+        final text = rawContent
+            .replaceAll(RegExp(r'<[^>]+>'), ' ')
+            .replaceAll(RegExp(r'&nbsp;'), ' ')
+            .replaceAll(RegExp(r'&#\d+;'), ' ')
+            .replaceAll(RegExp(r'\s+'), ' ');
+        startDate ??= _extractBidDate(text, [
+          'Bid Opening Date and Time', 'Bid Opening Date',
+          'Start Date and Time', 'Start Date',
+          'Opening Date and Time', 'Opening Date',
+          'Bid Start Date', 'Publication Date',
+        ]);
+        endDate ??= _extractBidDate(text, [
+          'Bid Closing Date and Time', 'Bid Closing Date',
+          'End Date and Time', 'End Date',
+          'Closing Date and Time', 'Closing Date',
+          'Last Date and Time', 'Last Date',
+          'Bid End Date',
+        ]);
+      }
+
       if (startDate == null && endDate == null) return;
 
       final updates = <String, String>{
@@ -982,8 +1026,24 @@ class AppStore extends ChangeNotifier {
         notifyListeners();
       }
     } catch (_) {
-      // Non-fatal — dates stay null and show "Not available"
+      // Non-fatal — dates stay null, UI shows "View on GeM" link instead
     }
+  }
+
+  static String? _extractJsonDate(String content, List<String> keys) {
+    for (final key in keys) {
+      final re = RegExp(
+        '"$key"\\s*:\\s*"([^"]{5,25})"',
+        caseSensitive: false,
+      );
+      final m = re.firstMatch(content);
+      if (m != null) {
+        final v = m.group(1)!.trim();
+        final normalized = _normalizeToIso(v);
+        if (normalized != null) return normalized;
+      }
+    }
+    return null;
   }
 
   static String? _extractBidDate(String text, List<String> labels) {

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/models.dart';
 import '../core/motion.dart';
 import '../core/theme.dart';
@@ -1531,6 +1532,19 @@ class _BidAlertRow extends StatelessWidget {
 
     final startDisplay = _fmtDate(alert['bid_start_date'] as String?);
     final endDisplay = _fmtDate(alert['bid_end_date'] as String?);
+    final datesAvailable = alert['bid_start_date'] != null || alert['bid_end_date'] != null;
+
+    // Build the GeM search URL for the "View on GeM" fallback link
+    final gemBidNum = (() {
+      final b = alert['body'] as String? ?? '';
+      for (final part in b.split(' · ')) {
+        if (part.trim().startsWith('GEM/')) return part.trim();
+      }
+      return null;
+    })();
+    final gemUrl = gemBidNum != null
+        ? 'https://bidplus.gem.gov.in/bidlists?search_bid_number=${Uri.encodeComponent(gemBidNum)}'
+        : (alert['source_url'] as String? ?? '');
 
     final createdRaw = alert['created_at'];
     DateTime? created;
@@ -1709,22 +1723,49 @@ class _BidAlertRow extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpace.md),
-          // ── Date blocks: start + end side by side ─────────────────────────
-          Row(
-            children: [
-              dateBlock(
-                Icons.calendar_today_outlined,
-                'STARTS',
-                startDisplay,
+          // ── Date blocks: start + end, or fallback "View on GeM" ──────────
+          if (datesAvailable)
+            Row(
+              children: [
+                dateBlock(Icons.calendar_today_outlined, 'STARTS', startDisplay),
+                const SizedBox(width: AppSpace.xs),
+                dateBlock(Icons.event_available_outlined, 'ENDS', endDisplay),
+              ],
+            )
+          else if (gemUrl.isNotEmpty)
+            GestureDetector(
+              onTap: () async {
+                final uri = Uri.tryParse(gemUrl);
+                if (uri != null) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.md,
+                  vertical: AppSpace.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.open_in_new, size: 14, color: AppColors.brand),
+                    const SizedBox(width: AppSpace.xs),
+                    Text(
+                      'View bid dates on GeM',
+                      style: AppText.bodyStrong.copyWith(
+                        color: AppColors.brand,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: AppSpace.xs),
-              dateBlock(
-                Icons.event_available_outlined,
-                'ENDS',
-                endDisplay,
-              ),
-            ],
-          ),
+            ),
         ],
       ),
     );
