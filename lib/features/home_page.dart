@@ -1544,7 +1544,6 @@ class _BidAlertRow extends StatelessWidget {
     // Small pill chip with icon + label text.
     Widget chip(IconData icon, String text, Color bg, Color iconColor) =>
         Container(
-          constraints: const BoxConstraints(maxWidth: 170),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpace.sm,
             vertical: AppSpace.xs,
@@ -1616,24 +1615,28 @@ class _BidAlertRow extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: AppSpace.sm),
-                    // ── Chips: buyer + delivery ───────────────────────────
-                    Wrap(
-                      spacing: AppSpace.xs,
-                      runSpacing: AppSpace.xs,
+                    // ── Chips: buyer + delivery (always one line) ────────
+                    Row(
                       children: [
-                        chip(
-                          Icons.account_balance_outlined,
-                          buyer,
-                          AppColors.infoTint,
-                          AppColors.info,
-                        ),
-                        if (delivery != 'Not specified')
-                          chip(
-                            Icons.location_on_outlined,
-                            delivery,
-                            AppColors.surfaceMuted,
-                            AppColors.textSecondary,
+                        Flexible(
+                          child: chip(
+                            Icons.account_balance_outlined,
+                            buyer,
+                            AppColors.infoTint,
+                            AppColors.info,
                           ),
+                        ),
+                        if (delivery != 'Not specified') ...[
+                          const SizedBox(width: AppSpace.xs),
+                          Flexible(
+                            child: chip(
+                              Icons.location_on_outlined,
+                              delivery,
+                              AppColors.surfaceMuted,
+                              AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],
