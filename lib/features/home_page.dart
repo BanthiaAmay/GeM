@@ -1609,6 +1609,37 @@ class _BidAlertRow extends StatelessWidget {
       ),
     );
 
+    // Infer Goods vs Service from title keywords
+    final isService = () {
+      final l = title.toLowerCase();
+      return l.contains('service') ||
+          l.contains('repair') ||
+          l.contains('maintenance') ||
+          l.contains('operation') ||
+          l.contains('management') ||
+          l.contains('facility') ||
+          l.contains('consultanc') ||
+          l.contains('installation');
+    }();
+
+    // Small type pill shown below the bell icon
+    final typeBadge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: isService ? AppColors.violetTint : AppColors.warningTint,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Text(
+        isService ? 'Service' : 'Goods',
+        style: AppText.caption.copyWith(
+          color: isService ? AppColors.violet : AppColors.warning,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+
     final cardContent = Padding(
       padding: const EdgeInsets.all(AppSpace.lg),
       child: Column(
@@ -1618,15 +1649,23 @@ class _BidAlertRow extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Icon(
-                  unread
-                      ? Icons.notifications_active
-                      : Icons.notifications_none_outlined,
-                  size: AppIconSize.md,
-                  color: unread ? AppColors.brand : AppColors.textHint,
-                ),
+              // Bell icon + type badge stacked
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(
+                      unread
+                          ? Icons.notifications_active
+                          : Icons.notifications_none_outlined,
+                      size: AppIconSize.md,
+                      color: unread ? AppColors.brand : AppColors.textHint,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  typeBadge,
+                ],
               ),
               const SizedBox(width: AppSpace.sm),
               Expanded(
