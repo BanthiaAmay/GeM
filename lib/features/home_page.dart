@@ -1428,28 +1428,16 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
               ),
             )
           else
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: ClipRRect(
-                borderRadius: AppRadius.card,
-                child: Column(
-                  children: [
-                    for (int i = 0; i < rows.length; i++) ...[
-                      if (i > 0)
-                        const Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: AppColors.border,
-                        ),
-                      _BidAlertRow(
-                        alert: rows[i],
-                        onTap: () =>
-                            Navigator.of(context).pushNamed('/alerts'),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+            Column(
+              children: [
+                for (int i = 0; i < rows.length; i++) ...[
+                  if (i > 0) const SizedBox(height: AppSpace.sm),
+                  _BidAlertRow(
+                    alert: rows[i],
+                    onTap: () => Navigator.of(context).pushNamed('/alerts'),
+                  ),
+                ],
+              ],
             ),
         ],
       ),
@@ -1552,102 +1540,187 @@ class _BidAlertRow extends StatelessWidget {
       created = createdRaw;
     }
 
-    // Compact labeled row: icon + "Label: value"
-    Widget metaRow(IconData icon, String label, String value) => Padding(
-      padding: const EdgeInsets.only(top: AppSpace.xs),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 13, color: AppColors.textSecondary),
-          const SizedBox(width: AppSpace.xs),
-          Expanded(
-            child: Text(
-              '$label$value',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppText.caption.copyWith(color: AppColors.textSecondary),
-            ),
-          ),
-        ],
-      ),
-    );
 
-    final rowContent = Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpace.md,
-        vertical: AppSpace.md,
-      ),
-      child: Row(
+    // Small pill chip with icon + label text.
+    Widget chip(IconData icon, String text, Color bg, Color iconColor) =>
+        Container(
+          constraints: const BoxConstraints(maxWidth: 170),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.sm,
+            vertical: AppSpace.xs,
+          ),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 11, color: iconColor),
+              const SizedBox(width: AppSpace.xs),
+              Flexible(
+                child: Text(
+                  text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.caption.copyWith(color: AppColors.textSecondary),
+                ),
+              ),
+            ],
+          ),
+        );
+
+    final cardContent = Padding(
+      padding: const EdgeInsets.all(AppSpace.md),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Icon(
-              unread
-                  ? Icons.notifications_active
-                  : Icons.notifications_none_outlined,
-              size: AppIconSize.sm,
-              color: unread ? AppColors.brand : AppColors.textHint,
-            ),
-          ),
-          const SizedBox(width: AppSpace.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Row 1: bid name + time-ago
-                Row(
+          // ── Title area ─────────────────────────────────────────────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Icon(
+                  unread
+                      ? Icons.notifications_active
+                      : Icons.notifications_none_outlined,
+                  size: AppIconSize.sm,
+                  color: unread ? AppColors.brand : AppColors.textHint,
+                ),
+              ),
+              const SizedBox(width: AppSpace.sm),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: unread ? AppText.bodyStrong : AppText.bodySmall,
-                      ),
-                    ),
-                    if (created != null)
-                      Padding(
-                        padding: const EdgeInsets.only(left: AppSpace.sm, top: 1),
-                        child: Text(
-                          _timeAgo(created),
-                          style: AppText.caption.copyWith(color: AppColors.textHint),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: unread ? AppText.bodyStrong : AppText.body,
+                          ),
                         ),
-                      ),
+                        if (created != null) ...[
+                          const SizedBox(width: AppSpace.sm),
+                          Text(
+                            _timeAgo(created),
+                            style: AppText.caption
+                                .copyWith(color: AppColors.textHint),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: AppSpace.sm),
+                    // ── Chips: buyer + delivery ───────────────────────────
+                    Wrap(
+                      spacing: AppSpace.xs,
+                      runSpacing: AppSpace.xs,
+                      children: [
+                        chip(
+                          Icons.account_balance_outlined,
+                          buyer,
+                          AppColors.infoTint,
+                          AppColors.info,
+                        ),
+                        if (delivery != 'Not specified')
+                          chip(
+                            Icons.location_on_outlined,
+                            delivery,
+                            AppColors.surfaceMuted,
+                            AppColors.textSecondary,
+                          ),
+                      ],
+                    ),
                   ],
                 ),
-                // Row 2: Buyer
-                metaRow(Icons.account_balance_outlined, 'Buyer: ', buyer),
-                // Row 3: Delivery
-                metaRow(Icons.location_on_outlined, 'Delivery: ', delivery),
-                // Row 4: Start date
-                metaRow(Icons.calendar_today_outlined, 'Start: ', startDisplay),
-                // Row 5: End date
-                metaRow(Icons.event_available_outlined, 'End: ', endDisplay),
-              ],
-            ),
+              ),
+            ],
+          ),
+          // ── Thin divider ───────────────────────────────────────────────────
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpace.sm),
+            child: Divider(height: 1, thickness: 1, color: AppColors.border),
+          ),
+          // ── Date range ─────────────────────────────────────────────────────
+          Row(
+            children: [
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 12,
+                color: AppColors.textHint,
+              ),
+              const SizedBox(width: AppSpace.xs),
+              Flexible(
+                child: Text(
+                  startDisplay,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      AppText.caption.copyWith(color: AppColors.textSecondary),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpace.xs),
+                child: Icon(
+                  Icons.arrow_forward,
+                  size: 11,
+                  color: AppColors.textHint,
+                ),
+              ),
+              Icon(
+                Icons.event_available_outlined,
+                size: 12,
+                color: AppColors.textHint,
+              ),
+              const SizedBox(width: AppSpace.xs),
+              Flexible(
+                child: Text(
+                  endDisplay,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      AppText.caption.copyWith(color: AppColors.textSecondary),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
 
-    // Unread rows: branded left accent bar + subtle tint.
-    if (unread) {
-      return InkWell(
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.brandTint.withValues(alpha: 0.5),
-            border: const Border(
-              left: BorderSide(color: AppColors.brand, width: 3),
-            ),
+    // Individual elevated card — each alert is its own card with shadow.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.card,
+        boxShadow: AppShadow.card,
+      ),
+      child: ClipRRect(
+        borderRadius: AppRadius.card,
+        child: Material(
+          color: unread
+              ? AppColors.brandTint.withValues(alpha: 0.35)
+              : AppColors.surface,
+          child: InkWell(
+            onTap: onTap,
+            child: unread
+                ? Container(
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        left: BorderSide(color: AppColors.brand, width: 4),
+                      ),
+                    ),
+                    child: cardContent,
+                  )
+                : cardContent,
           ),
-          child: rowContent,
         ),
-      );
-    }
-    return InkWell(onTap: onTap, child: rowContent);
+      ),
+    );
   }
 }
 
