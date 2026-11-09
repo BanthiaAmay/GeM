@@ -1499,15 +1499,16 @@ class _BidAlertRow extends StatelessWidget {
   final VoidCallback onTap;
   const _BidAlertRow({required this.alert, required this.onTap});
 
+  // Returns "12 Nov 2026"; falls back to "Not available" for missing/unparseable.
   static String _fmtDate(String? raw) {
-    if (raw == null || raw.isEmpty) return '';
+    if (raw == null || raw.isEmpty) return 'Not available';
     final dt = DateTime.tryParse(raw);
-    if (dt == null) return raw; // already a display string
+    if (dt == null) return raw;
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
-    return '${dt.day} ${months[dt.month - 1]}';
+    return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
 
   @override
@@ -1515,24 +1516,22 @@ class _BidAlertRow extends StatelessWidget {
     final unread = alert['read_at'] == null;
     final title = alert['title'] as String? ?? '';
 
-    // Ministry: prefer dedicated field, fall back to dept
-    final ministry = (() {
+    // Buyer: ministry field → dept field → 'Not specified'
+    final buyer = (() {
       final m = alert['ministry'] as String?;
       if (m != null && m.isNotEmpty) return m;
-      return alert['dept'] as String? ?? '';
+      final d = alert['dept'] as String?;
+      if (d != null && d.isNotEmpty) return d;
+      return 'Not specified';
     })();
 
-    final location = alert['delivery_area'] as String? ?? '';
-    final ministryLine = [ministry, location]
-        .where((v) => v.isNotEmpty)
-        .join(' · ');
+    // Delivery location → 'Not specified'
+    final deliveryRaw = alert['delivery_area'] as String?;
+    final delivery =
+        (deliveryRaw != null && deliveryRaw.isNotEmpty) ? deliveryRaw : 'Not specified';
 
     final startDisplay = _fmtDate(alert['bid_start_date'] as String?);
     final endDisplay = _fmtDate(alert['bid_end_date'] as String?);
-    final showDates = startDisplay.isNotEmpty || endDisplay.isNotEmpty;
-
-    final eligibility = alert['eligibility'] as String?;
-    final showEligibility = eligibility != null && eligibility.isNotEmpty;
 
     final createdRaw = alert['created_at'];
     DateTime? created;
@@ -1541,6 +1540,26 @@ class _BidAlertRow extends StatelessWidget {
     } else if (createdRaw is DateTime) {
       created = createdRaw;
     }
+
+    // Compact labeled row: icon + "Label: value"
+    Widget metaRow(IconData icon, String label, String value) => Padding(
+      padding: const EdgeInsets.only(top: AppSpace.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 13, color: AppColors.textSecondary),
+          const SizedBox(width: AppSpace.xs),
+          Expanded(
+            child: Text(
+              '$label$value',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.caption.copyWith(color: AppColors.textSecondary),
+            ),
+          ),
+        ],
+      ),
+    );
 
     final rowContent = Padding(
       padding: const EdgeInsets.symmetric(
@@ -1565,6 +1584,7 @@ class _BidAlertRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Row 1: bid name + time-ago
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1586,54 +1606,22 @@ class _BidAlertRow extends StatelessWidget {
                       ),
                   ],
                 ),
-                if (ministryLine.isNotEmpty) ...[
-                  const SizedBox(height: AppSpace.xs),
-                  Text(
-                    ministryLine,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.secondary(AppText.caption),
-                  ),
-                ],
-                if (showDates) ...[
-                  const SizedBox(height: AppSpace.xs),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today_outlined,
-                        size: 11,
-                        color: AppColors.info,
-                      ),
-                      const SizedBox(width: AppSpace.xs),
-                      Text(
-                        [
-                          if (startDisplay.isNotEmpty) startDisplay,
-                          if (endDisplay.isNotEmpty) endDisplay,
-                        ].join(' → '),
-                        style: AppText.caption.copyWith(color: AppColors.info),
-                      ),
-                    ],
-                  ),
-                ],
-                if (showEligibility) ...[
-                  const SizedBox(height: AppSpace.xs),
-                  Text(
-                    eligibility,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.caption.copyWith(
-                      color: AppColors.textSecondary,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
+                // Row 2: Buyer
+                metaRow(Icons.account_balance_outlined, 'Buyer: ', buyer),
+                // Row 3: Delivery
+                metaRow(Icons.location_on_outlined, 'Delivery: ', delivery),
+                // Row 4: Start date
+                metaRow(Icons.calendar_today_outlined, 'Start: ', startDisplay),
+                // Row 5: End date
+                metaRow(Icons.event_available_outlined, 'End: ', endDisplay),
               ],
             ),
           ),
         ],
       ),
     );
-    // Unread rows get a branded left accent bar + subtle tint.
+
+    // Unread rows: branded left accent bar + subtle tint.
     if (unread) {
       return InkWell(
         onTap: onTap,
