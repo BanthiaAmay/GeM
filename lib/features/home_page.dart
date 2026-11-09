@@ -1499,12 +1499,36 @@ class _BidAlertRow extends StatelessWidget {
   final VoidCallback onTap;
   const _BidAlertRow({required this.alert, required this.onTap});
 
+  static String _fmtDate(String? raw) {
+    if (raw == null || raw.isEmpty) return '';
+    final dt = DateTime.tryParse(raw);
+    if (dt == null) return raw; // already a display string
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${dt.day} ${months[dt.month - 1]}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final unread = alert['read_at'] == null;
     final title = alert['title'] as String? ?? '';
-    final dept = alert['dept'] as String? ?? '';
-    final gemId = alert['gem_id'] as String? ?? '';
+
+    // Ministry: prefer dedicated field, fall back to dept
+    final ministry = (() {
+      final m = alert['ministry'] as String?;
+      if (m != null && m.isNotEmpty) return m;
+      return alert['dept'] as String? ?? '';
+    })();
+
+    final startDisplay = _fmtDate(alert['bid_start_date'] as String?);
+    final endDisplay = _fmtDate(alert['bid_end_date'] as String?);
+    final showDates = startDisplay.isNotEmpty || endDisplay.isNotEmpty;
+
+    final eligibility = alert['eligibility'] as String?;
+    final showEligibility = eligibility != null && eligibility.isNotEmpty;
+
     final createdRaw = alert['created_at'];
     DateTime? created;
     if (createdRaw is String) {
@@ -1512,50 +1536,95 @@ class _BidAlertRow extends StatelessWidget {
     } else if (createdRaw is DateTime) {
       created = createdRaw;
     }
-    final meta = [dept, gemId].where((v) => v.isNotEmpty).join(' · ');
+
     final rowContent = Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpace.lg,
+        horizontal: AppSpace.md,
         vertical: AppSpace.md,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            unread
-                ? Icons.notifications_active
-                : Icons.notifications_none_outlined,
-            size: AppIconSize.md,
-            color: unread ? AppColors.brand : AppColors.textHint,
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(
+              unread
+                  ? Icons.notifications_active
+                  : Icons.notifications_none_outlined,
+              size: AppIconSize.sm,
+              color: unread ? AppColors.brand : AppColors.textHint,
+            ),
           ),
           const SizedBox(width: AppSpace.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: unread ? AppText.bodyStrong : AppText.bodySmall,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: unread ? AppText.bodyStrong : AppText.bodySmall,
+                      ),
+                    ),
+                    if (created != null)
+                      Padding(
+                        padding: const EdgeInsets.only(left: AppSpace.sm, top: 1),
+                        child: Text(
+                          _timeAgo(created),
+                          style: AppText.caption.copyWith(color: AppColors.textHint),
+                        ),
+                      ),
+                  ],
                 ),
-                if (meta.isNotEmpty)
+                if (ministry.isNotEmpty) ...[
+                  const SizedBox(height: AppSpace.xs),
                   Text(
-                    meta,
+                    ministry,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.secondary(AppText.caption),
                   ),
+                ],
+                if (showDates) ...[
+                  const SizedBox(height: AppSpace.xs),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 11,
+                        color: AppColors.info,
+                      ),
+                      const SizedBox(width: AppSpace.xs),
+                      Text(
+                        [
+                          if (startDisplay.isNotEmpty) startDisplay,
+                          if (endDisplay.isNotEmpty) endDisplay,
+                        ].join(' → '),
+                        style: AppText.caption.copyWith(color: AppColors.info),
+                      ),
+                    ],
+                  ),
+                ],
+                if (showEligibility) ...[
+                  const SizedBox(height: AppSpace.xs),
+                  Text(
+                    eligibility,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.caption.copyWith(
+                      color: AppColors.textSecondary,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-          if (created != null)
-            Padding(
-              padding: const EdgeInsets.only(left: AppSpace.sm),
-              child: Text(
-                _timeAgo(created),
-                style: AppText.caption.copyWith(color: AppColors.textHint),
-              ),
-            ),
         ],
       ),
     );
