@@ -97,6 +97,22 @@ function extractEligibility(text: string): string | null {
   return null;
 }
 
+function extractDeliveryArea(text: string): string | null {
+  const labels = [
+    "Delivery Location",
+    "Consignee Location",
+    "Place of Delivery",
+    "Service Location",
+    "Delivery Place",
+  ];
+  for (const label of labels) {
+    const re = new RegExp(label + "[:\\s]+([A-Z][^\\n,]{2,60})", "i");
+    const m = text.match(re);
+    if (m) return m[1].trim().slice(0, 60);
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 
 Deno.serve(async (req: Request) => {
@@ -153,6 +169,7 @@ Deno.serve(async (req: Request) => {
       "Bid End Date", "End Date", "Closing Date", "Bid Closing", "Last Date",
     ]),
     eligibility: extractEligibility(pdfText),
+    delivery_area: extractDeliveryArea(pdfText),
   };
 
   const { error } = await supabase

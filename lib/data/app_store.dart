@@ -73,6 +73,8 @@ class AppStore extends ChangeNotifier {
   /// Bids closing within the next 2 days on GeM (fetched on init; null while loading or failed).
   int? gemDeadlinesCount;
 
+  Timer? _gemStatsTimer;
+
   List<Map<String, dynamic>> gemVideosOf(Set<String> kinds) => [
     for (final video in gemVideos)
       if (kinds.contains(video['kind'])) video,
@@ -201,6 +203,10 @@ class AppStore extends ChangeNotifier {
       await loadAlerts();
     }
     unawaited(loadGemStats());
+    _gemStatsTimer = Timer.periodic(
+      const Duration(hours: 2),
+      (_) => unawaited(loadGemStats()),
+    );
     event('page_view', page: 'home');
     await persist();
     if (client != null) {
@@ -822,6 +828,7 @@ class AppStore extends ChangeNotifier {
 
   @override
   void dispose() {
+    _gemStatsTimer?.cancel();
     _authSubscription?.cancel();
     super.dispose();
   }

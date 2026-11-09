@@ -1522,6 +1522,11 @@ class _BidAlertRow extends StatelessWidget {
       return alert['dept'] as String? ?? '';
     })();
 
+    final location = alert['delivery_area'] as String? ?? '';
+    final ministryLine = [ministry, location]
+        .where((v) => v.isNotEmpty)
+        .join(' · ');
+
     final startDisplay = _fmtDate(alert['bid_start_date'] as String?);
     final endDisplay = _fmtDate(alert['bid_end_date'] as String?);
     final showDates = startDisplay.isNotEmpty || endDisplay.isNotEmpty;
@@ -1581,10 +1586,10 @@ class _BidAlertRow extends StatelessWidget {
                       ),
                   ],
                 ),
-                if (ministry.isNotEmpty) ...[
+                if (ministryLine.isNotEmpty) ...[
                   const SizedBox(height: AppSpace.xs),
                   Text(
-                    ministry,
+                    ministryLine,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.secondary(AppText.caption),
