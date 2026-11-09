@@ -108,7 +108,7 @@ class _BidFeedState extends State<BidFeed> {
         'अभी कोई मेल खाती खुली बोली नहीं',
       ),
       message: s.t(
-        'New GeM bids are checked through the day. You'll be notified when one matches.',
+        "New GeM bids are checked through the day. You'll be notified when one matches.",
         'नई GeM बोलियाँ दिन भर देखी जाती हैं। मेल खाने पर आपको सूचना मिलेगी।',
       ),
     );
