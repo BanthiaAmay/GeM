@@ -64,7 +64,6 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
   EscalationMatrixInput? _input;
   List<LetterBlock>? _blocks;
   List<TextEditingController>? _editors;
-  double _extraTop = 0;
   bool _confirmed = false;
   bool _busy = false;
 
@@ -269,7 +268,6 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
       _blocks = null;
       _input = null;
       _confirmed = false;
-      _extraTop = 0;
       _step = _Step.details;
     });
   }
@@ -317,7 +315,7 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
       );
       await Printing.layoutPdf(
         name: _fileStem,
-        onLayout: (_) => buildLetterPdf(_blocks!, extraTopMarginPt: _extraTop),
+        onLayout: (_) => buildLetterPdf(_blocks!, extraTopMarginPt: 0),
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -332,7 +330,7 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
         page: 'tool-escalation',
         props: {'action': 'share'},
       );
-      final bytes = await buildLetterPdf(_blocks!, extraTopMarginPt: _extraTop);
+      final bytes = await buildLetterPdf(_blocks!, extraTopMarginPt: 0);
       await Printing.sharePdf(bytes: bytes, filename: '$_fileStem.pdf');
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -679,20 +677,9 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
         style: AppText.caption,
       ),
       const SizedBox(height: AppSpace.lg),
-      Text(
-        t('Top margin (for letterhead)', 'ऊपरी मार्जिन (लेटरहेड के लिए)'),
-        style: AppText.label,
-      ),
-      Slider(
-        value: _extraTop,
-        min: 0,
-        max: kLetterMaxExtraTopMarginPt,
-        onChanged: (v) => setState(() => _extraTop = v),
-      ),
       LetterPaper(
         blocks: _blocks!,
-        extraTopMargin: _extraTop / 2,
-        editors: _editors,
+                editors: _editors,
       ),
       const SizedBox(height: AppSpace.lg),
       AppCard(
