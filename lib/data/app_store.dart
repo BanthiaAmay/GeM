@@ -898,35 +898,79 @@ class AppStore extends ChangeNotifier {
   Future<void> _enrichMissingDates() async {
     if (client == null || !signedIn) return;
     final toEnrich = bidNotifications.where((n) =>
-      n['bid_start_date'] == null &&
-      n['source_url'] != null &&
-      (n['source_url'] as String).isNotEmpty,
+      n['bid_start_date'] == null,
     ).toList();
     for (final bid in toEnrich) {
       unawaited(_fetchDatesForBid(
         bid['id'] as String,
-        bid['source_url'] as String,
+        bid['source_url'] as String? ?? '',
+        bid['body'] as String? ?? '',
       ));
     }
   }
 
-  Future<void> _fetchDatesForBid(String id, String sourceUrl) async {
+  Future<void> _fetchDatesForBid(
+      String id, String sourceUrl, String body) async {
     try {
-      final resp = await http
-          .get(Uri.parse(sourceUrl), headers: {'User-Agent': 'Bid2Scale/1.0'})
-          .timeout(const Duration(seconds: 15));
-      if (resp.statusCode != 200) return;
-      // Strip HTML tags to get searchable plain text
-      final text = resp.body
+      // Extract GEM bid number from body: last segment starting with "GEM/"
+      String? gemBidNum;
+      for (final part in body.split(' · ')) {
+        if (part.trim().startsWith('GEM/')) {
+          gemBidNum = part.trim();
+          break;
+        }
+      }
+
+      // Browser-like headers to avoid bot blocks
+      const headers = {
+        'User-Agent':
+            'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 '
+            '(KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+      };
+
+      String? rawHtml;
+
+      // 1. Try the public GeM bid listing search page (no login required)
+      if (gemBidNum != null) {
+        final searchUrl =
+            'https://bidplus.gem.gov.in/bidlists?search_bid_number='
+            '${Uri.encodeComponent(gemBidNum)}&page_no=1';
+        final r = await http
+            .get(Uri.parse(searchUrl), headers: headers)
+            .timeout(const Duration(seconds: 15));
+        if (r.statusCode == 200 && r.body.length > 2000) rawHtml = r.body;
+      }
+
+      // 2. Fallback: try the original source URL
+      if (rawHtml == null && sourceUrl.isNotEmpty) {
+        final r = await http
+            .get(Uri.parse(sourceUrl), headers: headers)
+            .timeout(const Duration(seconds: 15));
+        if (r.statusCode == 200 && r.body.length > 2000) rawHtml = r.body;
+      }
+
+      if (rawHtml == null) return;
+
+      final text = rawHtml
           .replaceAll(RegExp(r'<[^>]+>'), ' ')
           .replaceAll(RegExp(r'\s+'), ' ');
+
       final startDate = _extractBidDate(text, [
-        'Bid Opening Date', 'Start Date', 'Opening Date', 'Bid Start Date',
+        'Bid Opening Date and Time', 'Bid Opening Date',
+        'Start Date and Time', 'Start Date',
+        'Opening Date and Time', 'Opening Date',
+        'Bid Start Date',
       ]);
       final endDate = _extractBidDate(text, [
-        'Bid Closing Date', 'End Date', 'Closing Date', 'Last Date', 'Bid End Date',
+        'Bid Closing Date and Time', 'Bid Closing Date',
+        'End Date and Time', 'End Date',
+        'Closing Date and Time', 'Closing Date',
+        'Last Date and Time', 'Last Date',
+        'Bid End Date',
       ]);
       if (startDate == null && endDate == null) return;
+
       final updates = <String, String>{
         if (startDate != null) 'bid_start_date': startDate,
         if (endDate != null) 'bid_end_date': endDate,
@@ -944,8 +988,10 @@ class AppStore extends ChangeNotifier {
 
   static String? _extractBidDate(String text, List<String> labels) {
     for (final label in labels) {
+      // Match date with optional trailing time (e.g., "12/11/2026 14:00:00")
       final re = RegExp(
-        '$label[:\\s]+([\\d]{1,2}[\\s\\/\\-][A-Za-z\\d]{2,3}[\\s\\/\\-][\\d]{4})',
+        '$label[:\\s]+'
+        r'(\d{1,2}[\/\-\s][A-Za-z\d]{2,3}[\/\-\s]\d{4}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?)',
         caseSensitive: false,
       );
       final m = re.firstMatch(text);
@@ -955,13 +1001,36 @@ class AppStore extends ChangeNotifier {
   }
 
   static String? _normalizeToIso(String raw) {
+    // Strip optional trailing time
+    final cleaned = raw.split(RegExp(r'\s+\d{1,2}:\d{2}')).first.trim();
+
     // dd/mm/yyyy or dd-mm-yyyy
-    final dmy = RegExp(r'^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$').firstMatch(raw);
+    final dmy =
+        RegExp(r'^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})').firstMatch(cleaned);
     if (dmy != null) {
-      return '${dmy.group(3)}-${dmy.group(2)!.padLeft(2, '0')}-${dmy.group(1)!.padLeft(2, '0')}';
+      return '${dmy.group(3)}-${dmy.group(2)!.padLeft(2, '0')}'
+          '-${dmy.group(1)!.padLeft(2, '0')}';
     }
+
+    // dd MMM yyyy or dd-MMM-yyyy  (e.g. "12 Nov 2026" or "12-Nov-2026")
+    const months = {
+      'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04',
+      'may': '05', 'jun': '06', 'jul': '07', 'aug': '08',
+      'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12',
+    };
+    final mon3 =
+        RegExp(r'^(\d{1,2})[\s\-]([A-Za-z]{3})\w*[\s\-](\d{4})').firstMatch(cleaned);
+    if (mon3 != null) {
+      final m = months[mon3.group(2)!.toLowerCase().substring(0, 3)];
+      if (m != null) {
+        return '${mon3.group(3)}-$m-${mon3.group(1)!.padLeft(2, '0')}';
+      }
+    }
+
     // Already ISO
-    if (RegExp(r'^\d{4}-\d{2}-\d{2}').hasMatch(raw)) return raw.substring(0, 10);
+    if (RegExp(r'^\d{4}-\d{2}-\d{2}').hasMatch(cleaned)) {
+      return cleaned.substring(0, 10);
+    }
     return null;
   }
 
