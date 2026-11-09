@@ -437,7 +437,7 @@ class _BankSolvencyPageState extends State<BankSolvencyPage> {
         // Mode description
         AppCard(
           tone: _mode == _DocMode.referenceFormat
-              ? AppCardTone.warning
+              ? AppCardTone.brand
               : AppCardTone.muted,
           padding: const EdgeInsets.all(AppSpace.md),
           child: Text(
