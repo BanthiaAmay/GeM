@@ -31,7 +31,7 @@ enum _Tab { home, tools, calculators, financialHub, profile }
 /// so the two stay in lockstep instead of drifting apart.
 List<(_Tab, IconData, IconData, String)> _navItems(AppStore s) => [
   (_Tab.home, Icons.home_outlined, Icons.home, s.t('Home', 'होम')),
-  (_Tab.tools, Icons.build_outlined, Icons.build, s.t('Tools', 'टूल')),
+  (_Tab.tools, Icons.build_outlined, Icons.build, s.t('Documentation Assist', 'दस्तावेज़ सहायक')),
   (
     _Tab.calculators,
     Icons.calculate_outlined,
