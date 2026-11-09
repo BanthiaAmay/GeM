@@ -40,6 +40,7 @@ import 'features/bid_docs/oem_authorization_page.dart';
 import 'features/bid_docs/msme_emd_page.dart';
 import 'features/bid_docs/msme_turnover_page.dart';
 import 'features/bid_docs/warranty_declaration_page.dart';
+import 'features/bid_docs/bank_solvency_page.dart';
 import 'features/search/bid_detail_page.dart';
 import 'features/search/search_page.dart';
 import 'features/search/search_store.dart';
@@ -467,6 +468,8 @@ class SaathiApp extends StatelessWidget {
                 ? LandBorderDeclarationPage(store: store)
                 : page == 'tool-mrp-declaration'
                 ? MrpDeclarationPage(store: store)
+                : page == 'tool-bank-solvency'
+                ? BankSolvencyPage(store: store)
                 : page == 'search'
                 ? SearchPage(
                     store: store,

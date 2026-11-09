@@ -269,4 +269,18 @@ const List<ToolEntry> kTools = [
         'GeM बिड जमा करने के लिए अपने उत्पादों की अधिकतम खुदरा कीमत (MRP) घोषित करें',
     badge: ('PDF', 'PDF'),
   ),
+  ToolEntry(
+    id: 'bank-solvency-certificate',
+    route: '/tool-bank-solvency',
+    icon: Icons.account_balance_wallet_outlined,
+    group: ToolGroup.bidDocuments,
+    docCategory: DocCategory.certificates,
+    titleEn: 'Bank Solvency Certificate',
+    titleHi: 'बैंक सॉल्वेंसी प्रमाणपत्र',
+    descriptionEn:
+        'Generate a request letter or reference format for your Bank Solvency Certificate',
+    descriptionHi:
+        'बैंक सॉल्वेंसी प्रमाणपत्र के लिए अनुरोध पत्र या संदर्भ प्रारूप बनाएँ',
+    badge: ('PDF', 'PDF'),
+  ),
 ];
