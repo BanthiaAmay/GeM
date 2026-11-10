@@ -59,6 +59,38 @@ class AppStore extends ChangeNotifier {
   List<Map<String, dynamic>> bidNotifications = [];
   String? alertsError;
 
+  // ─────────────────── Bid Comparison Selection ───────────────────────────
+  /// Up to 3 bids the user has toggled into the comparison tray.
+  final List<Map<String, dynamic>> compareSelection = [];
+
+  bool inCompare(Map<String, dynamic> bid) {
+    final id = bid['source_id'] as String? ?? bid['id'] as String? ?? '';
+    return compareSelection.any(
+      (b) => (b['source_id'] ?? b['id'] ?? '') == id,
+    );
+  }
+
+  /// Returns true if the bid was added, false if removed or tray is full.
+  bool toggleCompare(Map<String, dynamic> bid) {
+    if (inCompare(bid)) {
+      final id = bid['source_id'] as String? ?? bid['id'] as String? ?? '';
+      compareSelection.removeWhere(
+        (b) => (b['source_id'] ?? b['id'] ?? '') == id,
+      );
+      notifyListeners();
+      return false;
+    }
+    if (compareSelection.length >= 3) return false;
+    compareSelection.add(bid);
+    notifyListeners();
+    return true;
+  }
+
+  void clearCompare() {
+    compareSelection.clear();
+    notifyListeners();
+  }
+
   /// Official GeM YouTube videos saved by the server (scripts/gem_videos.py),
   /// newest first: weekly bulletins for Home and News, and the other uploads
   /// (kind `tip`, `learning` or `story`) for Trainings and News.

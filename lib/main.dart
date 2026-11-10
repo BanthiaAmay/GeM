@@ -41,6 +41,8 @@ import 'features/bid_docs/msme_emd_page.dart';
 import 'features/bid_docs/msme_turnover_page.dart';
 import 'features/bid_docs/warranty_declaration_page.dart';
 import 'features/bid_docs/bank_solvency_page.dart';
+import 'features/bid_advisor.dart' show AdvisorPage;
+import 'features/bid_compare.dart' show BidComparePage;
 import 'features/search/bid_detail_page.dart';
 import 'features/search/search_page.dart';
 import 'features/search/search_store.dart';
@@ -485,6 +487,10 @@ class SaathiApp extends StatelessWidget {
                         ? settings.arguments as String
                         : null,
                   )
+                : page == 'compare'
+                ? BidComparePage(store: store)
+                : page == 'advisor'
+                ? AdvisorPage(store: store)
                 : page == 'trainings'
                 ? TrainingsPage(store: store)
                 : page == 'training-module'
