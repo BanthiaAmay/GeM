@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import '../core/models.dart' show money;
 import '../core/theme.dart';
 import '../data/app_store.dart';
-import 'bid_advisor.dart' show showBidAdvisorSheet;
 import 'bid_compare.dart' show CompareBar, CompareToggleButton;
 import 'bid_filter.dart';
 import 'components.dart';
@@ -680,25 +679,10 @@ class _BidCard extends StatelessWidget {
               ],
               const SizedBox(height: AppSpace.md),
 
-              // ── Action row: Compare toggle + Advisor + View ─────────────
-              Row(
-                children: [
-                  ListenableBuilder(
-                    listenable: s,
-                    builder: (context, _) =>
-                        CompareToggleButton(store: s, bid: bid),
-                  ),
-                  const SizedBox(width: AppSpace.sm),
-                  _ActionChip(
-                    icon: Icons.auto_awesome_outlined,
-                    label: s.t('Get advice', 'सलाह लें'),
-                    onTap: () => showBidAdvisorSheet(
-                      context: context,
-                      store: s,
-                      bid: bid,
-                    ),
-                  ),
-                ],
+              ListenableBuilder(
+                listenable: s,
+                builder: (context, _) =>
+                    CompareToggleButton(store: s, bid: bid),
               ),
               const SizedBox(height: AppSpace.sm),
               AppButton(
