@@ -9,8 +9,6 @@ import '../data/app_store.dart';
 import 'components.dart';
 import 'glass.dart';
 import 'scroll_hint.dart';
-import 'widgets.dart' show openLink;
-import 'youtube_video.dart';
 
 /// One entry per screen in the "not yet on GeM" 15-step walkthrough,
 /// in the order the flow is actually walked. This is the single
@@ -1154,15 +1152,6 @@ class OnboardingCheckOption extends StatefulWidget {
   final bool checked;
   final VoidCallback onTap;
 
-  /// When non-null, opens the tutorial YouTube video. Requires [store].
-  final String? tutorialVideoId;
-
-  /// When non-null (and [tutorialVideoId] is null), opens the portal in
-  /// the system browser. Requires [store].
-  final String? tutorialUrl;
-
-  final AppStore? store;
-
   const OnboardingCheckOption({
     super.key,
     this.icon,
@@ -1172,9 +1161,6 @@ class OnboardingCheckOption extends StatefulWidget {
     this.sublabel,
     required this.checked,
     required this.onTap,
-    this.tutorialVideoId,
-    this.tutorialUrl,
-    this.store,
   });
 
   @override
@@ -1225,57 +1211,6 @@ class _OnboardingCheckOptionState extends State<OnboardingCheckOption>
                     Text(widget.label, style: AppText.input),
                     if (widget.sublabel != null)
                       Text(widget.sublabel!, style: AppText.caption),
-                    if (widget.store != null &&
-                        (widget.tutorialVideoId != null ||
-                            widget.tutorialUrl != null)) ...[
-                      const SizedBox(height: AppSpace.xs),
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          if (widget.tutorialVideoId != null) {
-                            openYouTubeVideo(
-                              context,
-                              widget.store!,
-                              widget.tutorialVideoId!,
-                            );
-                          } else {
-                            openLink(
-                              context,
-                              widget.store!,
-                              widget.tutorialUrl!,
-                            );
-                          }
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              widget.tutorialVideoId != null
-                                  ? Icons.play_circle_outline
-                                  : Icons.open_in_new,
-                              size: AppIconSize.sm,
-                              color: AppColors.brand,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              widget.tutorialVideoId != null
-                                  ? widget.store!.t(
-                                      'Watch how to get it →',
-                                      'देखें कैसे मिलेगा →',
-                                    )
-                                  : widget.store!.t(
-                                      'Visit official portal →',
-                                      'आधिकारिक पोर्टल देखें →',
-                                    ),
-                              style: AppText.caption.copyWith(
-                                color: AppColors.brand,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
