@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../core/models.dart' show money;
 import '../core/theme.dart';
 import '../data/app_store.dart';
+import 'bid_filter.dart';
 import 'components.dart';
 import 'widgets.dart' show openLink;
 
@@ -24,6 +25,43 @@ class _BidFeedState extends State<BidFeed> {
   late _FeedView view = widget.store.bidKeywords.isEmpty
       ? _FeedView.latest
       : _FeedView.matching;
+
+  // Independent filter states per tab
+  BidFilterState _forYouFilter = BidFilterState.empty;
+  BidFilterState _latestFilter = BidFilterState.empty;
+  final _searchCtrl = TextEditingController();
+
+  BidFilterState get _currentFilter =>
+      view == _FeedView.matching ? _forYouFilter : _latestFilter;
+
+  void _setCurrentFilter(BidFilterState f) {
+    setState(() {
+      if (view == _FeedView.matching) {
+        _forYouFilter = f;
+      } else {
+        _latestFilter = f;
+      }
+    });
+  }
+
+  List<Map<String, dynamic>> get _displayBids =>
+      BidFilterLogic.apply(bids, _currentFilter);
+
+  Future<void> _openFilter() async {
+    final result = await showBidFilterSheet(
+      context: context,
+      store: widget.store,
+      current: _currentFilter,
+      allBids: bids,
+    );
+    if (result != null && mounted) _setCurrentFilter(result);
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -170,13 +208,42 @@ class _BidFeedState extends State<BidFeed> {
             ),
             const SizedBox(width: AppSpace.sm),
             _ActionChip(
+              icon: Icons.filter_list,
+              label: _currentFilter.activeCount > 0
+                  ? '${s.t('Filter', 'फ़िल्टर')} (${_currentFilter.activeCount})'
+                  : s.t('Filter', 'फ़िल्टर'),
+              onTap: bids.isEmpty ? null : _openFilter,
+              active: _currentFilter.activeCount > 0,
+            ),
+            const SizedBox(width: AppSpace.sm),
+            _ActionChip(
               icon: Icons.tune_outlined,
               label: s.t('Set alerts', 'अलर्ट चुनें'),
               onTap: () => Navigator.pushNamed(context, '/alerts'),
             ),
           ],
         ),
-        const SizedBox(height: AppSpace.lg),
+        const SizedBox(height: AppSpace.sm),
+        // ── Search field ────────────────────────────────────────────────────
+        _SearchBar(
+          store: s,
+          controller: _searchCtrl,
+          onChanged: (q) {
+            final f = _currentFilter.copyWith(searchQuery: q);
+            _setCurrentFilter(f);
+          },
+        ),
+        const SizedBox(height: AppSpace.sm),
+        // ── Active filter chips ─────────────────────────────────────────────
+        if (_currentFilter.activeCount > 0) ...[
+          ActiveFilterChips(
+            filter: _currentFilter,
+            store: s,
+            onChanged: _setCurrentFilter,
+          ),
+          const SizedBox(height: AppSpace.sm),
+        ],
+        const SizedBox(height: AppSpace.sm),
 
         // ── Content ─────────────────────────────────────────────────────────
         if (loading)
@@ -193,12 +260,46 @@ class _BidFeedState extends State<BidFeed> {
           )
         else if (bids.isEmpty)
           _empty(s),
-        if (!loading && error == null)
-          for (final bid in bids)
+        if (!loading && error == null) ...[
+          // Result count when filters are active
+          if (_currentFilter.hasAny) ...[
+            Builder(
+              builder: (_) {
+                final shown = _displayBids.length;
+                final total = bids.length;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpace.sm),
+                  child: Text(
+                    s.t(
+                      'Showing $shown of $total bids',
+                      '$total में से $shown बोलियाँ दिख रही हैं',
+                    ),
+                    style: AppText.caption.copyWith(color: AppColors.textHint),
+                  ),
+                );
+              },
+            ),
+          ],
+          if (_displayBids.isEmpty && bids.isNotEmpty)
+            StateView(
+              kind: StateKind.empty,
+              title: s.t(
+                'No bids match your filters',
+                'कोई बोली फ़िल्टर से नहीं मिली',
+              ),
+              message: s.t(
+                'Try removing some filters or clearing all.',
+                'कुछ फ़िल्टर हटाएँ या सब हटाएँ।',
+              ),
+              actionLabel: s.t('Clear filters', 'फ़िल्टर हटाएँ'),
+              onAction: () => _setCurrentFilter(BidFilterState.empty),
+            ),
+          for (final bid in _displayBids)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpace.lg),
               child: _BidCard(store: s, bid: bid),
             ),
+        ],
         const SizedBox(height: AppSpace.xxl),
         AppButton(
           label: s.t('Browse official GeM bids', 'आधिकारिक GeM बोलियाँ देखें'),
@@ -217,39 +318,111 @@ class _ActionChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
-  const _ActionChip({required this.icon, required this.label, this.onTap});
+  final bool active;
+  const _ActionChip({
+    required this.icon,
+    required this.label,
+    this.onTap,
+    this.active = false,
+  });
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpace.md,
-        vertical: AppSpace.sm,
+  Widget build(BuildContext context) {
+    final disabled = onTap == null;
+    final bg = disabled
+        ? AppColors.surfaceMuted
+        : active
+            ? AppColors.brand
+            : AppColors.brandTint;
+    final fg = disabled
+        ? AppColors.textHint
+        : active
+            ? AppColors.surface
+            : AppColors.brand;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.md,
+          vertical: AppSpace.sm,
+        ),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: fg),
+            const SizedBox(width: AppSpace.xs),
+            Text(label, style: AppText.label.copyWith(color: fg)),
+          ],
+        ),
       ),
-      decoration: BoxDecoration(
-        color: onTap == null ? AppColors.surfaceMuted : AppColors.brandTint,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
+    );
+  }
+}
+
+// ── Search bar below the action chips ────────────────────────────────────────
+class _SearchBar extends StatelessWidget {
+  final AppStore store;
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  const _SearchBar({
+    required this.store,
+    required this.controller,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final s = store;
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      style: AppText.body,
+      decoration: InputDecoration(
+        hintText: s.t('Search bids, ID, buyer…', 'बोली, ID, खरीदार खोजें…'),
+        hintStyle: AppText.caption.copyWith(color: AppColors.textHint),
+        prefixIcon: const Icon(
+          Icons.search,
+          size: AppIconSize.sm,
+          color: AppColors.textHint,
+        ),
+        suffixIcon: controller.text.isNotEmpty
+            ? GestureDetector(
+                onTap: () {
+                  controller.clear();
+                  onChanged('');
+                },
+                child: const Icon(
+                  Icons.close,
+                  size: AppIconSize.sm,
+                  color: AppColors.textHint,
+                ),
+              )
+            : null,
+        filled: true,
+        fillColor: AppColors.surfaceMuted,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.md,
+          vertical: AppSpace.sm,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: AppRadius.input,
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppRadius.input,
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppRadius.input,
+          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+        ),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 15,
-            color: onTap == null ? AppColors.textHint : AppColors.brand,
-          ),
-          const SizedBox(width: AppSpace.xs),
-          Text(
-            label,
-            style: AppText.label.copyWith(
-              color: onTap == null ? AppColors.textHint : AppColors.brand,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
+    );
+  }
 }
 
 // ── Individual bid card ─────────────────────────────────────────────────────
@@ -277,9 +450,10 @@ class _BidCard extends StatelessWidget {
 
     // Close date + urgency
     final closesAt = DateTime.tryParse(bid['closes_at'] as String? ?? '');
-    final daysLeft = closesAt != null
-        ? closesAt.toLocal().difference(DateTime.now()).inDays
-        : null;
+    final daysLeft = closesAt
+        ?.toLocal()
+        .difference(DateTime.now())
+        .inDays;
     final closesDisplay = closesAt != null
         ? DateFormat('d MMM yyyy, h:mm a').format(closesAt.toLocal())
         : '—';
@@ -484,6 +658,9 @@ class _BidCard extends StatelessWidget {
                 const SizedBox(height: AppSpace.sm),
                 _DocChips(documents: documents, store: s),
               ],
+
+              // ── Opportunity indicators ──────────────────────────────────
+              BidOpportunityIndicators(bid: bid, store: s),
 
               // ── Timestamp ───────────────────────────────────────────────
               if (updatedStr != null) ...[
