@@ -1253,15 +1253,19 @@ class _GreetingSection extends StatelessWidget {
               const SizedBox(width: AppSpace.sm),
               Expanded(
                 child: _MetricTile(
-                  label: s.t('Closing 7d', '7 दिन में'),
-                  value: s.closingSoonCount != null
-                      ? _fmtCount(s.closingSoonCount!)
+                  label: s.t('Bid Range', 'मूल्य सीमा'),
+                  value: s.alertsBidValueRange != null
+                      ? '${_fmtRupee(s.alertsBidValueRange!.min)}–'
+                        '${_fmtRupee(s.alertsBidValueRange!.max)}'
                       : '--',
-                  subtitle: s.t('Act fast', 'जल्दी करें'),
+                  subtitle: s.alertsBidValueRange != null
+                      ? s.t(
+                          'Across your ${s.bidNotifications.length} alerts',
+                          'आपके ${s.bidNotifications.length} अलर्ट',
+                        )
+                      : s.t('From your alerts', 'अलर्ट से'),
                   dark: true,
-                  onTap: s.closingSoonCount != null && s.closingSoonCount! > 0
-                      ? () => Navigator.of(context).pushNamed('/bids')
-                      : null,
+                  onTap: () => Navigator.of(context).pushNamed('/alerts'),
                 ),
               ),
             ],
@@ -1277,6 +1281,13 @@ String _fmtCount(int n) {
   if (n >= 100000) return '${(n / 100000).toStringAsFixed(1)}L';
   if (n >= 1000) return '${(n / 1000).toStringAsFixed(0)}K';
   return '$n';
+}
+
+String _fmtRupee(double v) {
+  if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(1)}Cr';
+  if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(0)}L';
+  if (v >= 1000) return '₹${(v / 1000).toStringAsFixed(0)}K';
+  return '₹${v.toStringAsFixed(0)}';
 }
 
 class _MetricTile extends StatelessWidget {
@@ -1328,7 +1339,11 @@ class _MetricTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value, style: valueStyle),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(value, style: valueStyle),
+              ),
               const SizedBox(height: AppSpace.xs),
               Text(label, style: labelStyle),
               if (subtitle != null) ...[

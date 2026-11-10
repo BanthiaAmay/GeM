@@ -79,6 +79,9 @@ class AppStore extends ChangeNotifier {
   /// Matching bids closing within the next 7 days (null until loaded).
   int? closingSoonCount;
 
+  /// Min/max EMD values across the alert bids dataset (null until loaded or if no data).
+  ({double min, double max})? alertsBidValueRange;
+
   Timer? _gemStatsTimer;
 
   List<Map<String, dynamic>> gemVideosOf(Set<String> kinds) => [
@@ -189,6 +192,7 @@ class AppStore extends ChangeNotifier {
             outcomes = [];
             alertPreferences = {};
             bidNotifications = [];
+            alertsBidValueRange = null;
             _read();
             notifyListeners();
           }
@@ -801,6 +805,7 @@ class AppStore extends ChangeNotifier {
     outcomes = [];
     alertPreferences = {};
     bidNotifications = [];
+    alertsBidValueRange = null;
     _read();
     notifyListeners();
   }
@@ -821,6 +826,7 @@ class AppStore extends ChangeNotifier {
       outcomes = [];
       alertPreferences = {};
       bidNotifications = [];
+      alertsBidValueRange = null;
       _loadedCloud = false;
       await prefs.remove('saathi.auth.pending_guest');
       await prefs.remove(accountStorageKey);
@@ -851,6 +857,7 @@ class AppStore extends ChangeNotifier {
       outcomes = [];
       alertPreferences = {};
       bidNotifications = [];
+      alertsBidValueRange = null;
       _loadedCloud = false;
       await persist();
       notifyListeners();
@@ -894,6 +901,8 @@ class AppStore extends ChangeNotifier {
       unawaited(_enrichMissingDates());
       // Background: fetch live matching-bids counts for the metric tiles.
       unawaited(_loadMatchingBidsStats());
+      // Background: compute bid value range from the same alert bids dataset.
+      unawaited(_loadAlertsBidValueRange());
     } catch (_) {
       if (currentUser?.id != userId) return;
       alertsError = 'Could not load alerts. Check your connection and retry.';
@@ -912,6 +921,51 @@ class AppStore extends ChangeNotifier {
       notifyListeners();
     } catch (_) {
       // Stats unavailable — tiles stay hidden.
+    }
+  }
+
+  /// Computes the min/max EMD range across the alert-bids dataset.
+  /// Uses the GEM IDs already in bidNotifications — no independent full-table scan.
+  Future<void> _loadAlertsBidValueRange() async {
+    if (client == null || bidNotifications.isEmpty) return;
+    // Extract unique GEM bid IDs from each notification's body field.
+    final gemIds = <String>{};
+    for (final n in bidNotifications) {
+      final body = n['body'] as String? ?? '';
+      for (final part in body.split(' · ')) {
+        final trimmed = part.trim();
+        if (trimmed.startsWith('GEM/')) {
+          gemIds.add(trimmed);
+          break;
+        }
+      }
+    }
+    if (gemIds.isEmpty) return;
+    try {
+      final rows = await client!
+          .from('gem_bids')
+          .select('source_id,details')
+          .inFilter('source_id', gemIds.toList());
+      double? minVal, maxVal;
+      for (final rawRow in rows) {
+        final row = Map<String, dynamic>.from(rawRow as Map);
+        final details = row['details'] as Map<String, dynamic>? ?? {};
+        final raw = details['emd_amount'];
+        if (raw == null) continue;
+        final emd = double.tryParse(
+          raw.toString().replaceAll(RegExp(r'[^\d.]'), ''),
+        );
+        if (emd != null && emd > 0) {
+          if (minVal == null || emd < minVal) minVal = emd;
+          if (maxVal == null || emd > maxVal) maxVal = emd;
+        }
+      }
+      if (minVal != null && maxVal != null) {
+        alertsBidValueRange = (min: minVal, max: maxVal);
+        notifyListeners();
+      }
+    } catch (_) {
+      // Non-fatal — tile stays at "--"
     }
   }
 
