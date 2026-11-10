@@ -9,6 +9,7 @@ import '../data/app_store.dart';
 import 'components.dart';
 import 'glass.dart';
 import 'scroll_hint.dart';
+import 'youtube_video.dart';
 
 /// One entry per screen in the "not yet on GeM" 15-step walkthrough,
 /// in the order the flow is actually walked. This is the single
@@ -1152,6 +1153,11 @@ class OnboardingCheckOption extends StatefulWidget {
   final bool checked;
   final VoidCallback onTap;
 
+  /// When non-null, a "Watch how to get it →" link appears below the
+  /// sublabel. Requires [store] to be supplied alongside it.
+  final String? tutorialVideoId;
+  final AppStore? store;
+
   const OnboardingCheckOption({
     super.key,
     this.icon,
@@ -1161,6 +1167,8 @@ class OnboardingCheckOption extends StatefulWidget {
     this.sublabel,
     required this.checked,
     required this.onTap,
+    this.tutorialVideoId,
+    this.store,
   });
 
   @override
@@ -1211,6 +1219,41 @@ class _OnboardingCheckOptionState extends State<OnboardingCheckOption>
                     Text(widget.label, style: AppText.input),
                     if (widget.sublabel != null)
                       Text(widget.sublabel!, style: AppText.caption),
+                    if (widget.tutorialVideoId != null &&
+                        widget.store != null) ...[
+                      const SizedBox(height: AppSpace.xs),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          openYouTubeVideo(
+                            context,
+                            widget.store!,
+                            widget.tutorialVideoId!,
+                          );
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.play_circle_outline,
+                              size: AppIconSize.sm,
+                              color: AppColors.brand,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.store!.t(
+                                'Watch how to get it →',
+                                'देखें कैसे मिलेगा →',
+                              ),
+                              style: AppText.caption.copyWith(
+                                color: AppColors.brand,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

@@ -5,6 +5,19 @@ import 'fact_deck.dart';
 import 'onboarding_widgets.dart';
 import '../core/tokens.dart';
 
+// Video IDs for document-checklist tutorial links.
+// 'pan' is confirmed from training_data.dart Module 1.
+// All other values are null until a suitable tutorial video is identified
+// and its ID is supplied here — the link simply won't appear for those docs.
+const Map<String, String?> _kDocTutorialVideoIds = {
+  'pan':          '567GuVY6vRc', // "Register as a Seller using PAN"
+  'gstin':        null,          // TODO: supply GSTIN tutorial video ID
+  'udyam':        null,          // TODO: supply Udyam tutorial video ID
+  'registration': null,          // TODO: supply Business Registration video ID
+  'itr':          null,          // TODO: supply ITR tutorial video ID
+  'bank':         null,          // TODO: supply Bank Account tutorial video ID
+};
+
 /// Step 9 of 15: is the authorised person ready.
 class FlowAuthorisedPage extends StatefulWidget {
   final AppStore store;
@@ -213,12 +226,16 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
           label: s.t('Business PAN details', 'व्यवसाय PAN विवरण'),
           checked: selected.contains('pan'),
           onTap: () => toggle('pan'),
+          tutorialVideoId: _kDocTutorialVideoIds['pan'],
+          store: s,
         ),
         OnboardingCheckOption(
           iconAsset: 'rec_gstin',
           label: s.t('GSTIN', 'GSTIN'),
           checked: selected.contains('gstin'),
           onTap: () => toggle('gstin'),
+          tutorialVideoId: _kDocTutorialVideoIds['gstin'],
+          store: s,
         ),
         OnboardingCheckOption(
           iconAsset: 'rec_udyam',
@@ -229,6 +246,8 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
           sublabel: s.t('MSME registration', 'MSME पंजीकरण'),
           checked: selected.contains('udyam'),
           onTap: () => toggle('udyam'),
+          tutorialVideoId: _kDocTutorialVideoIds['udyam'],
+          store: s,
         ),
         OnboardingCheckOption(
           iconAsset: 'rec_registration',
@@ -239,6 +258,8 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
           ),
           checked: selected.contains('registration'),
           onTap: () => toggle('registration'),
+          tutorialVideoId: _kDocTutorialVideoIds['registration'],
+          store: s,
         ),
         OnboardingCheckOption(
           iconAsset: 'rec_itr',
@@ -246,6 +267,8 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
           sublabel: s.t('If applicable', 'यदि लागू हो'),
           checked: selected.contains('itr'),
           onTap: () => toggle('itr'),
+          tutorialVideoId: _kDocTutorialVideoIds['itr'],
+          store: s,
         ),
         OnboardingCheckOption(
           iconAsset: 'rec_bank',
@@ -256,12 +279,15 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
           ),
           checked: selected.contains('bank'),
           onTap: () => toggle('bank'),
+          tutorialVideoId: _kDocTutorialVideoIds['bank'],
+          store: s,
         ),
         OnboardingCheckOption(
           iconAsset: 'rec_none',
           label: s.t('None yet', 'अभी कुछ नहीं'),
           checked: selected.contains('none'),
           onTap: () => toggle('none'),
+          // No tutorial link for "None yet"
         ),
         const SizedBox(height: 4),
         Text(
