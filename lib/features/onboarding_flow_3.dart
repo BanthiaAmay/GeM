@@ -10,12 +10,12 @@ import '../core/tokens.dart';
 // All other values are null until a suitable tutorial video is identified
 // and its ID is supplied here — the link simply won't appear for those docs.
 const Map<String, String?> _kDocTutorialVideoIds = {
-  'pan':          '567GuVY6vRc', // "Register as a Seller using PAN"
-  'gstin':        null,          // TODO: supply GSTIN tutorial video ID
-  'udyam':        null,          // TODO: supply Udyam tutorial video ID
-  'registration': null,          // TODO: supply Business Registration video ID
-  'itr':          null,          // TODO: supply ITR tutorial video ID
-  'bank':         null,          // TODO: supply Bank Account tutorial video ID
+  'pan':          'a08KybGiN5s',
+  'gstin':        'DQfMj93QdT4',
+  'udyam':        'B0g6vSOLmtQ',
+  'registration': 'K0jE7hXKCZY',
+  'itr':          'naIvEN0I1WY',
+  'bank':         'gvYdTXxdMUU',
 };
 
 /// Step 9 of 15: is the authorised person ready.
