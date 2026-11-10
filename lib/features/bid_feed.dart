@@ -42,21 +42,33 @@ class _BidFeedState extends State<BidFeed> {
       error = null;
     });
     try {
-      final List<dynamic> result = view == _FeedView.matching
-          ? (s.signedIn && s.bidKeywords.isNotEmpty
-                ? await s.client!.rpc(
-                        'my_matching_bids',
-                        params: {'p_limit': 50},
-                      )
-                      as List<dynamic>
-                : const [])
-          : await s.client!
-                .from('gem_bids')
-                .select()
-                .eq('published', true)
-                .gt('closes_at', DateTime.now().toUtc().toIso8601String())
-                .order('starts_at', ascending: false, nullsFirst: false)
-                .limit(50);
+      List<dynamic> result;
+      if (view == _FeedView.matching && s.signedIn && s.bidKeywords.isNotEmpty) {
+        try {
+          result = await s.client!.rpc(
+            'my_matching_bids',
+            params: {'p_limit': 50},
+          ) as List<dynamic>;
+        } catch (_) {
+          // RPC failed — fall back to latest bids silently.
+          if (mounted) setState(() => view = _FeedView.latest);
+          result = await s.client!
+              .from('gem_bids')
+              .select()
+              .eq('published', true)
+              .gt('closes_at', DateTime.now().toUtc().toIso8601String())
+              .order('starts_at', ascending: false, nullsFirst: false)
+              .limit(50);
+        }
+      } else {
+        result = await s.client!
+            .from('gem_bids')
+            .select()
+            .eq('published', true)
+            .gt('closes_at', DateTime.now().toUtc().toIso8601String())
+            .order('starts_at', ascending: false, nullsFirst: false)
+            .limit(50);
+      }
       if (mounted) {
         setState(
           () => bids = [
