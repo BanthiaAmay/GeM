@@ -1241,25 +1241,27 @@ class _GreetingSection extends StatelessWidget {
               const SizedBox(width: AppSpace.sm),
               Expanded(
                 child: _MetricTile(
-                  label: s.t('Active Bids', 'सक्रिय बोलियाँ'),
-                  value: s.gemActiveBids != null
-                      ? _fmtCount(s.gemActiveBids!)
+                  label: s.t('Matching', 'मिलान'),
+                  value: s.matchingBidsCount != null
+                      ? _fmtCount(s.matchingBidsCount!)
                       : '--',
-                  subtitle: s.t('GeM · today 12 AM', 'GeM · आज 12 AM'),
+                  subtitle: s.t('Live bids for you', 'आपके लिए बोलियाँ'),
                   dark: true,
-                  onTap: null,
+                  onTap: () => Navigator.of(context).pushNamed('/bids'),
                 ),
               ),
               const SizedBox(width: AppSpace.sm),
               Expanded(
                 child: _MetricTile(
-                  label: s.t('Deadlines', 'समयसीमाएँ'),
-                  value: s.gemDeadlinesCount != null
-                      ? _fmtCount(s.gemDeadlinesCount!)
+                  label: s.t('Closing 7d', '7 दिन में'),
+                  value: s.closingSoonCount != null
+                      ? _fmtCount(s.closingSoonCount!)
                       : '--',
-                  subtitle: s.t('2-day expiring', '2-दिन समाप्त'),
+                  subtitle: s.t('Act fast', 'जल्दी करें'),
                   dark: true,
-                  onTap: null,
+                  onTap: s.closingSoonCount != null && s.closingSoonCount! > 0
+                      ? () => Navigator.of(context).pushNamed('/bids')
+                      : null,
                 ),
               ),
             ],

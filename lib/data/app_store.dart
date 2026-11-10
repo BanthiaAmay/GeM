@@ -73,6 +73,12 @@ class AppStore extends ChangeNotifier {
   /// Bids closing within the next 2 days on GeM (fetched on init; null while loading or failed).
   int? gemDeadlinesCount;
 
+  /// Live GeM bids that match this user's alert keywords (null until loaded).
+  int? matchingBidsCount;
+
+  /// Matching bids closing within the next 7 days (null until loaded).
+  int? closingSoonCount;
+
   Timer? _gemStatsTimer;
 
   List<Map<String, dynamic>> gemVideosOf(Set<String> kinds) => [
@@ -886,11 +892,27 @@ class AppStore extends ChangeNotifier {
       // Background: enrich any rows that are missing dates by fetching
       // their bid document page from the app (the app can reach GeM servers).
       unawaited(_enrichMissingDates());
+      // Background: fetch live matching-bids counts for the metric tiles.
+      unawaited(_loadMatchingBidsStats());
     } catch (_) {
       if (currentUser?.id != userId) return;
       alertsError = 'Could not load alerts. Check your connection and retry.';
     }
     notifyListeners();
+  }
+
+  Future<void> _loadMatchingBidsStats() async {
+    if (client == null || !signedIn) return;
+    try {
+      final rows = await client!.rpc('my_matching_bids_stats') as List<dynamic>;
+      if (rows.isEmpty) return;
+      final row = Map<String, dynamic>.from(rows.first as Map);
+      matchingBidsCount = (row['total'] as num?)?.toInt();
+      closingSoonCount = (row['closing_7d'] as num?)?.toInt();
+      notifyListeners();
+    } catch (_) {
+      // Stats unavailable — tiles stay hidden.
+    }
   }
 
   /// Fetches bid document pages for rows missing dates and updates Supabase.
