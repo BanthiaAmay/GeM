@@ -9,13 +9,21 @@ import '../core/tokens.dart';
 // 'pan' is confirmed from training_data.dart Module 1.
 // All other values are null until a suitable tutorial video is identified
 // and its ID is supplied here — the link simply won't appear for those docs.
+// YouTube video IDs — Income Tax Dept (PAN), CBIC (GSTIN), SBI (Bank).
 const Map<String, String?> _kDocTutorialVideoIds = {
-  'pan':          'a08KybGiN5s',
-  'gstin':        'DQfMj93QdT4',
-  'udyam':        'B0g6vSOLmtQ',
-  'registration': 'K0jE7hXKCZY',
-  'itr':          'naIvEN0I1WY',
-  'bank':         'gvYdTXxdMUU',
+  'pan':          'j3UGJ6lzsBM', // Income Tax Dept – Instant e-PAN
+  'gstin':        'vHKK-xFPTeY', // CBIC – GST Registration Tutorial
+  'udyam':        null,
+  'registration': null,
+  'itr':          null,
+  'bank':         'gvYdTXxdMUU', // SBI – Current Account Opening
+};
+
+// Official government portal URLs for documents with no YouTube tutorial.
+const Map<String, String?> _kDocTutorialUrls = {
+  'udyam':        'https://udyamregistration.gov.in/',
+  'registration': 'https://www.mca.gov.in/',
+  'itr':          'https://www.incometax.gov.in/iec/foportal/help/all-topics/videos',
 };
 
 /// Step 9 of 15: is the authorised person ready.
@@ -247,6 +255,7 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
           checked: selected.contains('udyam'),
           onTap: () => toggle('udyam'),
           tutorialVideoId: _kDocTutorialVideoIds['udyam'],
+          tutorialUrl: _kDocTutorialUrls['udyam'],
           store: s,
         ),
         OnboardingCheckOption(
@@ -259,6 +268,7 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
           checked: selected.contains('registration'),
           onTap: () => toggle('registration'),
           tutorialVideoId: _kDocTutorialVideoIds['registration'],
+          tutorialUrl: _kDocTutorialUrls['registration'],
           store: s,
         ),
         OnboardingCheckOption(
@@ -268,6 +278,7 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
           checked: selected.contains('itr'),
           onTap: () => toggle('itr'),
           tutorialVideoId: _kDocTutorialVideoIds['itr'],
+          tutorialUrl: _kDocTutorialUrls['itr'],
           store: s,
         ),
         OnboardingCheckOption(
