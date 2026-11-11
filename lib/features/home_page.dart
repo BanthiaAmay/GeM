@@ -1558,9 +1558,12 @@ class _BidAlertRow extends StatelessWidget {
       }
       return null;
     })();
-    final gemUrl = gemBidNum != null
-        ? 'https://bidplus.gem.gov.in/bidlists?search_bid_number=${Uri.encodeComponent(gemBidNum)}'
-        : (alert['source_url'] as String? ?? '');
+    final sourceUrl = alert['source_url'] as String? ?? '';
+    final gemUrl = sourceUrl.isNotEmpty
+        ? sourceUrl
+        : gemBidNum != null
+            ? 'https://bidplus.gem.gov.in/bidlists?search_bid_number=${Uri.encodeComponent(gemBidNum)}'
+            : '';
 
     final createdRaw = alert['created_at'];
     DateTime? created;
@@ -1772,7 +1775,7 @@ class _BidAlertRow extends StatelessWidget {
                     Icon(Icons.open_in_new, size: 14, color: AppColors.brand),
                     const SizedBox(width: AppSpace.xs),
                     Text(
-                      'View bid dates on GeM',
+                      'View Bid Details',
                       style: AppText.bodyStrong.copyWith(
                         color: AppColors.brand,
                         fontSize: 13,
