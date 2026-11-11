@@ -770,12 +770,66 @@ class _DocChips extends StatelessWidget {
 
   static const _maxShow = 2;
 
+  String _clean(String doc) => doc
+      .replaceAll(RegExp(r'\s*\(Requested in ATC\)', caseSensitive: false), '')
+      .trim();
+
   String _shorten(String doc) {
-    // Strip " (Requested in ATC)" suffix
-    final clean = doc
-        .replaceAll(RegExp(r'\s*\(Requested in ATC\)', caseSensitive: false), '')
-        .trim();
+    final clean = _clean(doc);
     return clean.length > 24 ? '${clean.substring(0, 22)}…' : clean;
+  }
+
+  void _showAllDocs(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpace.gutter, AppSpace.lg, AppSpace.gutter, AppSpace.gutter,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                store.t('Documents Required', 'आवश्यक दस्तावेज़'),
+                style: AppText.h3,
+              ),
+              const SizedBox(height: AppSpace.md),
+              ...documents.map(
+                (doc) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpace.sm),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(top: 3),
+                        child: Icon(
+                          Icons.description_outlined,
+                          size: 15,
+                          color: AppColors.textHint,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpace.sm),
+                      Expanded(
+                        child: Text(
+                          _clean(doc),
+                          style: AppText.body,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -814,18 +868,21 @@ class _DocChips extends StatelessWidget {
                 ),
               ),
             if (extra > 0)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpace.sm,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.infoTint,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-                child: Text(
-                  '+$extra',
-                  style: AppText.label.copyWith(color: AppColors.info),
+              GestureDetector(
+                onTap: () => _showAllDocs(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpace.sm,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.infoTint,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    '+$extra',
+                    style: AppText.label.copyWith(color: AppColors.info),
+                  ),
                 ),
               ),
           ],
