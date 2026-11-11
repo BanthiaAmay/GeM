@@ -111,6 +111,76 @@ class AppStore extends ChangeNotifier {
   /// Matching bids closing within the next 7 days (null until loaded).
   int? closingSoonCount;
 
+  // ── Saved Bids ────────────────────────────────────────────────────────────
+  List<Map<String, dynamic>> savedBids = [];
+  Set<String> _savedBidIds = {};
+
+  int get savedBidsCount => savedBids.length;
+
+  bool isSaved(Map<String, dynamic> bid) {
+    final id = bid['source_id'] as String? ?? bid['id'] as String? ?? '';
+    return _savedBidIds.contains(id);
+  }
+
+  Future<void> loadSavedBids() async {
+    if (client == null || !signedIn) return;
+    try {
+      final rows = await client!
+          .from('saved_bids')
+          .select()
+          .eq('user_id', currentUser!.id)
+          .order('saved_at', ascending: false) as List<dynamic>;
+      savedBids = List<Map<String, dynamic>>.from(rows);
+      _savedBidIds = {
+        for (final r in savedBids)
+          (r['source_id'] as String? ?? ''),
+      }..remove('');
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<bool> toggleSavedBid(Map<String, dynamic> bid) async {
+    if (client == null || !signedIn) return false;
+    final sourceId = bid['source_id'] as String? ?? bid['id'] as String? ?? '';
+    if (sourceId.isEmpty) return false;
+    if (_savedBidIds.contains(sourceId)) {
+      // Remove
+      _savedBidIds.remove(sourceId);
+      savedBids.removeWhere((r) => r['source_id'] == sourceId);
+      notifyListeners();
+      try {
+        await client!
+            .from('saved_bids')
+            .delete()
+            .eq('user_id', currentUser!.id)
+            .eq('source_id', sourceId);
+      } catch (_) {
+        // Revert on error
+        await loadSavedBids();
+      }
+      return false;
+    } else {
+      // Add (optimistic)
+      _savedBidIds.add(sourceId);
+      final row = {
+        'user_id': currentUser!.id,
+        'source_id': sourceId,
+        'bid_data': bid,
+        'saved_at': DateTime.now().toIso8601String(),
+      };
+      savedBids.insert(0, row);
+      notifyListeners();
+      try {
+        await client!.from('saved_bids').upsert(row, onConflict: 'user_id,source_id');
+        await loadSavedBids(); // sync server timestamp
+      } catch (_) {
+        // Revert on error
+        await loadSavedBids();
+      }
+      return true;
+    }
+  }
+
   /// Min/max EMD values across the alert bids dataset (null until loaded or if no data).
   ({double min, double max})? alertsBidValueRange;
 
@@ -838,6 +908,8 @@ class AppStore extends ChangeNotifier {
     alertPreferences = {};
     bidNotifications = [];
     alertsBidValueRange = null;
+    savedBids = [];
+    _savedBidIds = {};
     _read();
     notifyListeners();
   }
@@ -933,6 +1005,8 @@ class AppStore extends ChangeNotifier {
       unawaited(_enrichMissingDates());
       // Background: fetch live matching-bids counts for the metric tiles.
       unawaited(_loadMatchingBidsStats());
+      // Background: load saved bids for the dashboard count.
+      unawaited(loadSavedBids());
       // Background: compute bid value range from the same alert bids dataset.
       unawaited(_loadAlertsBidValueRange());
     } catch (_) {

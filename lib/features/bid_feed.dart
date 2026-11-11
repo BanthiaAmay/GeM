@@ -679,10 +679,34 @@ class _BidCard extends StatelessWidget {
               ],
               const SizedBox(height: AppSpace.md),
 
+              // ── Action row: Compare + Bookmark ─────────────────────────
               ListenableBuilder(
                 listenable: s,
-                builder: (context, _) =>
+                builder: (context, _) => Row(
+                  children: [
                     CompareToggleButton(store: s, bid: bid),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => s.toggleSavedBid(bid),
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpace.sm,
+                          vertical: AppSpace.xs,
+                        ),
+                        child: Icon(
+                          s.isSaved(bid)
+                              ? Icons.bookmark
+                              : Icons.bookmark_border,
+                          size: 22,
+                          color: s.isSaved(bid)
+                              ? AppColors.brand
+                              : AppColors.textHint,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpace.sm),
               AppButton(

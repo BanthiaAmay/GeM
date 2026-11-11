@@ -1241,13 +1241,12 @@ class _GreetingSection extends StatelessWidget {
               const SizedBox(width: AppSpace.sm),
               Expanded(
                 child: _MetricTile(
-                  label: s.t('Matching', 'मिलान'),
-                  value: s.matchingBidsCount != null
-                      ? _fmtCount(s.matchingBidsCount!)
-                      : '--',
-                  subtitle: s.t('Live bids for you', 'आपके लिए बोलियाँ'),
+                  label: s.t('Saved Bids', 'सहेजी बोलियाँ'),
+                  value: _fmtCount(s.savedBidsCount),
+                  subtitle: s.t('Your shortlist', 'आपकी शॉर्टलिस्ट'),
                   dark: true,
-                  onTap: () => Navigator.of(context).pushNamed('/bids'),
+                  onTap: () =>
+                      Navigator.of(context).pushNamed('/saved-bids'),
                 ),
               ),
               const SizedBox(width: AppSpace.sm),
