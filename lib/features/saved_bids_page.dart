@@ -229,6 +229,7 @@ class _SavedBidCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppSpace.lg),
+              // Saved date + Remove button
               Row(
                 children: [
                   if (savedDisplay != null)
@@ -239,18 +240,20 @@ class _SavedBidCard extends StatelessWidget {
                       ),
                     ),
                   const Spacer(),
-                  // Remove bookmark
                   InkWell(
                     onTap: () => s.toggleSavedBid(bid),
                     borderRadius: BorderRadius.circular(AppRadius.pill),
                     child: Padding(
-                      padding: const EdgeInsets.all(AppSpace.xs),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpace.xs,
+                        vertical: 2,
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.bookmark,
-                            size: 16,
+                            size: 15,
                             color: AppColors.brand,
                           ),
                           const SizedBox(width: 4),
@@ -264,20 +267,18 @@ class _SavedBidCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppSpace.sm),
-                  AppButton(
-                    label: s.t('View on GeM', 'GeM पर देखें'),
-                    variant: AppButtonVariant.secondary,
-                    size: AppButtonSize.sm,
-                    expand: false,
-                    trailingIcon: Icons.open_in_new,
-                    onPressed: () => openLink(
-                      context,
-                      s,
-                      bid['source_url'] as String? ?? '',
-                    ),
-                  ),
                 ],
+              ),
+              const SizedBox(height: AppSpace.sm),
+              AppButton(
+                label: s.t('View on GeM', 'GeM पर देखें'),
+                variant: AppButtonVariant.secondary,
+                trailingIcon: Icons.open_in_new,
+                onPressed: () => openLink(
+                  context,
+                  s,
+                  bid['source_url'] as String? ?? '',
+                ),
               ),
             ],
           ),
