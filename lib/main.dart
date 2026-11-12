@@ -17,7 +17,7 @@ import 'features/saathi_page.dart';
 import 'features/gem_guide_page.dart';
 import 'features/gem_check_page.dart';
 import 'features/home_page.dart';
-import 'features/insights_page.dart';
+import 'features/tender_analytics_page.dart';
 import 'features/language_page.dart';
 import 'features/news_page.dart';
 import 'features/onboarding_flow_1.dart';
@@ -378,13 +378,7 @@ class SaathiApp extends StatelessWidget {
                 : page == 'gem-guide'
                 ? GemGuidePage(store: store)
                 : page == 'insights'
-                ? InsightsPage(store: store)
-                : page == 'insights-trends'
-                ? InsightsTrendsPage(store: store)
-                : page == 'insights-categories'
-                ? InsightsCategoriesPage(store: store)
-                : page == 'insights-fit'
-                ? InsightsFitPage(store: store)
+                ? TenderAnalyticsPage(store: store)
                 : page == 'tool-mii'
                 ? MiiCertificatePage(
                     store: store,

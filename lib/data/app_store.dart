@@ -181,6 +181,55 @@ class AppStore extends ChangeNotifier {
     }
   }
 
+  // ── Tender Analytics Data ──────────────────────────────────────────────────
+  List<Map<String, dynamic>> analyticsData = [];
+
+  Future<void> loadAnalyticsData() async {
+    if (client == null || !signedIn) return;
+    try {
+      final rows = await client!
+          .from('tender_analytics_data')
+          .select()
+          .eq('user_id', currentUser!.id) as List<dynamic>;
+      analyticsData = List<Map<String, dynamic>>.from(rows);
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> saveAnalyticsDatum(
+    String sourceId,
+    Map<String, dynamic> data,
+  ) async {
+    if (client == null || !signedIn) return;
+    final row = {
+      'user_id': currentUser!.id,
+      'source_id': sourceId,
+      ...data,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+    final idx = analyticsData.indexWhere((r) => r['source_id'] == sourceId);
+    if (idx >= 0) {
+      analyticsData[idx] = {...analyticsData[idx], ...row};
+    } else {
+      analyticsData.add(row);
+    }
+    notifyListeners();
+    try {
+      await client!
+          .from('tender_analytics_data')
+          .upsert(row, onConflict: 'user_id,source_id');
+    } catch (_) {
+      await loadAnalyticsData();
+    }
+  }
+
+  Map<String, dynamic> getAnalyticsDatum(String sourceId) {
+    return analyticsData.firstWhere(
+      (r) => r['source_id'] == sourceId,
+      orElse: () => <String, dynamic>{},
+    );
+  }
+
   /// Min/max EMD values across the alert bids dataset (null until loaded or if no data).
   ({double min, double max})? alertsBidValueRange;
 
@@ -910,6 +959,7 @@ class AppStore extends ChangeNotifier {
     alertsBidValueRange = null;
     savedBids = [];
     _savedBidIds = {};
+    analyticsData = [];
     _read();
     notifyListeners();
   }
@@ -1007,6 +1057,8 @@ class AppStore extends ChangeNotifier {
       unawaited(_loadMatchingBidsStats());
       // Background: load saved bids for the dashboard count.
       unawaited(loadSavedBids());
+      // Background: load tender analytics data.
+      unawaited(loadAnalyticsData());
       // Background: compute bid value range from the same alert bids dataset.
       unawaited(_loadAlertsBidValueRange());
     } catch (_) {

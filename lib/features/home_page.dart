@@ -1862,7 +1862,7 @@ class _QuickActionsSection extends StatelessWidget {
             ),
             _QuickActionTile(
               icon: Icons.trending_up_outlined,
-              label: s.t('Analytics', 'एनालिटिक्स'),
+              label: s.t('Tender Analytics', 'टेंडर एनालिटिक्स'),
               tileColor: AppColors.warningTint,
               iconColor: AppColors.warning,
               onTap: () => Navigator.of(context).pushNamed('/insights'),
