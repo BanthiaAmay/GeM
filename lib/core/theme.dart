@@ -4,11 +4,13 @@ import 'tokens.dart';
 
 export 'tokens.dart';
 
-// Compatibility aliases for the calculator/report pages while they migrate
-// onto the named design tokens. They resolve to the same audited palette.
-const green = AppColors.brand;
+// Legacy aliases from the pre-monochrome era — kept so the older
+// calculator / report pages keep compiling. Under the Apple B&W system
+// `green` and `lime` now resolve to charcoal and a soft grey, not
+// actual green. Prefer the named tokens in new code.
+const green = AppColors.brand; // charcoal (was forest green)
 const ink = AppColors.ink;
-const lime = AppColors.brandTint;
+const lime = AppColors.brandTint; // soft grey (was pale green)
 const line = AppColors.border;
 
 /// The one app theme. Every Material widget the app uses inherits its

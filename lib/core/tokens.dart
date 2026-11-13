@@ -5,6 +5,12 @@ import 'package:flutter/material.dart';
 /// `Color(0x…)`, `fontSize:` or pixel radius in a feature file; use these
 /// (see DESIGN_SYSTEM.md). Contrast ratios are measured against the
 /// surface named next to each colour.
+///
+/// Apple-inspired monochrome palette. Every historical semantic name
+/// (brand, brandTint, brandDeep, violet, violetTint) is preserved so
+/// feature code keeps working, but the hues collapse to black / charcoal
+/// / grey. Status colours (danger, warning, info) remain, muted, for
+/// meaningful system signals only — never as chrome.
 
 /// Private iOS system font families (never bundled — SF Pro's licence
 /// forbids redistribution). Other platforms fall back to their own UI font.
@@ -12,77 +18,109 @@ const sfProText = '.SF Pro Text';
 const sfProDisplay = '.SF Pro Display';
 
 abstract final class AppColors {
-  // Neutrals
-  /// Primary text, headings, primary button fill. 18.3:1 on [surface].
-  static const ink = Color(0xFF151515);
+  // ─── Neutrals ───────────────────────────────────────────────────
+  /// Primary text, headings, primary button fill — the "ink" of the
+  /// interface. Apple's dark charcoal, slightly off-black for
+  /// comfortable reading. 17.6:1 on [surface].
+  static const ink = Color(0xFF1D1D1F);
 
-  /// Primary button fill while pressed.
-  static const inkPressed = Color(0xFF3A3A3A);
+  /// Primary button fill while pressed — one notch lighter than [ink].
+  static const inkPressed = Color(0xFF424245);
 
-  /// Secondary text (subtitles, helper copy, captions). 5.6:1 on [surface].
-  static const textSecondary = Color(0xFF5F6873);
+  /// Secondary text (subtitles, helper copy, captions). Apple's
+  /// secondary system grey. 5.3:1 on [surface].
+  static const textSecondary = Color(0xFF6E6E73);
 
-  /// Placeholder and disabled-adjacent text only — 3.2:1, never for copy
+  /// Placeholder and disabled-adjacent text only — 3.6:1, never for copy
   /// the user must read.
-  static const textHint = Color(0xFF8A9199);
+  static const textHint = Color(0xFF86868B);
 
   /// Page and card surface.
   static const surface = Color(0xFFFFFFFF);
 
-  /// Quiet tinted surface: selected rows, chips, inset panels.
-  static const surfaceMuted = Color(0xFFF5F6F4);
+  /// Quiet tinted surface: selected rows, chips, inset panels. Apple's
+  /// soft grey, barely distinguishable from [surface] but enough to
+  /// group content.
+  static const surfaceMuted = Color(0xFFF5F5F7);
 
-  /// Decorative hairlines and card borders.
-  static const border = Color(0xFFE1E5E2);
+  /// Decorative hairlines and card borders — Apple's separator grey.
+  static const border = Color(0xFFD2D2D7);
 
-  /// Borders of interactive controls (inputs, unselected options).
-  static const borderStrong = Color(0xFFC9CFCB);
+  /// Borders of interactive controls (inputs, unselected options) — one
+  /// step stronger than [border] for a visible edge.
+  static const borderStrong = Color(0xFFA1A1A6);
 
   /// Disabled control fill.
-  static const disabled = Color(0xFFCCCCCC);
+  static const disabled = Color(0xFFE5E5EA);
 
-  // Brand + status. Each has a `*Tint` fill that carries its text colour
-  // at ≥5:1 (chips, badges, banners).
-  /// Brand green: positive state, "ready", links. 6.9:1 on [surface].
-  static const brand = Color(0xFF22654C);
-  static const brandTint = Color(0xFFE5F1EA);
+  // ─── Brand / accent (preserved names, monochrome values) ────────
+  /// Primary accent — formerly brand green, now the same ink as text so
+  /// chrome reads as one monochrome system. Use for interactive accents,
+  /// selection, focused state. The matching tint is [brandTint]; neither
+  /// signals "positive" any more — see [success] for that.
+  /// 17.6:1 on [surface].
+  static const brand = Color(0xFF1D1D1F);
 
-  /// Deep forest — hero card surface for the greeting section.
-  static const brandDeep = Color(0xFF164030);
+  /// Tinted surface paired with [brand] — featured cards, chips,
+  /// selected rows. Apple's elevated-surface grey.
+  static const brandTint = Color(0xFFF5F5F7);
 
-  /// Violet tint / icon for the Find Bids quick-action tile.
-  static const violetTint = Color(0xFFF0EAF7);
-  static const violet = Color(0xFF6A4C93);
+  /// Deepest surface — the hero card / splash background. Pure black
+  /// with white content on top. Replaces the old forest green.
+  static const brandDeep = Color(0xFF000000);
 
-  /// Urgent / error / destructive. 6.5:1 on [surface].
-  static const danger = Color(0xFFB3261E);
-  static const dangerTint = Color(0xFFFCE9E7);
+  /// Second accent slot — previously the Find Bids violet. Now folded
+  /// into the monochrome scale: same ink as [brand] so the tile reads
+  /// consistently with every other quick action.
+  static const violet = Color(0xFF1D1D1F);
 
-  /// Caution ("needs attention"). Text on [warningTint] 5.7:1.
+  /// Paired tint for [violet] — slightly cooler grey so the Find Bids
+  /// tile stays distinguishable from the brand tile beside it.
+  static const violetTint = Color(0xFFEFEFF2);
+
+  // ─── Status (semantic only — sparingly used) ────────────────────
+  // Each has a `*Tint` fill that carries its text colour at ≥5:1 (chips,
+  // badges, banners). These are the only non-grey colours in the system
+  // and never appear on chrome — only on true status signals.
+
+  /// Urgent / error / destructive. Apple system red family. 5.9:1 on [surface].
+  static const danger = Color(0xFFBF1E2E);
+  static const dangerTint = Color(0xFFFDECEC);
+
+  /// Caution ("needs attention"). Apple-aligned amber. Text on
+  /// [warningTint] 5.7:1.
   static const warning = Color(0xFF8A5300);
-  static const warningTint = Color(0xFFFFF1D6);
+  static const warningTint = Color(0xFFFFF4E0);
 
-  /// Neutral information.
-  static const info = Color(0xFF1F5F8B);
-  static const infoTint = Color(0xFFE6F0F7);
+  /// Neutral information — Apple system blue family.
+  static const info = Color(0xFF0066CC);
+  static const infoTint = Color(0xFFE6F0FA);
 
-  // Chart series — each ≥3:1 on [surface] for graphics, and always paired
-  // with a text label so colour is never the only signal.
-  static const chartPositive = brand;
-  static const chartNeutral = Color(0xFF2B6A99);
-  static const chartCost = Color(0xFFB26A00);
+  /// Positive result ("ready", success). Kept as a small green signal
+  /// so the one place it legitimately needs to read "safe / passed"
+  /// still can — but never used on chrome.
+  static const success = Color(0xFF248A3D);
+  static const successTint = Color(0xFFE5F2E8);
+
+  // ─── Chart series (monochromatic + status accents) ──────────────
+  // Each ≥3:1 on [surface] for graphics; hue is never the only signal
+  // (every series also gets a marker shape and a text label).
+  static const chartPositive = success;
+  static const chartNeutral = Color(0xFF424245);
+  static const chartCost = warning;
   static const chartNegative = danger;
-  static const chartTrack = Color(0xFFE4E7E5);
+  static const chartTrack = Color(0xFFE5E5EA);
 
   /// Frosted glass bar tint and hairline (see GlassBar).
   static const glassHairline = Color(0x14000000);
 
   /// Floating glass (bottom nav capsule): translucent fill and a light rim.
-  static const glassFill = Color(0x9EFFFFFF);
-  static const glassRim = Color(0xB3FFFFFF);
+  static const glassFill = Color(0xC7FFFFFF);
+  static const glassRim = Color(0xE0FFFFFF);
 
-  /// Page canvas behind cards: a hair off white so cards lift off it.
-  static const canvas = Color(0xFFF6F7F5);
+  /// Page canvas behind cards — Apple's "grouped background" grey,
+  /// one tone cooler than [surface] so white cards lift off it.
+  static const canvas = Color(0xFFF2F2F7);
 
   /// Light dimming over video thumbnails so the play button reads.
   static const scrim = Color(0x33000000);
@@ -91,18 +129,21 @@ abstract final class AppColors {
   static const videoPlay = Color(0xFFFF0000);
 
   /// Silhouette shadow cast by artwork and icons (see Depth, DepthIcon).
-  static const depthShadow = Color(0x42101C15);
+  /// Neutral grey (no green tint) matches the monochrome system.
+  static const depthShadow = Color(0x33000000);
 }
 
 /// Soft, low-contrast elevation. Cards rest; floating chrome hovers.
+/// Apple keeps shadows restrained — just enough to lift a surface,
+/// never a drop.
 abstract final class AppShadow {
   static const card = [
-    BoxShadow(color: Color(0x0D101C15), blurRadius: 18, offset: Offset(0, 6)),
-    BoxShadow(color: Color(0x08101C15), blurRadius: 3, offset: Offset(0, 1)),
+    BoxShadow(color: Color(0x0A000000), blurRadius: 16, offset: Offset(0, 4)),
+    BoxShadow(color: Color(0x05000000), blurRadius: 2, offset: Offset(0, 1)),
   ];
   static const floating = [
-    BoxShadow(color: Color(0x1F101C15), blurRadius: 32, offset: Offset(0, 12)),
-    BoxShadow(color: Color(0x0F101C15), blurRadius: 6, offset: Offset(0, 2)),
+    BoxShadow(color: Color(0x1A000000), blurRadius: 28, offset: Offset(0, 10)),
+    BoxShadow(color: Color(0x0D000000), blurRadius: 4, offset: Offset(0, 2)),
   ];
 }
 
@@ -123,7 +164,7 @@ abstract final class AppSpace {
 
 abstract final class AppRadius {
   static const sm = 8.0; // small chips, tags
-  static const md = 14.0; // inputs, inset panels
+  static const md = 12.0; // inputs, inset panels — Apple's 12pt corner
   static const lg = 16.0; // cards, list rows, option rows
   static const xl = 20.0; // hero cards, sheets
   static const pill = 999.0; // buttons, badges
@@ -164,23 +205,27 @@ abstract final class AppIconSize {
 }
 
 /// Type scale. One style per role; sizes never appear in feature files.
-/// Line heights are for Latin + Devanagari; Indic scripts need the extra
-/// leading in [body]/[bodySmall].
+/// Weights lean on Apple's Display / Text pair — Display for headlines,
+/// Text for anything under 20pt. Line heights are for Latin +
+/// Devanagari; Indic scripts need the extra leading in [body] /
+/// [bodySmall].
 abstract final class AppText {
   static const display = TextStyle(
     fontFamily: sfProDisplay,
-    fontSize: 40,
-    fontWeight: FontWeight.w800,
-    height: 1.15,
+    fontSize: 44,
+    fontWeight: FontWeight.w700,
+    height: 1.1,
+    letterSpacing: -0.5,
     color: AppColors.ink,
   );
 
   /// Screen headline (onboarding step, gem-check).
   static const h1 = TextStyle(
     fontFamily: sfProDisplay,
-    fontSize: 30,
-    fontWeight: FontWeight.w800,
+    fontSize: 32,
+    fontWeight: FontWeight.w700,
     height: 1.15,
+    letterSpacing: -0.4,
     color: AppColors.ink,
   );
 
@@ -188,8 +233,9 @@ abstract final class AppText {
   static const h2 = TextStyle(
     fontFamily: sfProDisplay,
     fontSize: 24,
-    fontWeight: FontWeight.w800,
+    fontWeight: FontWeight.w700,
     height: 1.2,
+    letterSpacing: -0.3,
     color: AppColors.ink,
   );
 
@@ -197,22 +243,24 @@ abstract final class AppText {
   static const h3 = TextStyle(
     fontFamily: sfProDisplay,
     fontSize: 20,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     height: 1.25,
+    letterSpacing: -0.2,
     color: AppColors.ink,
   );
 
   /// Card title, list-row title, button label (large).
   static const title = TextStyle(
     fontSize: 17,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     height: 1.3,
+    letterSpacing: -0.1,
     color: AppColors.ink,
   );
 
   static const body = TextStyle(
     fontSize: 16,
-    height: 1.5,
+    height: 1.45,
     color: AppColors.ink,
   );
 
@@ -224,14 +272,14 @@ abstract final class AppText {
 
   /// Larger supporting line under a hero headline (welcome, language).
   static const lead = TextStyle(
-    fontSize: 20,
+    fontSize: 19,
     height: 1.4,
     color: AppColors.textSecondary,
   );
 
   /// Text typed into a field, and the value of a picker.
   static const input = TextStyle(
-    fontSize: 18,
+    fontSize: 17,
     height: 1.3,
     color: AppColors.ink,
   );
@@ -253,7 +301,7 @@ abstract final class AppText {
 
   /// Chart axis tick labels.
   static const tick = TextStyle(
-    fontSize: 12,
+    fontSize: 11,
     height: 1.2,
     color: AppColors.textSecondary,
   );
@@ -268,32 +316,35 @@ abstract final class AppText {
   /// Chips, badges, tiny labels.
   static const label = TextStyle(
     fontSize: 12,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     height: 1.2,
     color: AppColors.ink,
   );
 
-  /// UPPERCASE eyebrow above a headline.
+  /// UPPERCASE eyebrow above a headline — Apple-style tight tracking
+  /// on a small caps label.
   static const overline = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w700,
-    letterSpacing: 1.2,
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 1.0,
     height: 1.2,
     color: AppColors.textSecondary,
   );
 
   /// Primary/secondary button label.
   static const button = TextStyle(
-    fontSize: 17,
-    fontWeight: FontWeight.w700,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
     height: 1.2,
+    letterSpacing: -0.1,
   );
 
   /// Large screen-CTA label (66px button).
   static const buttonLg = TextStyle(
-    fontSize: 22,
-    fontWeight: FontWeight.w700,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
     height: 1.2,
+    letterSpacing: -0.1,
   );
 
   /// Secondary text variants — same size, muted colour.
@@ -304,40 +355,46 @@ abstract final class AppText {
 /// Chart tokens — see "Charts" in DESIGN_SYSTEM.md. Every chart in the app
 /// (bar, line, pie, scatter) reads these; nothing chart-related is
 /// hard-coded in a feature file.
+///
+/// Monochromatic by default — Apple's data-vis discipline. Hue returns
+/// only where a series has a true status meaning (positive / negative /
+/// cost).
 abstract final class AppChart {
-  /// Categorical series, in order. All ≥5.4:1 on white (safe as a fill under
-  /// white labels). Hue alone never identifies a series: each also gets a
-  /// marker shape ([shapes]) and a text label/legend entry.
+  /// Categorical series, in order. A monochrome ramp from ink down to
+  /// mid-grey, with the brand accent at the head. Hue alone never
+  /// identifies a series: each also gets a marker shape ([shapes]) and
+  /// a text label/legend entry. All ≥4:1 on white for fills under white
+  /// labels.
   static const series = <Color>[
-    AppColors.brand, // green
-    Color(0xFF2B6A99), // blue
-    Color(0xFF9A5B00), // amber
-    Color(0xFF6A4C93), // purple
-    AppColors.textSecondary, // slate
+    AppColors.ink, // near-black
+    Color(0xFF424245), // charcoal
+    Color(0xFF6E6E73), // slate
+    Color(0xFF86868B), // mid-grey
+    Color(0xFFAEAEB2), // soft grey
   ];
 
-  static const _slate = Color(0xFF8A969F);
+  static const _slate = Color(0xFF86868B);
 
   /// Muted bar / prior-period fill (3.0:1 on white).
   static const muted = _slate;
 
   /// Decorative gridlines (behind data, never carry information alone).
-  static const grid = Color(0xFFE6EAE7);
+  static const grid = Color(0xFFE5E5EA);
 
   /// Axis baseline and tick marks.
   static const axis = _slate;
 
   static const plotInsets = EdgeInsets.fromLTRB(44, 12, 12, 30);
   static const gridStroke = 1.0;
-  static const axisStroke = 1.2;
-  static const lineStroke = 2.5;
-  static const markerSize = 10.0;
-  static const markerSelected = 15.0;
+  static const axisStroke = 1.0;
+  static const lineStroke = 2.0;
+  static const markerSize = 8.0;
+  static const markerSelected = 13.0;
 
   /// A tap/hover selects the nearest datum within this radius (≥44px touch
   /// target = radius 22; a little more is forgiving on dense charts).
   static const hitRadius = 28.0;
-  static const barRadius = 6.0;
+  static const barRadius = 4.0;
   static const height = 240.0;
 }
 
