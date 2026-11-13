@@ -10,10 +10,8 @@ pixel radius, or a styled `FilledButton`/`OutlinedButton`. Use a token or a comp
 If none fits, add one to the system first.
 
 ## Character
-Apple-inspired monochrome — charcoal ink on white, with a muted system red for "urgent",
-amber for "caution", blue for "info" and a quiet green reserved for a true "safe / passed"
-signal. The interface itself carries no hue; status colours appear only where they mean
-something. Bordered white cards, tinted (grey) status chips, pill buttons, thin line icons.
+Calm, precise, text-first — near-black ink on white, one green for "good", one red for
+"urgent". Bordered white cards, tinted status chips, pill buttons, thin line icons.
 Depth comes from two soft shadows only (`AppShadow.card` on outlined cards resting on the
 `canvas` page colour, `AppShadow.floating` on floating chrome); no gradients or decoration.
 Blur only in floating chrome: `GlassBar` (headers) and `GlassCapsule` (the phone tab bar,
@@ -27,42 +25,28 @@ glyph shadow, rise-in, a 3D pop when `lifted`, e.g. the selected tab). Both use 
 tokens and keep only the shadow under reduced motion.
 
 ## Colour (`AppColors`)
-Apple-aligned monochrome palette. Historical token names (`brand`, `brandTint`, `brandDeep`,
-`violet`, `violetTint`) are preserved so feature code keeps working, but their values now
-collapse to the greyscale ramp — no module has its own hue.
-
 | Token | Hex | Use | Contrast |
 |---|---|---|---|
-| `ink` | `#1D1D1F` | text, headings, primary button | 17.6:1 on white |
-| `inkPressed` | `#424245` | primary button pressed | |
-| `textSecondary` | `#6E6E73` | subtitles, helper text, captions | 5.3:1 |
-| `textHint` | `#86868B` | placeholders, disabled only | 3.6:1 (never for required reading) |
-| `surface` / `surfaceMuted` | `#FFFFFF` / `#F5F5F7` | page, card / selected row, inset panel | |
-| `canvas` | `#F2F2F7` | page background behind cards | |
-| `border` / `borderStrong` | `#D2D2D7` / `#A1A1A6` | card hairline / control border | |
-| `brand` + `brandTint` | `#1D1D1F` / `#F5F5F7` | primary accent, featured card — monochrome | |
-| `brandDeep` | `#000000` | hero card surface, inverted text | |
-| `violet` + `violetTint` | `#1D1D1F` / `#EFEFF2` | second accent slot (Find Bids) — monochrome | |
-| `success` + `successTint` | `#248A3D` / `#E5F2E8` | true "ready / passed" signal only | |
-| `danger` + `dangerTint` | `#BF1E2E` / `#FDECEC` | urgent, error, destructive | 5.9:1 |
-| `warning` + `warningTint` | `#8A5300` / `#FFF4E0` | needs attention | 5.7:1 on tint |
-| `info` + `infoTint` | `#0066CC` / `#E6F0FA` | neutral information | |
-| `disabled` | `#E5E5EA` | disabled fill | |
+| `ink` | `#151515` | text, headings, primary button | 18.3:1 on white |
+| `textSecondary` | `#5F6873` | subtitles, helper text, captions | 5.6:1 |
+| `textHint` | `#8A9199` | placeholders, disabled only | 3.2:1 (never for required reading) |
+| `surface` / `surfaceMuted` | `#FFFFFF` / `#F5F6F4` | page, card / selected row, inset panel | |
+| `border` / `borderStrong` | `#E1E5E2` / `#C9CFCB` | card hairline / control border | |
+| `brand` + `brandTint` | `#22654C` / `#E5F1EA` | ready, positive, links, featured card | 6.9:1 |
+| `danger` + `dangerTint` | `#B3261E` / `#FCE9E7` | urgent, error, destructive | 6.5:1 |
+| `warning` + `warningTint` | `#8A5300` / `#FFF1D6` | needs attention | 5.7:1 on tint |
+| `info` + `infoTint` | `#1F5F8B` / `#E6F0F7` | neutral information | 5.9:1 on tint |
+| `disabled` | `#CCCCCC` | disabled fill | |
 
 Colour is never the only signal: status always carries text or an icon. All body-size
-text meets WCAG AA (4.5:1). The status colours (success / danger / warning / info) are
-the ONLY non-grey values in the system and never appear on chrome — only on true status
-signals.
+text meets WCAG AA (4.5:1).
 
 ## Typography (`AppText`) — SF Pro on iOS, system font elsewhere, bundled Noto Sans fallback per script
-Apple's Display / Text pairing, with negative tracking on larger sizes for the characteristic
-tight-but-airy feel.
-
-`display` 44/700 (welcome) · `h1` 32/700 (screen headline) · `h2` 24/700 (page/card group)
-· `h3` 20/600 (section, option label) · `title` 17/600 (card/list title) · `body` 16
-· `bodySmall` 14 · `caption` 13 secondary (helper, metadata) · `label` 12/600 (chips, tab
-labels) · `overline` 11/600 uppercase (eyebrow) · `lead` 19 secondary · `input` 17
-(typed text) · `button` 16/600 · `buttonLg` 18/600. Use `AppText.secondary(style)` for the
+`display` 40/800 (welcome) · `h1` 30/800 (screen headline) · `h2` 24/800 (page/card group)
+· `h3` 20/700 (section, option label) · `title` 17/700 (card/list title) · `body` 16
+· `bodySmall` 14 · `caption` 13 secondary (helper, metadata) · `label` 12/700 (chips, tab
+labels) · `overline` 12/700 uppercase (eyebrow) · `lead` 20 secondary · `input` 18
+(typed text) · `button` 17/700 · `buttonLg` 22/700. Use `AppText.secondary(style)` for the
 muted variant. Documented exceptions: the language-screen hero greeting (`display` resized),
 and the handwriting on the name card (art overlay).
 
@@ -74,10 +58,9 @@ translations.
 
 ## Spacing, radius, size
 `AppSpace`: 4 · 8 · 12 · 16 · 20 · 24 · 32 · 48 (`gutter` = 24 side margin on phone
-screens). `AppRadius`: `sm` 8 (chips) · `md` 12 (inputs, option rows) · `lg` 16 (cards) ·
+screens). `AppRadius`: `sm` 8 (chips) · `md` 14 (inputs, option rows) · `lg` 16 (cards) ·
 `xl` 20 (hero cards, sheets) · `pill` (buttons). `AppSize`: tap target 48 · buttons
 66 / 52 / 40 · content max 1200 · wide layout ≥ 768.
-Icons: `sm` 18 · `md` 24 · `lg` 32.
 
 ## Buttons (`AppButton`, `AppIconButton`)
 | Variant | Look | Use |

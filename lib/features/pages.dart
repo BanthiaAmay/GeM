@@ -26,7 +26,7 @@ class HomePage extends StatelessWidget {
         padding: EdgeInsets.all(
           MediaQuery.sizeOf(context).width < 600 ? 24 : 40,
         ),
-        color: AppColors.surfaceMuted,
+        color: const Color(0xFFEDF1E5),
         child: ResponsiveRow(
           breakpoint: 780,
           children: [
@@ -298,7 +298,7 @@ class HomePage extends StatelessWidget {
                     'Ask about a workshop or request guidance from a CA partner.',
                     'कार्यशाला के बारे में जानें या CA पार्टनर से मार्गदर्शन माँगें।',
                   ),
-                  style: const TextStyle(color: AppColors.textHint),
+                  style: const TextStyle(color: Color(0xFFC4D4CD)),
                 ),
               ],
             ),
@@ -397,7 +397,7 @@ class ToolsPage extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppColors.surfaceMuted,
+                                  color: const Color(0xFFF0F4E9),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -594,7 +594,7 @@ class TrackerPage extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 12),
             child: Panel(
               padding: const EdgeInsets.all(12),
-              color: c[i] ? AppColors.surfaceMuted : null,
+              color: c[i] ? const Color(0xFFF0F5E9) : null,
               child: ExpansionTile(
                 key: ValueKey('step_$i'),
                 initiallyExpanded: i == c.indexOf(false),
@@ -1605,7 +1605,7 @@ class _SupportPageState extends State<SupportPage> {
               ),
             ),
             Panel(
-              color: AppColors.surfaceMuted,
+              color: const Color(0xFFEEF2E6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

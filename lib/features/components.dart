@@ -304,8 +304,7 @@ enum AppCardTone {
   /// Brand-tinted fill (featured / highlighted).
   brand,
 
-  /// Pure black surface — hero sections with inverted (white) text.
-  /// Apple's signature high-contrast hero treatment.
+  /// Deep forest green surface — hero sections with inverted (white) text.
   hero,
 }
 
