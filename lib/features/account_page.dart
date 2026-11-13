@@ -795,12 +795,13 @@ class _AccountPageState extends State<AccountPage> {
                   : requestPasswordReset,
               variant: AppButtonVariant.tertiary,
             ),
-          AppButton(
-            label: s.t('Email me a code', 'मुझे ईमेल कोड भेजें'),
-            onPressed: busy || s.emailAvailable == false ? null : sendCode,
-            loading: busy,
-            variant: AppButtonVariant.secondary,
-          ),
+          if (!signUp)
+            AppButton(
+              label: s.t('Email me a code', 'मुझे ईमेल कोड भेजें'),
+              onPressed: busy || s.emailAvailable == false ? null : sendCode,
+              loading: busy,
+              variant: AppButtonVariant.secondary,
+            ),
         ],
         const SizedBox(height: AppSpace.xxl),
         Text(
