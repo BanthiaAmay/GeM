@@ -103,9 +103,10 @@ content max 1200 · wide layout ≥ 768.
 | `primary` | solid ink pill | the one main action per screen |
 | `secondary` | white pill, 1.4px border | alternative action |
 | `tertiary` | underlined text | low emphasis ("Not now", "View all") |
+| `cheer` | lime pill, ink label | **one moment per screen** — celebratory CTAs only |
 
 Sizes `lg` 66 (screen CTA in the bottom `GlassBar`), `md` 52 (default), `sm` 40 (48px
-tap target). States: **pressed** 0.98 scale + ripple; **focused** 3px brand ring
+tap target). States: **pressed** 0.98 scale + ripple; **focused** 3px `accentInfo` ring
 (keyboard only); **disabled** grey pill, `onPressed: null` (use `onDisabledTap` to explain);
 **loading** spinner replaces label, width held, taps ignored. `danger: true` for
 destructive confirmations. Icon-only actions use `AppIconButton` — a tooltip is required.
@@ -119,18 +120,19 @@ and per-option line icons come from the design mockups: `assets/illustrations/`,
 `assets/icons/` (shown via `OnboardingArt`, `OnboardingIcon`); never recreate them in code.
 
 ## Components (`components.dart`)
-`AppCard` (outlined / muted / brand tone, optional tap) · `SectionHeader` (+ trailing
-action) · `StatusChip` (success/danger/warning/info/neutral) · `StatusItem` (done /
+`AppCard` (outlined / muted / brand / **hero**: `hero` is the full-bleed ink colour-break
+card with white text, used sparingly) · `SectionHeader` (+ trailing action) · `StatusChip`
+(success/danger/warning/info/neutral — all on the new accent tokens) · `StatusItem` (done /
 attention / pending check line) · `KeyValueRow` + `DividedList` · `AppListTile` ·
-`StateView` (loading / empty / error) · `AppProgressBar` · `AppProgressRing` ·
-`SheetHandle` · `AppSegmentedControl` · `AppChoiceChips` · `AppDropdownChip` ·
-`Depth` · `DepthIcon` · `AppKeywordField` (free-text tags: input + Add, removable ink pills, outlined
-tap-to-add suggestions; used for "What do you sell?") ·
-`ReassuranceNote` (muted green panel, brand-tint background + 3px brand left border, no
-radius — a short line reassuring the user a screen is optional/preparation-only, not a
-form or eligibility decision; used throughout onboarding wherever that reassurance
-applies). Page-level wrappers in `widgets.dart`: `Panel`, `Heading`, `Stat`,
-`NextActions`, `SourceNote`, and the animated figures `AnimatedMoney`/`AnimatedPercent`.
+`StateView` (loading / empty / error) · `AppProgressBar` (default `accentInfo`) ·
+`AppProgressRing` · `SheetHandle` · `AppSegmentedControl` · `AppChoiceChips` ·
+`AppDropdownChip` · `Depth` · `DepthIcon` · `AppKeywordField` · **`OversizedStat`** (the
+creso big-numeral move — `outlined` or `ink` tone — for hero metric tiles on home,
+trainings, tender-analytics, account) · `GemFact` (the single home for `accentPurple`) ·
+`ReassuranceNote` (surfaceAlt panel + ink left rule, no radius — a short line reassuring
+the user a screen is optional/preparation-only). Page-level wrappers in `widgets.dart`:
+`Panel`, `Heading`, `Stat`, `NextActions`, `SourceNote`, and the animated figures
+`AnimatedMoney`/`AnimatedPercent`.
 
 ## Patterns
 - **Screens:** white `Scaffold`; 24 gutter; headline (`h1`) → subtitle (`secondary body`)

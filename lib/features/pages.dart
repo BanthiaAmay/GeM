@@ -26,7 +26,7 @@ class HomePage extends StatelessWidget {
         padding: EdgeInsets.all(
           MediaQuery.sizeOf(context).width < 600 ? 24 : 40,
         ),
-        color: const Color(0xFFEDF1E5),
+        color: AppColors.surfaceAlt,
         child: ResponsiveRow(
           breakpoint: 780,
           children: [
@@ -45,9 +45,9 @@ class HomePage extends StatelessWidget {
                     'Your business.\nA new buyer: the\ngovernment.',
                     'आपका व्यवसाय।\nनया खरीदार:\nसरकार।',
                   ),
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontSize: MediaQuery.sizeOf(context).width < 600 ? 36 : 48,
-                  ),
+                  style: MediaQuery.sizeOf(context).width < 600
+                      ? AppText.h1
+                      : AppText.display,
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -86,7 +86,7 @@ class HomePage extends StatelessWidget {
                     'Free to use  ·  No login needed',
                     'मुफ़्त उपयोग  ·  लॉगिन ज़रूरी नहीं',
                   ),
-                  style: const TextStyle(fontSize: 12, color: green),
+                  style: AppText.label.copyWith(color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -103,11 +103,7 @@ class HomePage extends StatelessWidget {
                         Expanded(
                           child: Text(
                             s.t('YOUR PATH TO GeM', 'GeM तक आपका रास्ता'),
-                            style: const TextStyle(
-                              fontSize: 11,
-                              letterSpacing: 1.5,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: AppText.overline,
                           ),
                         ),
                       ],
@@ -191,7 +187,7 @@ class HomePage extends StatelessWidget {
                               'Clear assumptions. Official sources. Your decision.',
                               'स्पष्ट धारणाएँ। आधिकारिक स्रोत। आपका निर्णय।',
                             ),
-                            style: const TextStyle(fontSize: 12),
+                            style: AppText.label.copyWith(fontWeight: FontWeight.w400),
                           ),
                         ),
                       ],
@@ -298,7 +294,7 @@ class HomePage extends StatelessWidget {
                     'Ask about a workshop or request guidance from a CA partner.',
                     'कार्यशाला के बारे में जानें या CA पार्टनर से मार्गदर्शन माँगें।',
                   ),
-                  style: const TextStyle(color: Color(0xFFC4D4CD)),
+                  style: AppText.body.copyWith(color: AppColors.textHint),
                 ),
               ],
             ),
@@ -397,7 +393,7 @@ class ToolsPage extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF0F4E9),
+                                  color: AppColors.surfaceAlt,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -594,7 +590,7 @@ class TrackerPage extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 12),
             child: Panel(
               padding: const EdgeInsets.all(12),
-              color: c[i] ? const Color(0xFFF0F5E9) : null,
+              color: c[i] ? AppColors.surfaceAlt : null,
               child: ExpansionTile(
                 key: ValueKey('step_$i'),
                 initiallyExpanded: i == c.indexOf(false),
@@ -1605,7 +1601,7 @@ class _SupportPageState extends State<SupportPage> {
               ),
             ),
             Panel(
-              color: const Color(0xFFEEF2E6),
+              color: AppColors.surfaceAlt,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

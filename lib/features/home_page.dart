@@ -1350,9 +1350,8 @@ class _MetricTile extends StatelessWidget {
                   style: dark
                       ? AppText.caption.copyWith(
                           color: AppColors.surface.withValues(alpha: 0.5),
-                          fontSize: 10,
                         )
-                      : AppText.caption.copyWith(fontSize: 10),
+                      : AppText.caption,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1626,7 +1625,6 @@ class _BidAlertRow extends StatelessWidget {
                   label,
                   style: AppText.caption.copyWith(
                     color: AppColors.textHint,
-                    fontSize: 10,
                     letterSpacing: 0.4,
                   ),
                 ),
@@ -1666,10 +1664,8 @@ class _BidAlertRow extends StatelessWidget {
       ),
       child: Text(
         isService ? 'Service' : 'Goods',
-        style: AppText.caption.copyWith(
-          color: isService ? AppColors.violet : AppColors.warning,
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
+        style: AppText.label.copyWith(
+          color: isService ? AppColors.accentPurple : AppColors.accentWarning,
           letterSpacing: 0.3,
         ),
       ),
@@ -1779,8 +1775,7 @@ class _BidAlertRow extends StatelessWidget {
                     Text(
                       'View Bid Details',
                       style: AppText.bodyStrong.copyWith(
-                        color: AppColors.brand,
-                        fontSize: 13,
+                        color: AppColors.accentInfo,
                       ),
                     ),
                   ],
