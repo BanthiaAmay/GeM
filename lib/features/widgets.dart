@@ -85,7 +85,7 @@ class Heading extends StatelessWidget {
       children: [
         Text(
           eyebrow.toUpperCase(),
-          style: AppText.overline,
+          style: AppText.overline.copyWith(color: AppColors.brand),
         ),
         const SizedBox(height: AppSpace.md),
         Semantics(header: true, child: Text(title, style: AppText.h1)),

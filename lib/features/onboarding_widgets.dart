@@ -567,7 +567,7 @@ class _OnboardingLabelBlock extends StatelessWidget {
     excludeSemantics: true,
     child: Text(
       stepLabel,
-      style: AppText.overline,
+      style: AppText.overline.copyWith(color: AppColors.brand),
     ),
   );
 }
