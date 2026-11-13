@@ -190,14 +190,12 @@ class _HomePageState extends State<HomePage>
 
             final headerRow = Row(
               children: [
-                // The lockup is nearly square, so it is sized to fill the
-                // 48pt row (68 x 48) rather than by a wider width.
                 const Expanded(
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: BrandLogo(
                       variant: BrandLogoVariant.lockup,
-                      width: 68,
+                      height: 28,
                     ),
                   ),
                 ),

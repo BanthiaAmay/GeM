@@ -27,7 +27,14 @@ enum BrandLogoVariant {
 /// place controlling how the approved artwork is displayed.
 class BrandLogo extends StatelessWidget {
   final BrandLogoVariant variant;
-  final double width;
+
+  /// Constrain by width. Supply exactly one of [width] or [height]; the
+  /// image scales proportionally from whichever is set.
+  final double? width;
+
+  /// Constrain by height — preferred for nav-bar placements where the row
+  /// height is the natural constraint (e.g. `height: 28` in a 48pt bar).
+  final double? height;
 
   /// Soft silhouette shadow with a press tilt (see [Depth]). Off only where
   /// two logos are stacked exactly, so their shadows would double up.
@@ -36,9 +43,13 @@ class BrandLogo extends StatelessWidget {
   const BrandLogo({
     super.key,
     required this.variant,
-    required this.width,
+    this.width,
+    this.height,
     this.depth = true,
-  });
+  }) : assert(
+         width != null || height != null,
+         'Supply at least one of width or height.',
+       );
 
   static const _assetFor = {
     BrandLogoVariant.full: 'assets/brand/bid2scale-logo-full.png',
@@ -48,9 +59,11 @@ class BrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ref = width ?? height!;
     final image = Image.asset(
       _assetFor[variant]!,
       width: width,
+      height: height,
       fit: BoxFit.contain,
     );
     if (!depth) return image;
@@ -58,7 +71,7 @@ class BrandLogo extends StatelessWidget {
     // shadow and press tilt apply here.
     return Depth(
       entrance: false,
-      lift: (width * 0.025).clamp(2.0, 6.0),
+      lift: (ref * 0.025).clamp(2.0, 6.0),
       tilt: 0.22,
       child: image,
     );
