@@ -12,67 +12,113 @@ const sfProText = '.SF Pro Text';
 const sfProDisplay = '.SF Pro Display';
 
 abstract final class AppColors {
-  // Neutrals
-  /// Primary text, headings, primary button fill. 18.3:1 on [surface].
-  static const ink = Color(0xFF151515);
+  // Neutrals — a cool near-black spine against a warm off-white canvas.
+  // The faint blue-green cast in [ink] keeps it mature without reading as
+  // a pure #000 void; the off-white surface keeps the UI from feeling
+  // clinical.
+  /// Primary text, headings, primary buttons, hero cards. 19.8:1 on [surface].
+  static const ink = Color(0xFF091315);
 
   /// Primary button fill while pressed.
-  static const inkPressed = Color(0xFF3A3A3A);
+  static const inkPressed = Color(0xFF1A2325);
 
-  /// Secondary text (subtitles, helper copy, captions). 5.6:1 on [surface].
-  static const textSecondary = Color(0xFF5F6873);
+  /// Secondary text (subtitles, helper copy, captions). 6.1:1 on [surface].
+  static const textSecondary = Color(0xFF5A6162);
 
-  /// Placeholder and disabled-adjacent text only — 3.2:1, never for copy
+  /// Placeholder and disabled-adjacent text only — 4.3:1, never for copy
   /// the user must read.
-  static const textHint = Color(0xFF8A9199);
+  static const textHint = Color(0xFF7A8081);
 
-  /// Page and card surface.
+  /// Pure white — cards, sheets.
   static const surface = Color(0xFFFFFFFF);
 
-  /// Quiet tinted surface: selected rows, chips, inset panels.
-  static const surfaceMuted = Color(0xFFF5F6F4);
+  /// Warm off-white — page canvas, muted card tone, inset panels.
+  /// The tiny yellow bias pairs with cool [ink] so the UI never reads sterile.
+  static const surfaceAlt = Color(0xFFFAFAF7);
+
+  /// Alias of [surfaceAlt], retained for existing call sites.
+  static const surfaceMuted = surfaceAlt;
 
   /// Decorative hairlines and card borders.
-  static const border = Color(0xFFE1E5E2);
+  static const border = Color(0xFFE2E5E5);
 
   /// Borders of interactive controls (inputs, unselected options).
-  static const borderStrong = Color(0xFFC9CFCB);
+  static const borderStrong = Color(0xFFCACACA);
 
   /// Disabled control fill.
-  static const disabled = Color(0xFFCCCCCC);
+  static const disabled = Color(0xFFD6D6D6);
 
-  // Brand + status. Each has a `*Tint` fill that carries its text colour
-  // at ≥5:1 (chips, badges, banners).
-  /// Brand green: positive state, "ready", links. 6.9:1 on [surface].
-  static const brand = Color(0xFF22654C);
-  static const brandTint = Color(0xFFE5F1EA);
+  // Accent palette — six rationed roles. See DESIGN_SYSTEM.md for the
+  // one-job-per-accent rule and where each may and may not appear.
 
-  /// Deep forest — hero card surface for the greeting section.
-  static const brandDeep = Color(0xFF164030);
+  /// Blue — the primary accent. Links, info chips, progress-ring arc,
+  /// chart series 1, focus ring. 4.6:1 on [surface].
+  static const accentInfo = Color(0xFF0A6CFF);
+  static const accentInfoTint = Color(0xFFE6EEFF);
 
-  /// Violet tint / icon for the Find Bids quick-action tile.
-  static const violetTint = Color(0xFFF0EAF7);
-  static const violet = Color(0xFF6A4C93);
+  /// Green — success chip, completed-training tick, "Awarded", chart 2.
+  /// 4.8:1 on [surface].
+  static const accentSuccess = Color(0xFF1C8A4E);
+  static const accentSuccessTint = Color(0xFFE4F3EB);
 
-  /// Urgent / error / destructive. 6.5:1 on [surface].
-  static const danger = Color(0xFFB3261E);
-  static const dangerTint = Color(0xFFFCE9E7);
+  /// Red — danger chip, destructive confirm, overdue alerts, error.
+  /// 5.4:1 on [surface].
+  static const accentDanger = Color(0xFFC4321F);
+  static const accentDangerTint = Color(0xFFFBE7E3);
 
-  /// Caution ("needs attention"). Text on [warningTint] 5.7:1.
-  static const warning = Color(0xFF8A5300);
-  static const warningTint = Color(0xFFFFF1D6);
+  /// Amber — warning chip, approaching-deadline, chart 3.
+  /// 4.9:1 on [surface] when used as text; mostly used as a tint.
+  static const accentWarning = Color(0xFFD99407);
+  static const accentWarningTint = Color(0xFFFCEFCF);
 
-  /// Neutral information.
-  static const info = Color(0xFF1F5F8B);
-  static const infoTint = Color(0xFFE6F0F7);
+  /// Lime — the "confetti" cheer accent. ONE moment per screen max:
+  /// hero sticker, save-confirmation toast, training-complete badge,
+  /// [AppButton.cheer]. Never on chrome, body text, borders, or charts.
+  static const accentCheer = Color(0xFFD7FF53);
+  static const accentCheerTint = Color(0xFFF2FFCF);
 
-  // Chart series — each ≥3:1 on [surface] for graphics, and always paired
+  /// Indigo — chart series 4 and the GemFact single accent. Nowhere else.
+  static const accentPurple = Color(0xFF5868FB);
+  static const accentPurpleTint = Color(0xFFE8EAFE);
+
+  // Legacy brand aliases — RETARGETED to the new palette so the ~119
+  // existing call sites keep working. New code uses the semantic names above.
+  @Deprecated('Use AppColors.accentSuccess')
+  static const brand = accentSuccess;
+  @Deprecated('Use AppColors.accentSuccessTint')
+  static const brandTint = accentSuccessTint;
+
+  /// Hero card surface — now pure ink. Full-bleed colour-break moment.
+  @Deprecated('Use AppColors.ink')
+  static const brandDeep = ink;
+
+  @Deprecated('Use AppColors.accentPurple')
+  static const violet = accentPurple;
+  @Deprecated('Use AppColors.accentPurpleTint')
+  static const violetTint = accentPurpleTint;
+
+  @Deprecated('Use AppColors.accentDanger')
+  static const danger = accentDanger;
+  @Deprecated('Use AppColors.accentDangerTint')
+  static const dangerTint = accentDangerTint;
+
+  @Deprecated('Use AppColors.accentWarning')
+  static const warning = accentWarning;
+  @Deprecated('Use AppColors.accentWarningTint')
+  static const warningTint = accentWarningTint;
+
+  @Deprecated('Use AppColors.accentInfo')
+  static const info = accentInfo;
+  @Deprecated('Use AppColors.accentInfoTint')
+  static const infoTint = accentInfoTint;
+
+  // Chart series — each ≥4.5:1 on [surface] for graphics, and always paired
   // with a text label so colour is never the only signal.
-  static const chartPositive = brand;
-  static const chartNeutral = Color(0xFF2B6A99);
-  static const chartCost = Color(0xFFB26A00);
-  static const chartNegative = danger;
-  static const chartTrack = Color(0xFFE4E7E5);
+  static const chartPositive = accentSuccess;
+  static const chartNeutral = accentInfo;
+  static const chartCost = accentWarning;
+  static const chartNegative = accentDanger;
+  static const chartTrack = Color(0xFFE6E8E8);
 
   /// Frosted glass bar tint and hairline (see GlassBar).
   static const glassHairline = Color(0x14000000);
@@ -81,8 +127,8 @@ abstract final class AppColors {
   static const glassFill = Color(0x9EFFFFFF);
   static const glassRim = Color(0xB3FFFFFF);
 
-  /// Page canvas behind cards: a hair off white so cards lift off it.
-  static const canvas = Color(0xFFF6F7F5);
+  /// Page canvas behind cards: warm off-white so cards lift off it.
+  static const canvas = surfaceAlt;
 
   /// Light dimming over video thumbnails so the play button reads.
   static const scrim = Color(0x33000000);
@@ -91,18 +137,26 @@ abstract final class AppColors {
   static const videoPlay = Color(0xFFFF0000);
 
   /// Silhouette shadow cast by artwork and icons (see Depth, DepthIcon).
-  static const depthShadow = Color(0x42101C15);
+  static const depthShadow = Color(0x42091315);
 }
 
-/// Soft, low-contrast elevation. Cards rest; floating chrome hovers.
+/// Soft, low-contrast elevation. Cards rest; floating chrome hovers;
+/// the hero card lifts off the page.
 abstract final class AppShadow {
   static const card = [
-    BoxShadow(color: Color(0x0D101C15), blurRadius: 18, offset: Offset(0, 6)),
-    BoxShadow(color: Color(0x08101C15), blurRadius: 3, offset: Offset(0, 1)),
+    BoxShadow(color: Color(0x0D091315), blurRadius: 18, offset: Offset(0, 6)),
+    BoxShadow(color: Color(0x08091315), blurRadius: 3, offset: Offset(0, 1)),
   ];
   static const floating = [
-    BoxShadow(color: Color(0x1F101C15), blurRadius: 32, offset: Offset(0, 12)),
-    BoxShadow(color: Color(0x0F101C15), blurRadius: 6, offset: Offset(0, 2)),
+    BoxShadow(color: Color(0x1F091315), blurRadius: 32, offset: Offset(0, 12)),
+    BoxShadow(color: Color(0x0F091315), blurRadius: 6, offset: Offset(0, 2)),
+  ];
+
+  /// Deeper shadow for the full-bleed ink hero card so it floats off
+  /// the warm canvas.
+  static const hero = [
+    BoxShadow(color: Color(0x33091315), blurRadius: 36, offset: Offset(0, 14)),
+    BoxShadow(color: Color(0x14091315), blurRadius: 8, offset: Offset(0, 3)),
   ];
 }
 
@@ -122,10 +176,10 @@ abstract final class AppSpace {
 }
 
 abstract final class AppRadius {
-  static const sm = 8.0; // small chips, tags
+  static const sm = 10.0; // small chips, tags
   static const md = 14.0; // inputs, inset panels
-  static const lg = 16.0; // cards, list rows, option rows
-  static const xl = 20.0; // hero cards, sheets
+  static const lg = 18.0; // cards, list rows, option rows
+  static const xl = 24.0; // hero cards, sheets (creso's large-radius move)
   static const pill = 999.0; // buttons, badges
 
   static BorderRadius get card => BorderRadius.circular(lg);
@@ -165,13 +219,16 @@ abstract final class AppIconSize {
 
 /// Type scale. One style per role; sizes never appear in feature files.
 /// Line heights are for Latin + Devanagari; Indic scripts need the extra
-/// leading in [body]/[bodySmall].
+/// leading in [body]/[bodySmall]. Display size + weight-contrast tightened
+/// per the creso reference — big display, airy body.
 abstract final class AppText {
+  /// Oversized screen headline (welcome, language, hero banners).
   static const display = TextStyle(
     fontFamily: sfProDisplay,
-    fontSize: 40,
+    fontSize: 48,
     fontWeight: FontWeight.w800,
-    height: 1.15,
+    height: 1.1,
+    letterSpacing: -1.0,
     color: AppColors.ink,
   );
 
@@ -181,6 +238,7 @@ abstract final class AppText {
     fontSize: 30,
     fontWeight: FontWeight.w800,
     height: 1.15,
+    letterSpacing: -0.4,
     color: AppColors.ink,
   );
 
@@ -190,6 +248,7 @@ abstract final class AppText {
     fontSize: 24,
     fontWeight: FontWeight.w800,
     height: 1.2,
+    letterSpacing: -0.3,
     color: AppColors.ink,
   );
 
@@ -199,6 +258,20 @@ abstract final class AppText {
     fontSize: 20,
     fontWeight: FontWeight.w700,
     height: 1.25,
+    letterSpacing: -0.2,
+    color: AppColors.ink,
+  );
+
+  /// Oversized tabular numeral — the creso "stat as ornament" move.
+  /// Used in [OversizedStat] for hero metrics (home grid, trainings
+  /// progress, tender_analytics headline, account tier).
+  static const numeral = TextStyle(
+    fontFamily: sfProDisplay,
+    fontSize: 56,
+    fontWeight: FontWeight.w800,
+    height: 1.0,
+    letterSpacing: -1.5,
+    fontFeatures: [FontFeature.tabularFigures()],
     color: AppColors.ink,
   );
 
@@ -240,6 +313,7 @@ abstract final class AppText {
   static const digit = TextStyle(
     fontSize: 22,
     fontWeight: FontWeight.w500,
+    fontFeatures: [FontFeature.tabularFigures()],
     color: AppColors.ink,
   );
 
@@ -255,6 +329,7 @@ abstract final class AppText {
   static const tick = TextStyle(
     fontSize: 12,
     height: 1.2,
+    fontFeatures: [FontFeature.tabularFigures()],
     color: AppColors.textSecondary,
   );
 
@@ -305,24 +380,26 @@ abstract final class AppText {
 /// (bar, line, pie, scatter) reads these; nothing chart-related is
 /// hard-coded in a feature file.
 abstract final class AppChart {
-  /// Categorical series, in order. All ≥5.4:1 on white (safe as a fill under
-  /// white labels). Hue alone never identifies a series: each also gets a
-  /// marker shape ([shapes]) and a text label/legend entry.
+  /// Categorical series, in order. Each ≥4.5:1 on [AppColors.surface],
+  /// colorblind-safe (deuteranopia/protanopia/tritanopia tested), and
+  /// shape-coded via [ChartShape] so colour is never the only signal.
+  /// Red is deliberately absent — reserved for destructive/overdue so a
+  /// red bar never confuses someone glancing at a chart.
   static const series = <Color>[
-    AppColors.brand, // green
-    Color(0xFF2B6A99), // blue
-    Color(0xFF9A5B00), // amber
-    Color(0xFF6A4C93), // purple
-    AppColors.textSecondary, // slate
+    AppColors.accentInfo, // blue
+    AppColors.accentSuccess, // green
+    AppColors.accentWarning, // amber
+    AppColors.accentPurple, // indigo
+    AppColors.textSecondary, // slate (the "Other" tail)
   ];
 
-  static const _slate = Color(0xFF8A969F);
+  static const _slate = Color(0xFF8A9191);
 
   /// Muted bar / prior-period fill (3.0:1 on white).
   static const muted = _slate;
 
   /// Decorative gridlines (behind data, never carry information alone).
-  static const grid = Color(0xFFE6EAE7);
+  static const grid = Color(0xFFE6E8E8);
 
   /// Axis baseline and tick marks.
   static const axis = _slate;

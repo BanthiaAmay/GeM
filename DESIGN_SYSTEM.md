@@ -10,10 +10,16 @@ pixel radius, or a styled `FilledButton`/`OutlinedButton`. Use a token or a comp
 If none fits, add one to the system first.
 
 ## Character
-Calm, precise, text-first — near-black ink on white, one green for "good", one red for
-"urgent". Bordered white cards, tinted status chips, pill buttons, thin line icons.
-Depth comes from two soft shadows only (`AppShadow.card` on outlined cards resting on the
-`canvas` page colour, `AppShadow.floating` on floating chrome); no gradients or decoration.
+**Sophisticated noir with confetti accents.** A cool near-black `ink` (`#091315`, never
+pure `#000`) sits on a warm off-white `surfaceAlt` (`#FAFAF7`) canvas, with pure white
+cards lifting off it. Six rationed accents carry meaning (blue, green, red, amber, indigo)
+plus one lime "confetti" moment for celebration — status still has a hue, but colour is
+~15% of visual weight on any screen. Cheer comes from large card radii (18 / 24), fully-pill
+buttons, oversized tabular numerals (`OversizedStat`), and hard full-bleed ink hero cards
+that interrupt white sections. No gradients on chrome, no spot illustrations — geometry
+and typography do the work. Depth comes from three shadow tokens only (`AppShadow.card`
+on outlined cards, `AppShadow.floating` on floating chrome, `AppShadow.hero` on full-bleed
+ink hero cards).
 Blur only in floating chrome: `GlassBar` (headers) and `GlassCapsule` (the phone tab bar,
 which floats above the home indicator with content scrolling blurred behind it).
 Home's header is one 48pt row under the status bar that tucks away while scrolling down
@@ -25,30 +31,58 @@ glyph shadow, rise-in, a 3D pop when `lifted`, e.g. the selected tab). Both use 
 tokens and keep only the shadow under reduced motion.
 
 ## Colour (`AppColors`)
+
+### Neutrals — the spine
 | Token | Hex | Use | Contrast |
 |---|---|---|---|
-| `ink` | `#151515` | text, headings, primary button | 18.3:1 on white |
-| `textSecondary` | `#5F6873` | subtitles, helper text, captions | 5.6:1 |
-| `textHint` | `#8A9199` | placeholders, disabled only | 3.2:1 (never for required reading) |
-| `surface` / `surfaceMuted` | `#FFFFFF` / `#F5F6F4` | page, card / selected row, inset panel | |
-| `border` / `borderStrong` | `#E1E5E2` / `#C9CFCB` | card hairline / control border | |
-| `brand` + `brandTint` | `#22654C` / `#E5F1EA` | ready, positive, links, featured card | 6.9:1 |
-| `danger` + `dangerTint` | `#B3261E` / `#FCE9E7` | urgent, error, destructive | 6.5:1 |
-| `warning` + `warningTint` | `#8A5300` / `#FFF1D6` | needs attention | 5.7:1 on tint |
-| `info` + `infoTint` | `#1F5F8B` / `#E6F0F7` | neutral information | 5.9:1 on tint |
-| `disabled` | `#CCCCCC` | disabled fill | |
+| `ink` | `#091315` | text, headings, primary button, hero card surface | 19.8:1 on white |
+| `inkPressed` | `#1A2325` | primary button pressed | |
+| `textSecondary` | `#5A6162` | subtitles, helper text, captions | 6.1:1 |
+| `textHint` | `#7A8081` | placeholders, disabled only | 4.3:1 (never for required reading) |
+| `surface` | `#FFFFFF` | cards, sheets | |
+| `surfaceAlt` | `#FAFAF7` | page canvas, muted panels (alias `surfaceMuted` / `canvas`) | |
+| `border` / `borderStrong` | `#E2E5E5` / `#CACACA` | card hairline / control border | |
+| `disabled` | `#D6D6D6` | disabled fill | |
+
+### Accents — six slots, each with one job
+| Token | Hex | Where allowed | Banned from |
+|---|---|---|---|
+| `accentInfo` (blue) | `#0A6CFF` | Links, info chips, progress-ring arc, chart 1, focus ring | Large backgrounds, buttons |
+| `accentSuccess` (green) | `#1C8A4E` | Success chip, completed tick, "Awarded", chart 2 | Primary CTAs, hero bg |
+| `accentDanger` (red) | `#C4321F` | Danger chip, destructive confirm, overdue, error | Non-destructive emphasis |
+| `accentWarning` (amber) | `#D99407` | Warning chip, approaching-deadline, chart 3 | Success contexts, CTAs |
+| `accentCheer` (lime) | `#D7FF53` | **One moment per screen max** — hero sticker, save toast, training-complete badge, `AppButton.cheer` | Chrome, body text, borders, charts |
+| `accentPurple` (indigo) | `#5868FB` | Chart 4, `GemFact` single accent | Anywhere else |
+
+Each accent has a `*Tint` fill (`accent@12%`) for chips, badges, and insets.
+
+### Legacy aliases — retained, retargeted
+`brand` → `accentSuccess`, `brandTint` → `accentSuccessTint`, `brandDeep` → `ink`,
+`violet` → `accentPurple`, `violetTint` → `accentPurpleTint`, `danger`/`warning`/`info`
+alias their `accent*` equivalents. The top-level `green` / `lime` / `ink` constants in
+`theme.dart` resolve to `accentSuccess` / `accentCheer` / `ink`. All are `@Deprecated`
+in the tokens file; new code uses the semantic names.
+
+### The cheer-accent rule
+One lime moment per screen, never two. Used sparingly, it reads as celebration;
+scattered, it reads as a child's party. Candidates: save confirmations, completed
+training badges, hero stickers, the one primary CTA on a win moment.
 
 Colour is never the only signal: status always carries text or an icon. All body-size
 text meets WCAG AA (4.5:1).
 
 ## Typography (`AppText`) — SF Pro on iOS, system font elsewhere, bundled Noto Sans fallback per script
-`display` 40/800 (welcome) · `h1` 30/800 (screen headline) · `h2` 24/800 (page/card group)
-· `h3` 20/700 (section, option label) · `title` 17/700 (card/list title) · `body` 16
-· `bodySmall` 14 · `caption` 13 secondary (helper, metadata) · `label` 12/700 (chips, tab
-labels) · `overline` 12/700 uppercase (eyebrow) · `lead` 20 secondary · `input` 18
-(typed text) · `button` 17/700 · `buttonLg` 22/700. Use `AppText.secondary(style)` for the
-muted variant. Documented exceptions: the language-screen hero greeting (`display` resized),
-and the handwriting on the name card (art overlay).
+`display` 48/800 (-1.0 tracking, hero numerals and splash) · `numeral` 56/800 tabular
+(-1.5 tracking, `OversizedStat` metric values) · `h1` 30/800 · `h2` 24/800 · `h3` 20/700
+· `title` 17/700 · `body` 16 · `bodySmall` 14 · `caption` 13 secondary · `label` 12/700
+· `overline` 12/700 uppercase · `lead` 20 secondary · `input` 18 · `digit` 22/500 tabular
+· `button` 17/700 · `buttonLg` 22/700. Use `AppText.secondary(style)` for the muted
+variant. Display and headlines carry negative letter-spacing for the creso-style tight
+display + airy body contrast. All numeric styles (`numeral`, `digit`, `tick`) use
+tabular figures.
+
+Documented exceptions: the language-screen hero greeting (`display` resized), and the
+handwriting on the name card (art overlay).
 
 Every script in `supportedLanguages` (core/models.dart) has a matching bundled font in
 `theme.dart`'s `fontFamilyFallback` (Devanagari, Bengali, Gujarati, Gurmukhi, Tamil, Telugu,
@@ -58,9 +92,10 @@ translations.
 
 ## Spacing, radius, size
 `AppSpace`: 4 · 8 · 12 · 16 · 20 · 24 · 32 · 48 (`gutter` = 24 side margin on phone
-screens). `AppRadius`: `sm` 8 (chips) · `md` 14 (inputs, option rows) · `lg` 16 (cards) ·
-`xl` 20 (hero cards, sheets) · `pill` (buttons). `AppSize`: tap target 48 · buttons
-66 / 52 / 40 · content max 1200 · wide layout ≥ 768.
+screens). `AppRadius`: `sm` 10 (chips) · `md` 14 (inputs, option rows) · `lg` 18 (cards) ·
+`xl` 24 (hero cards, sheets) · `pill` (buttons). Larger radii than before — a creso move
+to read confident, not corporate. `AppSize`: tap target 48 · buttons 66 / 52 / 40 ·
+content max 1200 · wide layout ≥ 768.
 
 ## Buttons (`AppButton`, `AppIconButton`)
 | Variant | Look | Use |
