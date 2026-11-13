@@ -1166,7 +1166,7 @@ class _NotificationBell extends StatelessWidget {
               width: 8,
               height: 8,
               decoration: const BoxDecoration(
-                color: AppColors.brand,
+                color: AppColors.danger,
                 shape: BoxShape.circle,
               ),
             ),
@@ -1847,29 +1847,29 @@ class _QuickActionsSection extends StatelessWidget {
             _QuickActionTile(
               icon: Icons.bar_chart_outlined,
               label: s.t('ROI Calc', 'ROI कैल्क'),
-              tileColor: AppColors.infoTint,
-              iconColor: AppColors.info,
+              tileColor: AppColors.surfaceMuted,
+              iconColor: AppColors.ink,
               onTap: () => onNavigate(_Tab.financialHub),
             ),
             _QuickActionTile(
               icon: Icons.chat_bubble_outline,
               label: s.t('Ask Saathi', 'साथी से पूछें'),
-              tileColor: AppColors.brandTint,
-              iconColor: AppColors.brand,
+              tileColor: AppColors.surfaceMuted,
+              iconColor: AppColors.ink,
               onTap: () => Navigator.of(context).pushNamed('/saathi'),
             ),
             _QuickActionTile(
               icon: Icons.trending_up_outlined,
               label: s.t('Tender Analytics', 'टेंडर एनालिटिक्स'),
-              tileColor: AppColors.warningTint,
-              iconColor: AppColors.warning,
+              tileColor: AppColors.surfaceMuted,
+              iconColor: AppColors.ink,
               onTap: () => Navigator.of(context).pushNamed('/insights'),
             ),
             _QuickActionTile(
               icon: Icons.gavel_outlined,
               label: s.t('Find Bids', 'बोलियाँ खोजें'),
-              tileColor: AppColors.violetTint,
-              iconColor: AppColors.violet,
+              tileColor: AppColors.surfaceMuted,
+              iconColor: AppColors.ink,
               onTap: () => Navigator.of(context).pushNamed('/bids'),
             ),
           ],
@@ -1989,7 +1989,7 @@ class _LearnSection extends StatelessWidget {
             children: [
               Text(
                 s.t('GEM WEEKLY', 'GEM साप्ताहिक'),
-                style: AppText.overline.copyWith(color: AppColors.brand),
+                style: AppText.overline,
               ),
               const SizedBox(height: AppSpace.xs),
               Container(
@@ -1998,7 +1998,7 @@ class _LearnSection extends StatelessWidget {
                   vertical: AppSpace.xs,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.brandTint,
+                  color: AppColors.surfaceMuted,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
@@ -2007,13 +2007,13 @@ class _LearnSection extends StatelessWidget {
                       : s.t('Coming soon', 'जल्द आ रहा है'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppText.bodyStrong.copyWith(color: AppColors.brand),
+                  style: AppText.bodyStrong,
                 ),
               ),
               const SizedBox(height: AppSpace.xs),
               Text(
                 s.t('Watch →', 'देखें →'),
-                style: AppText.caption.copyWith(color: AppColors.brand),
+                style: AppText.caption.copyWith(color: AppColors.ink),
               ),
             ],
           ),

@@ -86,7 +86,7 @@ class HomePage extends StatelessWidget {
                     'Free to use  ·  No login needed',
                     'मुफ़्त उपयोग  ·  लॉगिन ज़रूरी नहीं',
                   ),
-                  style: const TextStyle(fontSize: 12, color: green),
+                  style: AppText.label.copyWith(color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -98,16 +98,12 @@ class HomePage extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.explore_outlined, color: green),
+                        const Icon(Icons.explore_outlined, color: AppColors.brand),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             s.t('YOUR PATH TO GeM', 'GeM तक आपका रास्ता'),
-                            style: const TextStyle(
-                              fontSize: 11,
-                              letterSpacing: 1.5,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: AppText.overline,
                           ),
                         ),
                       ],
@@ -146,14 +142,14 @@ class HomePage extends StatelessWidget {
                               height: 36,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color: lime,
+                                color: AppColors.brandTint,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
                                 row[0],
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: green,
+                                  color: AppColors.brand,
                                 ),
                               ),
                             ),
@@ -182,7 +178,7 @@ class HomePage extends StatelessWidget {
                         const Icon(
                           Icons.verified_user_outlined,
                           size: 18,
-                          color: green,
+                          color: AppColors.brand,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -191,7 +187,9 @@ class HomePage extends StatelessWidget {
                               'Clear assumptions. Official sources. Your decision.',
                               'स्पष्ट धारणाएँ। आधिकारिक स्रोत। आपका निर्णय।',
                             ),
-                            style: const TextStyle(fontSize: 12),
+                            style: AppText.label.copyWith(
+                              fontWeight: FontWeight.w400,
+                            ),
                           ),
                         ),
                       ],
@@ -208,10 +206,10 @@ class HomePage extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(bottom: 24),
           child: Panel(
-            color: lime,
+            color: AppColors.brandTint,
             child: Row(
               children: [
-                const Icon(Icons.bookmark_added_outlined, color: green),
+                const Icon(Icons.bookmark_added_outlined, color: AppColors.brand),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -277,7 +275,7 @@ class HomePage extends StatelessWidget {
       ToolsPage(s, embedded: true),
       const SizedBox(height: 30),
       Panel(
-        color: ink,
+        color: AppColors.ink,
         child: ResponsiveRow(
           children: [
             Column(
@@ -306,8 +304,8 @@ class HomePage extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: FilledButton(
                 style: FilledButton.styleFrom(
-                  backgroundColor: lime,
-                  foregroundColor: ink,
+                  backgroundColor: AppColors.brandTint,
+                  foregroundColor: AppColors.ink,
                 ),
                 onPressed: () => go(context, s, 'support'),
                 child: Text(s.t('Find support →', 'सहायता पाएँ →')),
@@ -324,7 +322,7 @@ class HomePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: green, size: 24),
+            Icon(icon, color: AppColors.brand, size: 24),
             const SizedBox(height: 12),
             Text(title, style: Theme.of(c).textTheme.titleMedium),
             const SizedBox(height: 6),
@@ -402,7 +400,7 @@ class ToolsPage extends StatelessWidget {
                                 ),
                                 child: Icon(
                                   toolIcons[entry.key],
-                                  color: green,
+                                  color: AppColors.brand,
                                   size: 25,
                                 ),
                               ),
@@ -672,7 +670,7 @@ class ReportPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.description_outlined, size: 40, color: green),
+              const Icon(Icons.description_outlined, size: 40, color: AppColors.brand),
               const SizedBox(height: 16),
               Text(
                 s.t(
@@ -763,7 +761,7 @@ class ReportPage extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(toolIcons[k], color: green),
+                      Icon(toolIcons[k], color: AppColors.brand),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -801,7 +799,7 @@ class ReportPage extends StatelessWidget {
             ),
           ),
         Panel(
-          color: lime,
+          color: AppColors.brandTint,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -911,7 +909,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         s.checklist[i]
                             ? Icons.check_circle
                             : Icons.radio_button_unchecked,
-                        color: green,
+                        color: AppColors.brand,
                       ),
                       title: Text(tr(s.language, steps[i][0], steps[i][1])),
                     ),
@@ -1133,7 +1131,7 @@ class _AccountPageState extends State<AccountPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.cloud_outlined, color: green, size: 32),
+                  const Icon(Icons.cloud_outlined, color: AppColors.brand, size: 32),
                   const SizedBox(height: 16),
                   Text(
                     s.t('Save your plan online', 'अपनी योजना ऑनलाइन सहेजें'),
@@ -1399,7 +1397,7 @@ class _AccountPageState extends State<AccountPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.replay_outlined, color: green, size: 32),
+              const Icon(Icons.replay_outlined, color: AppColors.brand, size: 32),
               const SizedBox(height: 16),
               Text(
                 s.t('Revisit the welcome screens', 'वेलकम स्क्रीन फिर देखें'),
@@ -1595,8 +1593,8 @@ class _SupportPageState extends State<SupportPage> {
                       padding: const EdgeInsets.only(top: 16),
                       child: Text(
                         submitted!,
-                        style: const TextStyle(
-                          color: green,
+                        style: TextStyle(
+                          color: AppColors.brand,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

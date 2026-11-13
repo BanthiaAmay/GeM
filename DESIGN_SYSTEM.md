@@ -54,6 +54,19 @@ text meets WCAG AA (4.5:1). The status colours (success / danger / warning / inf
 the ONLY non-grey values in the system and never appear on chrome — only on true status
 signals.
 
+### Phase 2 refinements (screen-level)
+- **Overline eyebrows** (`SectionHeader`, onboarding step labels, GEM WEEKLY): plain
+  `AppText.overline` (uses `textSecondary`) — NOT `brand`-colored. With brand = charcoal ≈ ink,
+  a brand-tinted overline was too heavy; neutral grey restores the intended subdued hierarchy.
+- **Quick action tiles** (Home): all four tiles are uniform monochrome —
+  `surfaceMuted` background, `ink` icon. No per-tile colour. This is the Apple approach:
+  non-status chrome carries no hue.
+- **Notification dot** (Home bell icon): `danger` red, not `brand`. The dot signals unread
+  attention; a charcoal dot on a charcoal icon was invisible.
+- **Legacy aliases** (`green`, `lime`, `ink` in `theme.dart`): resolve correctly through the
+  alias chain but should NOT be used in new code. Feature files use `AppColors.*` directly.
+  `pages.dart` has been fully migrated.
+
 ## Typography (`AppText`) — SF Pro on iOS, system font elsewhere, bundled Noto Sans fallback per script
 Apple's Display / Text pairing, with negative tracking on larger sizes for the characteristic
 tight-but-airy feel.
