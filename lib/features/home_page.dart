@@ -191,12 +191,16 @@ class _HomePageState extends State<HomePage>
 
             final headerRow = Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Align(
                     alignment: Alignment.centerLeft,
+                    // lockup is a stacked PNG; 44 pt keeps both the mark
+                    // and "Bid2Scale" wordmark clearly legible in the bar.
+                    // depth: false avoids shadow noise at this small size.
                     child: BrandLogo(
                       variant: BrandLogoVariant.lockup,
-                      height: 28,
+                      height: 44,
+                      depth: false,
                     ),
                   ),
                 ),
