@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show cos, sin, pi;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/models.dart';
@@ -732,50 +733,357 @@ class _FinancialHubTab extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _PageHeader(title: s.t('Finance', 'वित्त')),
-        AppCard(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpace.lg,
-            vertical: AppSpace.xxl,
-          ),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: const BoxDecoration(
-                    color: AppColors.brandTint,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.savings_outlined,
-                    color: AppColors.brand,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(height: AppSpace.lg),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpace.md,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.brandTint,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Text(
-                    s.t('Coming Soon', 'जल्द आ रहा है'),
-                    style: AppText.overline.copyWith(color: AppColors.brand),
-                  ),
-                ),
-              ],
-            ),
+        const SizedBox(height: AppSpace.xl),
+        // ── Illustration ────────────────────────────────────────────────
+        Center(
+          child: SizedBox(
+            width: 240,
+            height: 200,
+            child: CustomPaint(painter: _FinanceIllustration()),
           ),
         ),
+        const SizedBox(height: AppSpace.xxl),
+        // ── Headline ────────────────────────────────────────────────────
+        Center(
+          child: Text(
+            s.t('Coming Soon', 'जल्द आ रहा है'),
+            style: AppText.h1,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: AppSpace.sm),
+        Center(
+          child: Text(
+            s.t(
+              'This feature is currently under development.\nStay tuned for something exciting!',
+              'यह सुविधा अभी विकास में है।\nकुछ रोमांचक आने वाला है!',
+            ),
+            style: AppText.body.copyWith(color: AppColors.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: AppSpace.xxl),
+        // ── Teaser card ─────────────────────────────────────────────────
+        AppCard(
+          tone: AppCardTone.muted,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.lg,
+            vertical: AppSpace.lg,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.accentInfoTint,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: const Icon(
+                  Icons.lightbulb_outline,
+                  color: AppColors.accentInfo,
+                  size: AppIconSize.md,
+                ),
+              ),
+              const SizedBox(width: AppSpace.md),
+              Container(
+                width: 1,
+                height: 44,
+                color: AppColors.border,
+              ),
+              const SizedBox(width: AppSpace.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.t("What's coming?", 'क्या आने वाला है?'),
+                      style: AppText.bodyStrong,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      s.t(
+                        'A smarter, simpler way to explore GeM opportunities.',
+                        'GeM अवसरों को खोजने का एक स्मार्ट और सरल तरीका।',
+                      ),
+                      style: AppText.caption,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpace.xxl),
+        // ── Back to Home ─────────────────────────────────────────────────
+        AppButton(
+          label: s.t('Back to Home', 'होम पर वापस जाएं'),
+          onPressed: () {
+            // Pop back to home tab (index 0) via the shell's tab switch
+            Navigator.of(context).popUntil((r) => r.isFirst);
+          },
+        ),
+        const SizedBox(height: AppSpace.gutter),
       ],
     );
   }
+}
+
+/// Finance "coming soon" illustration:
+/// shop-front + coin stack + bar chart with upward arrow,
+/// all drawn in app design-token colours.
+class _FinanceIllustration extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    // shared paints
+    final fill = (Color c) => Paint()..color = c..style = PaintingStyle.fill;
+    final stroke = (Color c, double sw) => Paint()
+      ..color = c
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = sw
+      ..strokeCap = StrokeCap.round;
+
+    // ── Background halo circle ────────────────────────────────────────
+    canvas.drawCircle(
+      Offset(w * 0.46, h * 0.46),
+      w * 0.42,
+      fill(AppColors.surfaceMuted),
+    );
+
+    // ── Bar chart (3 bars, ascending left to right, behind shop) ─────
+    final barBottom = h * 0.84;
+    final barW = w * 0.10;
+    final barsData = [
+      (w * 0.52, h * 0.42),
+      (w * 0.65, h * 0.30),
+      (w * 0.78, h * 0.18),
+    ];
+    for (final (bx, bh) in barsData) {
+      final rect = Rect.fromLTWH(bx, barBottom - bh, barW, bh);
+      final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(4));
+      canvas.drawRRect(
+        rrect,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: [AppColors.border, AppColors.textHint.withValues(alpha: 0.45)],
+          ).createShader(rect),
+      );
+    }
+
+    // ── Trend arrow (diagonal up-right, dark) ────────────────────────
+    final arrowPath = Path()
+      ..moveTo(w * 0.52, h * 0.70)
+      ..lineTo(w * 0.84, h * 0.14);
+    canvas.drawPath(arrowPath, stroke(AppColors.ink, 2.4));
+    // arrowhead
+    final arrowTip = Offset(w * 0.84, h * 0.14);
+    final arrowHead = Path()
+      ..moveTo(arrowTip.dx, arrowTip.dy)
+      ..lineTo(arrowTip.dx - 10, arrowTip.dy + 4)
+      ..lineTo(arrowTip.dx - 4, arrowTip.dy + 10)
+      ..close();
+    canvas.drawPath(arrowHead, fill(AppColors.ink));
+
+    // ── Shop building ────────────────────────────────────────────────
+    final shopL = w * 0.10;
+    final shopR = w * 0.60;
+    final shopTop = h * 0.46;
+    final shopBot = h * 0.86;
+    final shopW = shopR - shopL;
+    // walls
+    canvas.drawRRect(
+      RRect.fromRectAndCorners(
+        Rect.fromLTRB(shopL, shopTop, shopR, shopBot),
+        bottomLeft: const Radius.circular(4),
+        bottomRight: const Radius.circular(4),
+      ),
+      fill(AppColors.surface),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndCorners(
+        Rect.fromLTRB(shopL, shopTop, shopR, shopBot),
+        bottomLeft: const Radius.circular(4),
+        bottomRight: const Radius.circular(4),
+      ),
+      stroke(AppColors.borderStrong, 1.2),
+    );
+
+    // awning base bar
+    final awningTop = shopTop - 4;
+    final awningBot = shopTop + 20;
+    canvas.drawRect(
+      Rect.fromLTRB(shopL - 4, awningTop, shopR + 4, awningBot),
+      fill(AppColors.ink),
+    );
+    // awning scalloped bottom edge
+    final scallop = Path();
+    final scW = shopW / 7;
+    scallop.moveTo(shopL - 4, awningBot);
+    for (int i = 0; i < 7; i++) {
+      final x0 = shopL - 4 + i * scW;
+      scallop.conicTo(x0 + scW / 2, awningBot + 8, x0 + scW, awningBot, 0.7);
+    }
+    scallop.lineTo(shopR + 4, awningTop);
+    scallop.lineTo(shopL - 4, awningTop);
+    scallop.close();
+    canvas.drawPath(scallop, fill(AppColors.ink));
+    // awning stripes (white)
+    final stripeW = scW * 0.45;
+    for (int i = 0; i < 7; i++) {
+      final sx = shopL - 4 + i * scW + scW * 0.28;
+      canvas.drawRect(
+        Rect.fromLTWH(sx, awningTop, stripeW, awningBot - awningTop),
+        fill(AppColors.surface.withValues(alpha: 0.5)),
+      );
+    }
+
+    // shop door
+    final doorW = shopW * 0.28;
+    final doorH = (shopBot - shopTop) * 0.55;
+    final doorL = shopL + (shopW - doorW) / 2;
+    final doorTop = shopBot - doorH;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(doorL, doorTop, doorW, doorH),
+        const Radius.circular(3),
+      ),
+      fill(AppColors.borderStrong),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(doorL, doorTop, doorW, doorH),
+        const Radius.circular(3),
+      ),
+      stroke(AppColors.textSecondary, 1.0),
+    );
+    // door window (glass shine)
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(doorL + 3, doorTop + 3, doorW - 6, doorH * 0.45),
+        const Radius.circular(2),
+      ),
+      fill(AppColors.border),
+    );
+    // door handle
+    canvas.drawCircle(
+      Offset(doorL + doorW * 0.70, doorTop + doorH * 0.60),
+      2.0,
+      fill(AppColors.textSecondary),
+    );
+
+    // shop window (left of door)
+    final winL = shopL + shopW * 0.08;
+    final winTop2 = shopTop + 28;
+    final winW = shopW * 0.24;
+    final winH = (shopBot - shopTop - 28) * 0.38;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(winL, winTop2, winW, winH),
+        const Radius.circular(3),
+      ),
+      fill(AppColors.border),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(winL, winTop2, winW, winH),
+        const Radius.circular(3),
+      ),
+      stroke(AppColors.borderStrong, 1.0),
+    );
+    // window cross divider
+    canvas.drawLine(
+      Offset(winL + winW / 2, winTop2),
+      Offset(winL + winW / 2, winTop2 + winH),
+      stroke(AppColors.borderStrong, 0.8),
+    );
+    canvas.drawLine(
+      Offset(winL, winTop2 + winH / 2),
+      Offset(winL + winW, winTop2 + winH / 2),
+      stroke(AppColors.borderStrong, 0.8),
+    );
+
+    // ── Leaves / plant (bottom-left of shop) ─────────────────────────
+    final leafPaint = fill(AppColors.accentSuccess.withValues(alpha: 0.55));
+    for (int i = 0; i < 3; i++) {
+      final lx = shopL - 2 + i * 7.0;
+      final ly = shopBot - 2.0;
+      final leaf = Path()
+        ..moveTo(lx, ly)
+        ..quadraticBezierTo(lx - 8 + i * 4, ly - 18, lx + 2, ly - 14)
+        ..quadraticBezierTo(lx + 10 - i * 2, ly - 8, lx, ly);
+      canvas.drawPath(leaf, leafPaint);
+    }
+
+    // ── Coin stack (right of shop) ────────────────────────────────────
+    final coinCx = w * 0.80;
+    final coinCy = h * 0.74;
+    final coinRx = w * 0.085;
+    final coinRy = coinRx * 0.28;
+    final stackOffsets = [12.0, 7.0, 2.0]; // bottom → top
+    for (final dy in stackOffsets) {
+      // coin side thickness
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(coinCx, coinCy + dy + coinRy),
+          width: coinRx * 2,
+          height: coinRy * 2,
+        ),
+        fill(AppColors.textHint.withValues(alpha: 0.6)),
+      );
+      // coin top face
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(coinCx, coinCy + dy),
+          width: coinRx * 2,
+          height: coinRy * 2,
+        ),
+        fill(AppColors.surfaceMuted),
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(coinCx, coinCy + dy),
+          width: coinRx * 2,
+          height: coinRy * 2,
+        ),
+        stroke(AppColors.borderStrong, 1.0),
+      );
+    }
+    // featured rupee coin (larger, front)
+    final rcx = coinCx + 18;
+    final rcy = coinCy + 4;
+    final rr = w * 0.11;
+    canvas.drawCircle(rcx, rcy, rr, fill(AppColors.surfaceMuted));
+    canvas.drawCircle(rcx, rcy, rr, stroke(AppColors.ink, 1.4));
+    // ₹ symbol via TextPainter
+    final tp = TextPainter(
+      text: TextSpan(
+        text: '₹',
+        style: TextStyle(
+          color: AppColors.ink,
+          fontSize: rr * 1.1,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, Offset(rcx - tp.width / 2, rcy - tp.height / 2));
+
+    // ── Ground line ───────────────────────────────────────────────────
+    canvas.drawLine(
+      Offset(w * 0.04, h * 0.86),
+      Offset(w * 0.96, h * 0.86),
+      stroke(AppColors.border, 1.0),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_FinanceIllustration _) => false;
 }
 
 class _ProfileTab extends StatelessWidget {
