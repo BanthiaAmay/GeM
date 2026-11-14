@@ -1,0 +1,10 @@
+{
+  "_help": "Price sources in priority order. A site is used only when enabled and its search_url (with {query}) is set. Check each site's terms and robots.txt first; verify page formats with: python scripts/bid_valuer/run.py probe <url>",
+  "gem_marketplace": {"enabled": true, "search_url": "", "render": true, "follow": 3},
+  "gem_awarded": {"enabled": false, "search_url": ""},
+  "indiamart": {"enabled": true},
+  "manufacturers": {},
+  "other_suppliers": {},
+  "amazon_in": {"enabled": false, "_note": "Off: robots.txt disallows search; enable only where automated access is permitted."},
+  "flipkart": {"enabled": false, "_note": "Off: enable only where automated access is permitted."}
+}

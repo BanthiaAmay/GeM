@@ -18,6 +18,12 @@ jobs:
       - run: flutter analyze
       - run: flutter test
       - run: python3 -m unittest discover -s research -p 'test_*.py'
+      # Bid valuer readers and OCR (Playwright is not needed by the tests).
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get install -y -qq tesseract-ocr
+      - run: pip install pymupdf==1.26.5 pdfplumber==0.11.7 pytesseract==0.3.13 openpyxl==3.1.5 python-docx==1.2.0 httpx==0.28.1 selectolax==0.3.29
       - run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - run: flutter build web --release
       - run: flutter build apk --debug
@@ -73,3 +79,6 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202611050001_gem_videos.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/gem_videos.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/gem_bulletins.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202611140001_bid_valuations.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bid_valuations.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bid_retention.sql

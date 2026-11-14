@@ -61,3 +61,6 @@ research/exports/
 /logs/
 # When the bid worker last saved GeM YouTube videos (scripts/gem_videos.py)
 /.video-sync-stamp
+
+# Pages saved by `scripts/bid_valuer/run.py probe` while checking a source.
+scripts/bid_valuer/tests/fixtures/probe/
