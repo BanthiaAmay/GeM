@@ -741,10 +741,11 @@ class _FinancialHubTab extends StatelessWidget {
         const SizedBox(height: AppSpace.xl),
         // ── Illustration ────────────────────────────────────────────────
         Center(
-          child: SizedBox(
-            width: 240,
-            height: 200,
-            child: CustomPaint(painter: _FinanceIllustration()),
+          child: Image.asset(
+            'assets/illustrations/finance_hub.png',
+            width: 280,
+            height: 220,
+            fit: BoxFit.contain,
           ),
         ),
         const SizedBox(height: AppSpace.xxl),
@@ -832,10 +833,10 @@ class _FinancialHubTab extends StatelessWidget {
   }
 }
 
-/// Finance "coming soon" illustration:
-/// shop-front + coin stack + bar chart with upward arrow,
-/// all drawn in app design-token colours.
-class _FinanceIllustration extends CustomPainter {
+// _FinanceIllustration removed — replaced by assets/illustrations/finance_hub.png
+
+// ignore: unused_element
+class _FinanceIllustrationUnused extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
@@ -1103,7 +1104,7 @@ class _FinanceIllustration extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_FinanceIllustration _) => false;
+  bool shouldRepaint(_FinanceIllustrationUnused _) => false;
 }
 
 class _ProfileTab extends StatelessWidget {
