@@ -1439,20 +1439,26 @@ class AppStore extends ChangeNotifier {
   }
 
   Future<void> saveAlertPreferences({
-    required String phone,
-    required bool whatsapp,
+    String phone = '',
+    bool whatsapp = false,
     bool inApp = true,
     List<String> keywords = const [],
     List<String> states = const [],
   }) async {
     if (!signedIn) throw StateError('sign_in_required');
-    final normalized = normalizeWhatsapp(phone);
-    if (normalized == null) throw ArgumentError('Invalid WhatsApp number');
+    // If no phone supplied, preserve any previously stored number.
+    final effectivePhone = phone.isNotEmpty
+        ? phone
+        : (alertPreferences['whatsapp_number'] as String? ?? '');
+    final normalized = normalizeWhatsapp(effectivePhone);
+    if (phone.isNotEmpty && normalized == null) {
+      throw ArgumentError('Invalid WhatsApp number');
+    }
     final userId = currentUser!.id;
     final result = await client!.rpc(
       'save_bid_alert_preferences',
       params: {
-        'p_phone': normalized,
+        'p_phone': normalized ?? effectivePhone,
         'p_whatsapp': whatsapp,
         'p_in_app': inApp,
         'p_keywords': keywords,
@@ -1466,7 +1472,7 @@ class AppStore extends ChangeNotifier {
     // Reuse the number in the seller preparation form, without a second entry.
     data['profile'] = {
       ...profile,
-      'mobile': normalized.substring(3),
+      if (normalized != null) 'mobile': normalized.substring(3),
       'bidKeywords': keywords,
     };
     save();

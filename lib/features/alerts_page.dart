@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
 import 'components.dart';
-import 'contact_fields.dart';
 import 'widgets.dart' show openLink;
 
 class AlertsPage extends StatelessWidget {
@@ -35,10 +34,10 @@ class AlertsBody extends StatefulWidget {
 
 class _AlertsBodyState extends State<AlertsBody> {
   final form = GlobalKey<FormState>();
-  final phone = TextEditingController();
   final keywords = TextEditingController();
   final states = TextEditingController();
-  bool whatsapp = false, inApp = true, busy = false, dirty = false;
+  bool inApp = true, busy = false, dirty = false;
+  bool? _feedbackOk;
   String? feedback;
   AppStore get s => widget.store;
 
@@ -51,10 +50,8 @@ class _AlertsBodyState extends State<AlertsBody> {
 
   void hydrate() {
     final p = s.alertPreferences;
-    phone.text = p['whatsapp_number'] as String? ?? '';
     keywords.text = s.bidKeywords.join(', ');
     states.text = List<String>.from(p['states'] ?? []).join(', ');
-    whatsapp = p['whatsapp_opt_in'] == true;
     inApp = p['in_app_enabled'] != false;
   }
 
@@ -65,10 +62,11 @@ class _AlertsBodyState extends State<AlertsBody> {
 
   List<String> split(String value) => value
       .split(',')
-      .map((s) => s.trim())
-      .where((s) => s.isNotEmpty)
+      .map((e) => e.trim())
+      .where((e) => e.isNotEmpty)
       .toSet()
       .toList();
+
   String? filterError(String? value) {
     final entries = split(value ?? '');
     return entries.length > 10 || entries.any((v) => v.length > 80)
@@ -84,11 +82,10 @@ class _AlertsBodyState extends State<AlertsBody> {
     setState(() {
       busy = true;
       feedback = null;
+      _feedbackOk = null;
     });
     try {
       await s.saveAlertPreferences(
-        phone: phone.text,
-        whatsapp: whatsapp,
         inApp: inApp,
         keywords: split(keywords.text),
         states: split(states.text),
@@ -96,25 +93,25 @@ class _AlertsBodyState extends State<AlertsBody> {
       if (mounted) {
         setState(() {
           dirty = false;
+          _feedbackOk = true;
           feedback = s.t('Preferences saved.', 'पसंद सहेजी गई।');
         });
       }
     } catch (_) {
       if (mounted) {
-        setState(
-          () => feedback = s.t(
+        setState(() {
+          _feedbackOk = false;
+          feedback = s.t(
             'Could not save. Check your connection and retry.',
             'सहेजा नहीं गया। इंटरनेट जाँचकर फिर कोशिश करें।',
-          ),
-        );
+          );
+        });
       }
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
 
-  /// Turning app notifications on is the moment to ask the phone for
-  /// permission; the choice itself is saved with the form.
   Future<void> setInApp(bool value) async {
     setState(() {
       inApp = value;
@@ -123,18 +120,18 @@ class _AlertsBodyState extends State<AlertsBody> {
     if (!value || !s.pushSupported) return;
     final allowed = await s.push!.enable();
     if (!allowed && mounted) {
-      setState(
-        () => feedback = s.t(
+      setState(() {
+        _feedbackOk = false;
+        feedback = s.t(
           'Notifications are off for Bid2Scale. Allow them in your phone settings to get alerts on this phone.',
           'Bid2Scale की सूचनाएँ बंद हैं। इस फ़ोन पर अलर्ट पाने के लिए फ़ोन की सेटिंग में अनुमति दें।',
-        ),
-      );
+        );
+      });
     }
   }
 
   @override
   void dispose() {
-    phone.dispose();
     keywords.dispose();
     states.dispose();
     super.dispose();
@@ -147,27 +144,19 @@ class _AlertsBodyState extends State<AlertsBody> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          s.t('Opportunities, on your terms.', 'अवसर, आपकी पसंद से।'),
-          style: AppText.h1,
+          s.t(
+            'Find GeM opportunities that match your business.',
+            'अपने व्यवसाय से मेल खाते GeM अवसर खोजें।',
+          ),
+          style: AppText.h2,
         ),
-        const SizedBox(height: AppSpace.md),
+        const SizedBox(height: AppSpace.sm),
         Text(
           s.t(
-            'Choose what you sell and where you deliver. New matching GeM bids appear here and on your phone.',
-            'अपनी पेशकश और वितरण स्थान चुनें। नई मेल खाती GeM बोलियाँ यहाँ और आपके फ़ोन पर दिखेंगी।',
+            'Add your products or services and delivery locations. We\'ll notify you when matching bids become available.',
+            'अपने उत्पाद या सेवाएँ और वितरण स्थान डालें। मेल खाती बोलियाँ मिलने पर हम आपको सूचित करेंगे।',
           ),
-          style: AppText.body,
-        ),
-        const SizedBox(height: AppSpace.xl),
-        AppCard(
-          tone: AppCardTone.muted,
-          child: Text(
-            s.t(
-              'We check GeM for new bids through the day and notify you when one matches what you sell. WhatsApp alerts are coming soon.',
-              'हम दिन भर GeM पर नई बोलियाँ देखते हैं और आपकी पेशकश से मेल खाने पर आपको बताते हैं। WhatsApp अलर्ट जल्द आ रहे हैं।',
-            ),
-            style: AppText.bodySmall,
-          ),
+          style: AppText.body.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: AppSpace.xxl),
         if (!s.signedIn) ...[
@@ -184,85 +173,105 @@ class _AlertsBodyState extends State<AlertsBody> {
             onPressed: () => Navigator.pushNamed(context, '/auth'),
           ),
         ] else ...[
-          Form(
-            key: form,
-            onChanged: () => dirty = true,
+          // --- Setup card ---
+          AppCard(
+            tone: AppCardTone.outlined,
+            child: Form(
+              key: form,
+              onChanged: () => dirty = true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SectionHeader(s.t('Alert settings', 'अलर्ट सेटिंग')),
+                  const SizedBox(height: AppSpace.lg),
+                  TextFormField(
+                    controller: keywords,
+                    enabled: !busy,
+                    validator: filterError,
+                    decoration: InputDecoration(
+                      labelText: s.t('Products or services', 'उत्पाद या सेवाएँ'),
+                      hintText: s.t(
+                        'e.g. stationery, laptops, cleaning',
+                        'उदा. stationery, laptops, cleaning',
+                      ),
+                      helperText: s.t(
+                        'Enter keywords separated by commas. We\'ll match bids that contain your keywords.',
+                        'अल्पविराम से अलग करें। आपके कीवर्ड वाली बोलियाँ मेल खाएंगी।',
+                      ),
+                      helperMaxLines: 3,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpace.xl),
+                  TextFormField(
+                    controller: states,
+                    enabled: !busy,
+                    validator: filterError,
+                    decoration: InputDecoration(
+                      labelText: s.t('Delivery states', 'वितरण राज्य'),
+                      hintText: 'Maharashtra, Gujarat',
+                      helperText: s.t(
+                        'Enter delivery states separated by commas. Leave blank to include all of India.',
+                        'राज्यों के नाम अल्पविराम से अलग करें। खाली छोड़ने पर पूरा भारत।',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpace.xl),
+                  if (feedback != null)
+                    Semantics(
+                      liveRegion: true,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpace.md),
+                        child: Text(
+                          feedback!,
+                          style: AppText.bodySmall.copyWith(
+                            color: _feedbackOk == true
+                                ? AppColors.accentSuccess
+                                : AppColors.accentDanger,
+                          ),
+                        ),
+                      ),
+                    ),
+                  AppButton(
+                    label: s.t('Save preferences', 'पसंद सहेजें'),
+                    onPressed: busy ? null : save,
+                    loading: busy,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpace.lg),
+          // --- Notification preferences card ---
+          AppCard(
+            tone: AppCardTone.outlined,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextFormField(
-                  controller: keywords,
-                  enabled: !busy,
-                  validator: filterError,
-                  decoration: InputDecoration(
-                    labelText: s.t('Products or services', 'उत्पाद या सेवाएँ'),
-                    hintText: s.t(
-                      'e.g. stationery, laptops, cleaning',
-                      'उदा. stationery, laptops, cleaning',
-                    ),
-                    helperText: s.t(
-                      'Separate keywords with commas. A bid matches when it contains every word of a keyword. Add at least one to get alerts.',
-                      'अल्पविराम से अलग करें। किसी शब्द-समूह के सभी शब्द बोली में हों तो वह मेल खाती है। अलर्ट के लिए कम से कम एक जोड़ें।',
-                    ),
-                    helperMaxLines: 3,
-                  ),
+                SectionHeader(
+                  s.t('How you\'ll be notified', 'आपको कैसे सूचित किया जाएगा'),
                 ),
-                const SizedBox(height: AppSpace.xl),
-                TextFormField(
-                  controller: states,
-                  enabled: !busy,
-                  validator: filterError,
-                  decoration: InputDecoration(
-                    labelText: s.t('Delivery states', 'वितरण राज्य'),
-                    hintText: 'Maharashtra, Gujarat',
-                    helperText: s.t(
-                      'Full English state names, separated by commas. Blank means all India.',
-                      'राज्यों के पूरे अंग्रेज़ी नाम, अल्पविराम से अलग। खाली का अर्थ पूरा भारत।',
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpace.xl),
-                ContactFields(
-                  store: s,
-                  phone: phone,
-                  optedIn: whatsapp,
-                  enabled: !busy,
-                  onOptIn: (v) => setState(() {
-                    whatsapp = v;
-                    dirty = true;
-                  }),
-                ),
-                SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    s.t(
-                      'App notifications for matching bids',
-                      'मेल खाती बोलियों की ऐप सूचनाएँ',
-                    ),
-                    style: AppText.body,
-                  ),
-                  subtitle: Text(
-                    s.t(
-                      'In your inbox, and on this phone if you allow notifications.',
-                      'आपकी सूचना सूची में, और अनुमति देने पर इस फ़ोन पर भी।',
-                    ),
-                    style: AppText.caption,
+                const SizedBox(height: AppSpace.lg),
+                _NotifTile(
+                  icon: Icons.notifications_outlined,
+                  title: s.t('App Notifications', 'ऐप सूचनाएँ'),
+                  subtitle: s.t(
+                    'Alerts on this device when matching GeM bids are found.',
+                    'मेल खाती GeM बोलियाँ मिलने पर इस डिवाइस पर अलर्ट।',
                   ),
                   value: inApp,
                   onChanged: busy ? null : setInApp,
                 ),
-                SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    s.t('Email me matching bids', 'मेल खाती बोलियाँ ईमेल करें'),
-                    style: AppText.body,
-                  ),
-                  subtitle: Text(
-                    s.t(
-                      'One summary email at most every 12 hours, to {email}.',
-                      'हर 12 घंटे में अधिकतम एक सारांश ईमेल, {email} पर।',
-                      vars: {'email': s.currentUser?.email ?? ''},
-                    ),
-                    style: AppText.caption,
+                Divider(
+                  color: AppColors.border,
+                  height: AppSpace.xl * 2,
+                ),
+                _NotifTile(
+                  icon: Icons.email_outlined,
+                  title: s.t('Email Notifications', 'ईमेल सूचनाएँ'),
+                  subtitle: s.t(
+                    'Matching bid summaries sent to {email}.',
+                    'मेल खाती बोलियों का सारांश {email} पर भेजा जाएगा।',
+                    vars: {'email': s.currentUser?.email ?? ''},
                   ),
                   value: s.emailAlerts,
                   onChanged: busy
@@ -272,12 +281,13 @@ class _AlertsBodyState extends State<AlertsBody> {
                             await s.setEmailAlerts(v);
                           } catch (_) {
                             if (mounted) {
-                              setState(
-                                () => feedback = s.t(
+                              setState(() {
+                                _feedbackOk = false;
+                                feedback = s.t(
                                   'Could not save. Check your connection and retry.',
                                   'सहेजा नहीं गया। इंटरनेट जाँचकर फिर कोशिश करें।',
-                                ),
-                              );
+                                );
+                              });
                             }
                           }
                         },
@@ -285,91 +295,321 @@ class _AlertsBodyState extends State<AlertsBody> {
               ],
             ),
           ),
-          if (feedback != null)
-            Semantics(
-              liveRegion: true,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpace.md),
-                child: Text(feedback!, style: AppText.body),
-              ),
-            ),
-          AppButton(
-            label: s.t('Save alert preferences', 'अलर्ट पसंद सहेजें'),
-            onPressed: busy ? null : save,
-            loading: busy,
-          ),
           const SizedBox(height: AppSpace.huge),
-          Text(s.t('Your inbox', 'आपकी सूचनाएँ'), style: AppText.h2),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: busy ? null : refresh,
-              icon: const Icon(Icons.refresh),
-              label: Text(s.t('Refresh', 'ताज़ा करें')),
-            ),
+          // --- Inbox section ---
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  s.t('Your inbox', 'आपकी सूचनाएँ'),
+                  style: AppText.h2,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh_outlined),
+                tooltip: s.t('Refresh', 'ताज़ा करें'),
+                onPressed: busy ? null : refresh,
+              ),
+            ],
           ),
+          const SizedBox(height: AppSpace.lg),
           if (s.alertsError != null)
-            Text(
-              s.t(
+            _InboxState(
+              icon: Icons.error_outline,
+              iconColor: AppColors.accentDanger,
+              message: s.t(
                 'Could not load alerts. Check your connection and retry.',
                 'अलर्ट लोड नहीं हुए। इंटरनेट जाँचकर फिर कोशिश करें।',
               ),
-              style: AppText.body,
+              actionLabel: s.t('Retry', 'फिर कोशिश करें'),
+              onAction: refresh,
             )
           else if (s.bidNotifications.isEmpty)
-            Text(
-              s.t(
-                'No bid alerts yet. Your matching opportunities will appear here.',
-                'अभी कोई बोली अलर्ट नहीं है। मेल खाते अवसर यहाँ दिखेंगे।',
+            _InboxState(
+              icon: Icons.inbox_outlined,
+              message: s.t(
+                'No bid alerts yet. Add keywords above to start getting matched opportunities.',
+                'अभी कोई बोली अलर्ट नहीं। ऊपर कीवर्ड जोड़कर मेल खाते अवसर पाएं।',
               ),
-              style: AppText.body,
-            ),
-          for (final n in s.bidNotifications)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpace.md),
-              child: AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(n['title'] as String, style: AppText.title),
-                    const SizedBox(height: AppSpace.sm),
-                    Text(n['body'] as String, style: AppText.bodySmall),
-                    if (n['read_at'] == null)
-                      TextButton(
-                        onPressed: () async {
-                          try {
-                            await s.markAlertRead(n['id'] as String);
-                          } catch (_) {
-                            if (mounted) {
-                              setState(
-                                () => feedback = s.t(
-                                  'Could not update this alert. Try again.',
-                                  'अलर्ट अपडेट नहीं हुआ। फिर कोशिश करें।',
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        child: Text(s.t('Mark as read', 'पढ़ा हुआ बताएँ')),
-                      ),
-                    TextButton.icon(
-                      onPressed: () =>
-                          openLink(context, s, n['source_url'] as String),
-                      icon: const Icon(Icons.open_in_new),
-                      label: Text(s.t('View on GeM', 'GeM पर देखें')),
-                    ),
-                  ],
+            )
+          else
+            for (final n in s.bidNotifications)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpace.md),
+                child: _BidCard(
+                  notification: n,
+                  store: s,
+                  onError: (msg) {
+                    if (mounted) {
+                      setState(() {
+                        _feedbackOk = false;
+                        feedback = msg;
+                      });
+                    }
+                  },
                 ),
               ),
-            ),
+          const SizedBox(height: AppSpace.xxl),
         ],
-        const SizedBox(height: AppSpace.xxl),
         AppButton(
           label: s.t('GeM registration guide', 'GeM पंजीकरण गाइड'),
           variant: AppButtonVariant.secondary,
           onPressed: () => Navigator.pushNamed(context, '/gem-guide'),
         ),
+        const SizedBox(height: AppSpace.gutter),
       ],
     ),
   );
+}
+
+// ── Notification toggle row ───────────────────────────────────────────────────
+
+class _NotifTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  const _NotifTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Icon(icon, size: AppIconSize.md, color: AppColors.textSecondary),
+      const SizedBox(width: AppSpace.md),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: AppText.bodyStrong),
+            const SizedBox(height: AppSpace.xs),
+            Text(subtitle, style: AppText.caption),
+          ],
+        ),
+      ),
+      const SizedBox(width: AppSpace.sm),
+      Switch.adaptive(value: value, onChanged: onChanged),
+    ],
+  );
+}
+
+// ── Inbox empty / error state ─────────────────────────────────────────────────
+
+class _InboxState extends StatelessWidget {
+  final IconData icon;
+  final Color? iconColor;
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  const _InboxState({
+    required this.icon,
+    this.iconColor,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpace.huge),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: AppIconSize.lg,
+            color: iconColor ?? AppColors.textHint,
+          ),
+          const SizedBox(height: AppSpace.md),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: AppText.bodySmall.copyWith(color: AppColors.textSecondary),
+          ),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: AppSpace.lg),
+            AppButton(
+              label: actionLabel!,
+              variant: AppButtonVariant.secondary,
+              size: AppButtonSize.sm,
+              expand: false,
+              onPressed: onAction,
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
+// ── Bid card with expandable body ─────────────────────────────────────────────
+
+class _BidCard extends StatefulWidget {
+  final Map<String, dynamic> notification;
+  final AppStore store;
+  final void Function(String) onError;
+
+  const _BidCard({
+    required this.notification,
+    required this.store,
+    required this.onError,
+  });
+
+  @override
+  State<_BidCard> createState() => _BidCardState();
+}
+
+class _BidCardState extends State<_BidCard> {
+  bool _expanded = false;
+
+  Map<String, dynamic> get n => widget.notification;
+  AppStore get s => widget.store;
+  bool get _unread => n['read_at'] == null;
+
+  @override
+  Widget build(BuildContext context) {
+    final body = n['body'] as String? ?? '';
+    final canExpand = body.length > 120;
+
+    return AppCard(
+      tone: AppCardTone.outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top row: unread badge + date
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (_unread)
+                Container(
+                  margin: const EdgeInsets.only(right: AppSpace.sm),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpace.sm,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentInfoTint,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    s.t('New', 'नया'),
+                    style: AppText.label.copyWith(color: AppColors.accentInfo),
+                  ),
+                ),
+              const Spacer(),
+              if (n['created_at'] != null)
+                Text(
+                  _formatDate(n['created_at'] as String),
+                  style: AppText.caption,
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpace.sm),
+          // Title
+          Text(
+            n['title'] as String? ?? '',
+            style: _unread ? AppText.title : AppText.bodyStrong,
+          ),
+          if (body.isNotEmpty) ...[
+            const SizedBox(height: AppSpace.sm),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              alignment: Alignment.topLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    body,
+                    maxLines: _expanded ? null : 3,
+                    overflow:
+                        _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                    style: AppText.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  if (canExpand)
+                    GestureDetector(
+                      onTap: () => setState(() => _expanded = !_expanded),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: AppSpace.xs),
+                        child: Text(
+                          _expanded
+                              ? s.t('Show less', 'कम देखें')
+                              : s.t('Show more', 'और देखें'),
+                          style: AppText.bodySmall.copyWith(
+                            color: AppColors.accentInfo,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpace.md),
+          // Actions
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: AppSpace.sm,
+            runSpacing: AppSpace.sm,
+            children: [
+              if (_unread)
+                AppButton(
+                  label: s.t('Mark read', 'पढ़ा हुआ बताएँ'),
+                  variant: AppButtonVariant.secondary,
+                  size: AppButtonSize.sm,
+                  expand: false,
+                  onPressed: () async {
+                    try {
+                      await s.markAlertRead(n['id'] as String);
+                    } catch (_) {
+                      widget.onError(
+                        s.t(
+                          'Could not update this alert. Try again.',
+                          'अलर्ट अपडेट नहीं हुआ। फिर कोशिश करें।',
+                        ),
+                      );
+                    }
+                  },
+                ),
+              AppButton(
+                label: s.t('View on GeM', 'GeM पर देखें'),
+                icon: Icons.open_in_new,
+                size: AppButtonSize.sm,
+                expand: false,
+                onPressed: () => openLink(context, s, n['source_url'] as String),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(String iso) {
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      final now = DateTime.now();
+      final diff = now.difference(dt);
+      if (diff.inDays == 0) {
+        final h = diff.inHours;
+        return h == 0 ? s.t('Just now', 'अभी') : '${h}h ago';
+      }
+      if (diff.inDays == 1) return s.t('Yesterday', 'कल');
+      if (diff.inDays < 7) return '${diff.inDays}d ago';
+      return '${dt.day}/${dt.month}';
+    } catch (_) {
+      return '';
+    }
+  }
 }
