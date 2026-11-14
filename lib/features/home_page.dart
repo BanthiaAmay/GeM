@@ -2156,7 +2156,7 @@ class _QuickActionsSection extends StatelessWidget {
               label: s.t('ROI Calc', 'ROI कैल्क'),
               tileColor: AppColors.infoTint,
               iconColor: AppColors.info,
-              onTap: () => onNavigate(_Tab.calculators),
+              onTap: () => go(context, s, 'roi'),
             ),
             _QuickActionTile(
               icon: Icons.chat_bubble_outline,
