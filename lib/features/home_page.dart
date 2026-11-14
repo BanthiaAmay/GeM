@@ -1763,36 +1763,45 @@ class _QuickActionsSection extends StatelessWidget {
       children: [
         SectionHeader(s.t('Quick actions', 'त्वरित कार्य')),
         const SizedBox(height: AppSpace.sm),
+        // Equal shares let long labels wrap instead of overflowing.
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _QuickActionTile(
-              icon: Icons.bar_chart_outlined,
-              label: s.t('ROI Calc', 'ROI कैल्क'),
-              tileColor: AppColors.infoTint,
-              iconColor: AppColors.info,
-              onTap: () => go(context, s, 'roi'),
+            Expanded(
+              child: _QuickActionTile(
+                icon: Icons.bar_chart_outlined,
+                label: s.t('ROI Calc', 'ROI कैल्क'),
+                tileColor: AppColors.infoTint,
+                iconColor: AppColors.info,
+                onTap: () => go(context, s, 'roi'),
+              ),
             ),
-            _QuickActionTile(
-              icon: Icons.chat_bubble_outline,
-              label: s.t('Ask Saathi', 'साथी से पूछें'),
-              tileColor: AppColors.brandTint,
-              iconColor: AppColors.brand,
-              onTap: () => Navigator.of(context).pushNamed('/saathi'),
+            Expanded(
+              child: _QuickActionTile(
+                icon: Icons.chat_bubble_outline,
+                label: s.t('Ask Saathi', 'साथी से पूछें'),
+                tileColor: AppColors.brandTint,
+                iconColor: AppColors.brand,
+                onTap: () => Navigator.of(context).pushNamed('/saathi'),
+              ),
             ),
-            _QuickActionTile(
-              icon: Icons.trending_up_outlined,
-              label: s.t('Tender Analytics', 'टेंडर एनालिटिक्स'),
-              tileColor: AppColors.warningTint,
-              iconColor: AppColors.warning,
-              onTap: () => Navigator.of(context).pushNamed('/insights'),
+            Expanded(
+              child: _QuickActionTile(
+                icon: Icons.trending_up_outlined,
+                label: s.t('Tender Analytics', 'टेंडर एनालिटिक्स'),
+                tileColor: AppColors.warningTint,
+                iconColor: AppColors.warning,
+                onTap: () => Navigator.of(context).pushNamed('/insights'),
+              ),
             ),
-            _QuickActionTile(
-              icon: Icons.gavel_outlined,
-              label: s.t('Find Bids', 'बोलियाँ खोजें'),
-              tileColor: AppColors.violetTint,
-              iconColor: AppColors.violet,
-              onTap: () => Navigator.of(context).pushNamed('/bids'),
+            Expanded(
+              child: _QuickActionTile(
+                icon: Icons.gavel_outlined,
+                label: s.t('Find Bids', 'बोलियाँ खोजें'),
+                tileColor: AppColors.violetTint,
+                iconColor: AppColors.violet,
+                onTap: () => Navigator.of(context).pushNamed('/bids'),
+              ),
             ),
           ],
         ),

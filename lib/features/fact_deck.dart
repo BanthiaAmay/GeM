@@ -151,9 +151,45 @@ class FactTicket extends StatelessWidget {
     this.compact = false,
   });
 
+  static double _lineHeight(BuildContext context, TextStyle style) {
+    final painter = TextPainter(
+      text: TextSpan(text: 'Ag', style: style),
+      textScaler: MediaQuery.textScalerOf(context),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final height = painter.height;
+    painter.dispose();
+    return height;
+  }
+
+  /// The perforated source stub grows with the text scale.
+  static double footerHeight(BuildContext context, {required bool compact}) =>
+      math.max(
+        compact ? 40.0 : 46.0,
+        10 + _lineHeight(context, AppText.tick) + AppSpace.md,
+      );
+
+  /// Height a ticket needs at the current text scale, so a fixed-height
+  /// parent such as [FactCarousel] never clips it.
+  static double heightFor(BuildContext context, {required bool compact}) {
+    final pad = compact ? AppSpace.md : AppSpace.lg;
+    final header = math.max(
+      compact ? 28.0 : 36.0,
+      _lineHeight(context, AppText.overline),
+    );
+    return pad +
+        header +
+        (compact ? AppSpace.sm : AppSpace.md) +
+        _lineHeight(context, compact ? AppText.h2 : AppText.display) +
+        AppSpace.xs +
+        2 * _lineHeight(context, compact ? AppText.bodySmall : AppText.body) +
+        AppSpace.sm +
+        footerHeight(context, compact: compact);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final footer = compact ? 40.0 : 46.0;
+    final footer = footerHeight(context, compact: compact);
     final pad = compact ? AppSpace.md : AppSpace.lg;
     final figureStyle = (compact ? AppText.h2 : AppText.display).copyWith(
       color: fact.accent,
@@ -197,36 +233,47 @@ class FactTicket extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: AppSpace.sm),
-                        Text(
-                          store.t('GeM FACT', 'GeM तथ्य'),
-                          style: AppText.overline.copyWith(
-                            color: AppColors.ink,
+                        // Both labels may shrink so large text never
+                        // pushes the row past the card edge.
+                        Flexible(
+                          child: Text(
+                            store.t('GeM FACT', 'GeM तथ्य'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppText.overline.copyWith(
+                              color: AppColors.ink,
+                            ),
                           ),
                         ),
-                        const Spacer(),
-                        Flexible(
-                          child: Transform.rotate(
-                            angle: -0.12,
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpace.sm,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                                  border: Border.all(
-                                    color: fact.accent,
-                                    width: 1.5,
+                        const SizedBox(width: AppSpace.sm),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Transform.rotate(
+                              angle: -0.12,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpace.sm,
+                                    vertical: 2,
                                   ),
-                                ),
-                                child: Text(
-                                  store.t('OFFICIAL DATA', 'आधिकारिक आँकड़े'),
-                                  style: AppText.tick.copyWith(
-                                    color: fact.accent,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.6,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.sm,
+                                    ),
+                                    border: Border.all(
+                                      color: fact.accent,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    store.t('OFFICIAL DATA', 'आधिकारिक आँकड़े'),
+                                    style: AppText.tick.copyWith(
+                                      color: fact.accent,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.6,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -628,7 +675,10 @@ class _FactCarouselState extends State<FactCarousel>
     return Column(
       children: [
         SizedBox(
-          height: 186,
+          height: math.max(
+            186.0,
+            FactTicket.heightFor(context, compact: true) + AppSpace.sm,
+          ),
           child: PageView.builder(
             controller: _page,
             padEnds: true,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gem/core/motion.dart';
 import 'package:gem/core/phone.dart';
 import 'package:gem/core/theme.dart';
 import 'package:gem/data/app_store.dart';
@@ -192,7 +193,7 @@ void main() {
         'seller@example.com',
       );
       await tester.enterText(
-        find.byKey(const ValueKey('whatsapp-number')),
+        find.byKey(const ValueKey('mobile-number')),
         '9876543210',
       );
       await fillPassword(tester, 'short');
@@ -232,14 +233,14 @@ void main() {
         'seller@example.com',
       );
       await tester.enterText(
-        find.byKey(const ValueKey('whatsapp-number')),
+        find.byKey(const ValueKey('mobile-number')),
         '9876543210',
       );
       await fillPassword(tester, 'Some-password1!');
       await tap(tester, 'Create account');
       expect(store.authenticated, isTrue);
       expect(find.text('Sync now'), findsOneWidget);
-      expect(store.profile['whatsappNumber'], '+919876543210');
+      expect(store.profile['mobile'], '9876543210');
     },
   );
 
@@ -302,6 +303,9 @@ void main() {
   testWidgets(
     'welcome and language lead to app signup before the GeM question',
     (tester) async {
+      // GeM onboarding pages loop a progress shimmer unless motion is reduced.
+      Motion.debugReducedOverride = true;
+      addTearDown(() => Motion.debugReducedOverride = null);
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -318,10 +322,11 @@ void main() {
         'seller@example.com',
       );
       await tester.enterText(
-        find.byKey(const ValueKey('whatsapp-number')),
+        find.byKey(const ValueKey('mobile-number')),
         '9876543210',
       );
-      await tap(tester, 'Email me a code');
+      await fillPassword(tester, 'Strong-password1!');
+      await tap(tester, 'Create account');
       await tester.enterText(find.byType(TextField).last, '123456');
       await tap(tester, 'Verify and sign in');
       expect(store.authenticated, isTrue);
@@ -344,7 +349,7 @@ void main() {
     final nav = tester.state<NavigatorState>(find.byType(Navigator));
     nav.pushNamed('/gem-check');
     await tester.pumpAndSettle();
-    expect(find.text('Email me a code'), findsOneWidget);
+    expect(find.text('Create account'), findsOneWidget);
     expect(find.text('Is your business already on GeM?'), findsNothing);
   });
 
@@ -355,7 +360,7 @@ void main() {
     await tester.pumpWidget(SaathiApp(store: store, ready: Future.value()));
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
-    expect(find.text('Email me a code'), findsOneWidget);
+    expect(find.text('Create account'), findsOneWidget);
     await tap(tester, 'Log in');
     await tester.enterText(
       find.byType(TextFormField).first,
@@ -369,7 +374,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  test('WhatsApp numbers normalize without claiming verification', () {
+  test('Indian mobile numbers normalize without claiming verification', () {
     expect(normalizeWhatsapp('98765 43210'), '+919876543210');
     expect(normalizeWhatsapp('+91 (98765) 43210'), '+919876543210');
     for (final v in [
@@ -391,18 +396,20 @@ void main() {
         find.byType(TextFormField).first,
         'seller@example.com',
       );
-      await tap(tester, 'Email me a code');
-      expect(store.otpRequests, 0);
+      await fillPassword(tester, 'Strong-password1!');
+      await tap(tester, 'Create account');
+      expect(store.passwordSignUps, 0);
       await tester.enterText(
-        find.byKey(const ValueKey('whatsapp-number')),
+        find.byKey(const ValueKey('mobile-number')),
         '9876543210',
       );
-      await tap(tester, 'Email me a code');
-      expect(store.createsUser, isTrue);
+      await fillPassword(tester, 'Strong-password1!');
+      await tap(tester, 'Create account');
+      expect(store.passwordSignUps, 1);
       await tester.enterText(find.byType(TextField).last, '12345678');
       await tap(tester, 'Verify and sign in');
       expect(store.verifiedCode, '12345678');
-      expect(store.alertPreferences['whatsapp_number'], '+919876543210');
+      expect(store.profile['mobile'], '9876543210');
       expect(store.savedConsent, isFalse);
       expect(find.text('GeM preparation'), findsNothing);
       expect(find.text('Sync now'), findsOneWidget);
@@ -414,7 +421,7 @@ void main() {
     'login requests an existing account without a signup phone field',
     (tester) async {
       await boot(tester, entry: false);
-      expect(find.byKey(const ValueKey('whatsapp-number')), findsNothing);
+      expect(find.byKey(const ValueKey('mobile-number')), findsNothing);
       await tester.enterText(
         find.byType(TextFormField).first,
         'seller@example.com',
@@ -430,34 +437,34 @@ void main() {
     store.googleAvailable = true;
     await boot(tester);
     expect(find.text('Continue with Google'), findsNothing);
-    expect(find.text('Email me a code'), findsOneWidget);
+    expect(find.text('Create account'), findsOneWidget);
     expect(store.authenticated, isFalse);
   });
 
-  testWidgets(
-    'email sign-in succeeds even when WhatsApp storage is unavailable',
-    (tester) async {
-      store.failContactSave = true;
-      await boot(tester);
-      await tester.enterText(
-        find.byType(TextFormField).first,
-        'seller@example.com',
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('whatsapp-number')),
-        '9876543210',
-      );
-      await tap(tester, 'Email me a code');
-      await tester.enterText(find.byType(TextField).last, '123456');
-      await tap(tester, 'Verify and sign in');
-      expect(store.authenticated, isTrue);
-      expect(find.text('Sync now'), findsOneWidget);
-      expect(find.text('Where should we reach you?'), findsNothing);
-      expect(find.text('GeM preparation'), findsNothing);
-      expect(store.profile['whatsappNumber'], '+919876543210');
-      expect(tester.takeException(), isNull);
-    },
-  );
+  testWidgets('signup succeeds even when contact storage is unavailable', (
+    tester,
+  ) async {
+    store.failContactSave = true;
+    await boot(tester);
+    await tester.enterText(
+      find.byType(TextFormField).first,
+      'seller@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('mobile-number')),
+      '9876543210',
+    );
+    await fillPassword(tester, 'Strong-password1!');
+    await tap(tester, 'Create account');
+    await tester.enterText(find.byType(TextField).last, '123456');
+    await tap(tester, 'Verify and sign in');
+    expect(store.authenticated, isTrue);
+    expect(find.text('Sync now'), findsOneWidget);
+    expect(find.text('Where should we reach you?'), findsNothing);
+    expect(find.text('GeM preparation'), findsNothing);
+    expect(store.profile['mobile'], '9876543210');
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('existing email users do not have a mandatory contact step', (
     tester,
@@ -486,7 +493,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Email me a code'));
+    await tester.ensureVisible(find.text('Create account'));
     expect(tester.takeException(), isNull);
   });
 
@@ -496,6 +503,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: saathiTheme(),
+        // The progress bar shimmer loops until reduced motion is on.
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: child!,
+        ),
         home: GemGuidePage(store: store),
       ),
     );

@@ -33,7 +33,6 @@ class _AccountPageState extends State<AccountPage> {
   final form = GlobalKey<FormState>();
   final passwordForm = GlobalKey<FormState>();
   late bool signUp = widget.entry;
-  bool whatsapp = false;
   bool codeSent = false;
   bool navigating = false;
   bool busy = false;
@@ -61,7 +60,6 @@ class _AccountPageState extends State<AccountPage> {
   void initState() {
     super.initState();
     phone.text = s.alertPreferences['whatsapp_number'] as String? ?? '';
-    whatsapp = s.alertPreferences['whatsapp_opt_in'] == true;
     s.addListener(onStoreChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => onStoreChanged());
   }
@@ -321,7 +319,6 @@ class _AccountPageState extends State<AccountPage> {
       final number = normalizeWhatsapp(phone.text)!;
       s.setProfile('mobile', number.substring(3));
       s.setProfile('whatsappNumber', number);
-      s.setProfile('whatsappOptIn', whatsapp);
       try {
         await saveContact();
       } catch (_) {
@@ -337,8 +334,8 @@ class _AccountPageState extends State<AccountPage> {
                 'साइन इन हो गया। आपका सहेजा काम अब इस खाते से जुड़ा है।',
               )
             : s.t(
-                'Signed in. You can finish WhatsApp alert setup in Updates.',
-                'साइन इन हो गया। WhatsApp अलर्ट सेटअप सूचनाओं में पूरा कर सकते हैं।',
+                'Signed in. You can finish alert setup in Updates.',
+                'साइन इन हो गया। अलर्ट सेटअप सूचनाओं में पूरा कर सकते हैं।',
               );
       });
     }
@@ -368,7 +365,8 @@ class _AccountPageState extends State<AccountPage> {
 
   Future<void> saveContact() => s.saveAlertPreferences(
     phone: phone.text,
-    whatsapp: whatsapp,
+    // Alerts are in-app only; messaging consent is always saved off.
+    whatsapp: false,
     inApp: s.alertPreferences['in_app_enabled'] != false,
     keywords: List<String>.from(s.alertPreferences['keywords'] ?? []),
     states: List<String>.from(s.alertPreferences['states'] ?? []),
@@ -718,13 +716,7 @@ class _AccountPageState extends State<AccountPage> {
                 ],
                 if (signUp && !codeSent) ...[
                   const SizedBox(height: AppSpace.lg),
-                  ContactFields(
-                    store: s,
-                    phone: phone,
-                    optedIn: whatsapp,
-                    enabled: !busy,
-                    onOptIn: (v) => setState(() => whatsapp = v),
-                  ),
+                  ContactFields(store: s, phone: phone, enabled: !busy),
                 ],
               ],
             ),
@@ -912,7 +904,7 @@ class _AccountPageState extends State<AccountPage> {
         ),
         const SizedBox(height: AppSpace.md),
         AppButton(
-          label: s.t('Bid alerts & WhatsApp', 'बोली अलर्ट और WhatsApp'),
+          label: s.t('Bid alerts', 'बोली अलर्ट'),
           icon: Icons.notifications_outlined,
           onPressed: () => Navigator.pushNamed(context, '/alerts'),
           variant: AppButtonVariant.secondary,

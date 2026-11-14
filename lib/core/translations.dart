@@ -13,6 +13,15 @@
 // OTP, GeM, MSME, Udyam, CA, L1) are kept in Latin script throughout, the
 // same convention the existing Hindi text already uses.
 const Map<String, Map<String, String>> kTranslations = {
+  "Signed in. You can finish alert setup in Updates.": {
+    "mr": "साइन इन झाले. अलर्ट सेटअप अपडेट्समध्ये पूर्ण करू शकता.",
+    "bn": "সাইন ইন হয়েছে। আপডেটে অ্যালার্ট সেটআপ শেষ করতে পারেন।",
+    "pa": "ਸਾਈਨ ਇਨ ਹੋ ਗਿਆ। ਤੁਸੀਂ ਅੱਪਡੇਟਸ ਵਿੱਚ ਅਲਰਟ ਸੈੱਟਅੱਪ ਪੂਰਾ ਕਰ ਸਕਦੇ ਹੋ।",
+    "gu": "સાઇન ઇન થયું. તમે અપડેટ્સમાં એલર્ટ સેટઅપ પૂર્ણ કરી શકો છો.",
+    "ta": "உள்நுழைந்தீர்கள். புதுப்பிப்புகளில் எச்சரிக்கை அமைப்பை முடிக்கலாம்.",
+    "te": "సైన్ ఇన్ అయ్యారు. అప్‌డేట్స్‌లో అలర్ట్ సెటప్ పూర్తి చేయవచ్చు.",
+    "kn": "ಸೈನ್ ಇನ್ ಆಗಿದೆ. ಅಪ್‌ಡೇಟ್‌ಗಳಲ್ಲಿ ಅಲರ್ಟ್ ಸೆಟಪ್ ಪೂರ್ಣಗೊಳಿಸಬಹುದು.",
+  },
   // Email and password authentication.
   "Password": {
     "mr": "पासवर्ड",
