@@ -1062,8 +1062,8 @@ class _FinanceIllustration extends CustomPainter {
     final rcx = coinCx + 18;
     final rcy = coinCy + 4;
     final rr = w * 0.11;
-    canvas.drawCircle(rcx, rcy, rr, fill(AppColors.surfaceMuted));
-    canvas.drawCircle(rcx, rcy, rr, stroke(AppColors.ink, 1.4));
+    canvas.drawCircle(Offset(rcx, rcy), rr, fill(AppColors.surfaceMuted));
+    canvas.drawCircle(Offset(rcx, rcy), rr, stroke(AppColors.ink, 1.4));
     // ₹ symbol via TextPainter
     final tp = TextPainter(
       text: TextSpan(
