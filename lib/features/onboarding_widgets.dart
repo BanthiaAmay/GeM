@@ -10,6 +10,8 @@ import '../data/app_store.dart';
 import 'components.dart';
 import 'glass.dart';
 import 'scroll_hint.dart';
+import 'widgets.dart' show openLink;
+import 'youtube_video.dart' show openYouTubeVideo;
 
 /// One entry per screen in the "not yet on GeM" 15-step walkthrough,
 /// in the order the flow is actually walked. This is the single
@@ -1025,6 +1027,60 @@ class _OnboardingRadioOptionState extends State<OnboardingRadioOption>
   );
 }
 
+/// Cheerful-but-subtle tutorial link pill shown inside [OnboardingCheckOption].
+/// Video links use a soft info-blue tint; portal links use a soft purple tint —
+/// both restrained enough to feel like a helpful aside, not a CTA.
+class _TutorialLink extends StatelessWidget {
+  final bool isVideo;
+  final AppStore store;
+  final VoidCallback onTap;
+
+  const _TutorialLink({
+    required this.isVideo,
+    required this.store,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color bg = isVideo
+        ? AppColors.accentInfo.withValues(alpha: 0.08)
+        : AppColors.accentPurple.withValues(alpha: 0.08);
+    final Color fg = isVideo ? AppColors.accentInfo : AppColors.accentPurple;
+    final IconData icon =
+        isVideo ? Icons.play_circle_outline : Icons.open_in_new;
+    final String label = isVideo
+        ? store.t('Watch how to get it →', 'देखें कैसे मिलेगा →')
+        : store.t('Visit official portal →', 'आधिकारिक पोर्टल देखें →');
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: fg),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: AppText.caption.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// The trailing checkbox indicator for [OnboardingCheckOption]: a box
 /// that fills in while a tick draws itself across it stroke-by-stroke
 /// (via [PathMetric.extractPath] over a growing length), rather than
@@ -1153,6 +1209,15 @@ class OnboardingCheckOption extends StatefulWidget {
   final bool checked;
   final VoidCallback onTap;
 
+  /// When non-null, opens the tutorial YouTube video in-app. Requires [store].
+  final String? tutorialVideoId;
+
+  /// When non-null (and [tutorialVideoId] is null), opens the portal in
+  /// the system browser. Requires [store].
+  final String? tutorialUrl;
+
+  final AppStore? store;
+
   const OnboardingCheckOption({
     super.key,
     this.icon,
@@ -1162,6 +1227,9 @@ class OnboardingCheckOption extends StatefulWidget {
     this.sublabel,
     required this.checked,
     required this.onTap,
+    this.tutorialVideoId,
+    this.tutorialUrl,
+    this.store,
   });
 
   @override
@@ -1212,6 +1280,31 @@ class _OnboardingCheckOptionState extends State<OnboardingCheckOption>
                     Text(widget.label, style: AppText.input),
                     if (widget.sublabel != null)
                       Text(widget.sublabel!, style: AppText.caption),
+                    if (widget.store != null &&
+                        (widget.tutorialVideoId != null ||
+                            widget.tutorialUrl != null)) ...[
+                      const SizedBox(height: 6),
+                      _TutorialLink(
+                        isVideo: widget.tutorialVideoId != null,
+                        store: widget.store!,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          if (widget.tutorialVideoId != null) {
+                            openYouTubeVideo(
+                              context,
+                              widget.store!,
+                              widget.tutorialVideoId!,
+                            );
+                          } else {
+                            openLink(
+                              context,
+                              widget.store!,
+                              widget.tutorialUrl!,
+                            );
+                          }
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),
