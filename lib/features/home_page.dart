@@ -272,7 +272,7 @@ class _HomePageState extends State<HomePage>
                       ),
                       _Tab.tools => _ToolsTab(store: s),
                       _Tab.calculators => _CalculatorsTab(store: s),
-                      _Tab.financialHub => _FinancialHubTab(store: s),
+                      _Tab.financialHub => _FinancialHubTab(store: s, onNavigate: _go),
                       _Tab.profile => _ProfileTab(store: s),
                     },
                   );
@@ -728,7 +728,8 @@ class _CalculatorsTab extends StatelessWidget {
 
 class _FinancialHubTab extends StatelessWidget {
   final AppStore store;
-  const _FinancialHubTab({required this.store});
+  final ValueChanged<_Tab> onNavigate;
+  const _FinancialHubTab({required this.store, required this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -823,10 +824,7 @@ class _FinancialHubTab extends StatelessWidget {
         // ── Back to Home ─────────────────────────────────────────────────
         AppButton(
           label: s.t('Back to Home', 'होम पर वापस जाएं'),
-          onPressed: () {
-            // Pop back to home tab (index 0) via the shell's tab switch
-            Navigator.of(context).popUntil((r) => r.isFirst);
-          },
+          onPressed: () => onNavigate(_Tab.home),
         ),
         const SizedBox(height: AppSpace.gutter),
       ],
@@ -843,64 +841,70 @@ class _FinanceIllustration extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    // shared paints
-    final fill = (Color c) => Paint()..color = c..style = PaintingStyle.fill;
-    final stroke = (Color c, double sw) => Paint()
+    Paint fill(Color c) => Paint()..color = c..style = PaintingStyle.fill;
+    Paint stroke(Color c, double sw) => Paint()
       ..color = c
       ..style = PaintingStyle.stroke
       ..strokeWidth = sw
       ..strokeCap = StrokeCap.round;
 
-    // ── Background halo circle ────────────────────────────────────────
+    // ── Background halo ────────────────────────────────────────────────
     canvas.drawCircle(
-      Offset(w * 0.46, h * 0.46),
-      w * 0.42,
+      Offset(w * 0.50, h * 0.48),
+      w * 0.44,
       fill(AppColors.surfaceMuted),
     );
 
-    // ── Bar chart (3 bars, ascending left to right, behind shop) ─────
-    final barBottom = h * 0.84;
-    final barW = w * 0.10;
+    // ── Bar chart — 3 ascending bars, tall, behind & right of shop ────
+    final barBottom = h * 0.86;
+    final barW = w * 0.095;
     final barsData = [
-      (w * 0.52, h * 0.42),
-      (w * 0.65, h * 0.30),
-      (w * 0.78, h * 0.18),
+      (w * 0.56, h * 0.46), // bar 1 — tallest, partially behind shop
+      (w * 0.68, h * 0.34), // bar 2
+      (w * 0.80, h * 0.22), // bar 3 — tallest on right
     ];
     for (final (bx, bh) in barsData) {
       final rect = Rect.fromLTWH(bx, barBottom - bh, barW, bh);
-      final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(4));
       canvas.drawRRect(
-        rrect,
+        RRect.fromRectAndRadius(rect, const Radius.circular(5)),
         Paint()
           ..shader = LinearGradient(
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
-            colors: [AppColors.border, AppColors.textHint.withValues(alpha: 0.45)],
+            colors: [
+              AppColors.borderStrong.withValues(alpha: 0.7),
+              AppColors.textSecondary.withValues(alpha: 0.35),
+            ],
           ).createShader(rect),
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(5)),
+        stroke(AppColors.border, 0.8),
       );
     }
 
-    // ── Trend arrow (diagonal up-right, dark) ────────────────────────
+    // ── Trend arrow ────────────────────────────────────────────────────
     final arrowPath = Path()
-      ..moveTo(w * 0.52, h * 0.70)
-      ..lineTo(w * 0.84, h * 0.14);
-    canvas.drawPath(arrowPath, stroke(AppColors.ink, 2.4));
-    // arrowhead
-    final arrowTip = Offset(w * 0.84, h * 0.14);
+      ..moveTo(w * 0.56, h * 0.72)
+      ..lineTo(w * 0.86, h * 0.16);
+    canvas.drawPath(arrowPath, stroke(AppColors.ink, 2.0));
+    final arrowTip = Offset(w * 0.86, h * 0.16);
     final arrowHead = Path()
       ..moveTo(arrowTip.dx, arrowTip.dy)
-      ..lineTo(arrowTip.dx - 10, arrowTip.dy + 4)
-      ..lineTo(arrowTip.dx - 4, arrowTip.dy + 10)
+      ..lineTo(arrowTip.dx - 9, arrowTip.dy + 5)
+      ..lineTo(arrowTip.dx - 3, arrowTip.dy + 10)
       ..close();
     canvas.drawPath(arrowHead, fill(AppColors.ink));
 
-    // ── Shop building ────────────────────────────────────────────────
-    final shopL = w * 0.10;
-    final shopR = w * 0.60;
-    final shopTop = h * 0.46;
+    // Shop geometry — centered horizontally
+    final shopL = w * 0.12;
+    final shopR = w * 0.62;
+    final shopTop = h * 0.44;
     final shopBot = h * 0.86;
     final shopW = shopR - shopL;
-    // walls
+    final shopH = shopBot - shopTop;
+
+    // ── Shop walls ─────────────────────────────────────────────────────
     canvas.drawRRect(
       RRect.fromRectAndCorners(
         Rect.fromLTRB(shopL, shopTop, shopR, shopBot),
@@ -918,38 +922,69 @@ class _FinanceIllustration extends CustomPainter {
       stroke(AppColors.borderStrong, 1.2),
     );
 
-    // awning base bar
-    final awningTop = shopTop - 4;
-    final awningBot = shopTop + 20;
-    canvas.drawRect(
-      Rect.fromLTRB(shopL - 4, awningTop, shopR + 4, awningBot),
-      fill(AppColors.ink),
-    );
-    // awning scalloped bottom edge
+    // ── Market awning — alternating dark/light horizontal stripes ─────
+    const stripeCount = 6;
+    final awningTop = shopTop - 6;
+    final awningH = 24.0;
+    final awningBot = awningTop + awningH;
+    final stripeH = awningH / stripeCount;
+    for (int i = 0; i < stripeCount; i++) {
+      final sy = awningTop + i * stripeH;
+      canvas.drawRect(
+        Rect.fromLTWH(shopL - 4, sy, shopW + 8, stripeH),
+        fill(
+          i.isEven ? AppColors.ink : AppColors.surface.withValues(alpha: 0.85),
+        ),
+      );
+    }
+    // scalloped bottom edge
     final scallop = Path();
-    final scW = shopW / 7;
+    const scallopCount = 7;
+    final scW = (shopW + 8) / scallopCount;
     scallop.moveTo(shopL - 4, awningBot);
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < scallopCount; i++) {
       final x0 = shopL - 4 + i * scW;
-      scallop.conicTo(x0 + scW / 2, awningBot + 8, x0 + scW, awningBot, 0.7);
+      scallop.conicTo(x0 + scW / 2, awningBot + 10, x0 + scW, awningBot, 0.7);
     }
     scallop.lineTo(shopR + 4, awningTop);
     scallop.lineTo(shopL - 4, awningTop);
     scallop.close();
     canvas.drawPath(scallop, fill(AppColors.ink));
-    // awning stripes (white)
-    final stripeW = scW * 0.45;
-    for (int i = 0; i < 7; i++) {
-      final sx = shopL - 4 + i * scW + scW * 0.28;
-      canvas.drawRect(
-        Rect.fromLTWH(sx, awningTop, stripeW, awningBot - awningTop),
-        fill(AppColors.surface.withValues(alpha: 0.5)),
-      );
-    }
 
-    // shop door
-    final doorW = shopW * 0.28;
-    final doorH = (shopBot - shopTop) * 0.55;
+    // ── Shop window (left side, 4-pane) ────────────────────────────────
+    final winL = shopL + shopW * 0.07;
+    final winTop = shopTop + 32;
+    final winW = shopW * 0.30;
+    final winH = shopH * 0.36;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(winL, winTop, winW, winH),
+        const Radius.circular(3),
+      ),
+      fill(AppColors.border),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(winL, winTop, winW, winH),
+        const Radius.circular(3),
+      ),
+      stroke(AppColors.borderStrong, 1.0),
+    );
+    // 4-pane cross
+    canvas.drawLine(
+      Offset(winL + winW / 2, winTop),
+      Offset(winL + winW / 2, winTop + winH),
+      stroke(AppColors.borderStrong, 1.0),
+    );
+    canvas.drawLine(
+      Offset(winL, winTop + winH / 2),
+      Offset(winL + winW, winTop + winH / 2),
+      stroke(AppColors.borderStrong, 1.0),
+    );
+
+    // ── Shop door (centered) ───────────────────────────────────────────
+    final doorW = shopW * 0.26;
+    final doorH = shopH * 0.50;
     final doorL = shopL + (shopW - doorW) / 2;
     final doorTop = shopBot - doorH;
     canvas.drawRRect(
@@ -966,84 +1001,65 @@ class _FinanceIllustration extends CustomPainter {
       ),
       stroke(AppColors.textSecondary, 1.0),
     );
-    // door window (glass shine)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(doorL + 3, doorTop + 3, doorW - 6, doorH * 0.45),
+        Rect.fromLTWH(doorL + 3, doorTop + 3, doorW - 6, doorH * 0.42),
         const Radius.circular(2),
       ),
       fill(AppColors.border),
     );
-    // door handle
     canvas.drawCircle(
-      Offset(doorL + doorW * 0.70, doorTop + doorH * 0.60),
+      Offset(doorL + doorW * 0.72, doorTop + doorH * 0.58),
       2.0,
       fill(AppColors.textSecondary),
     );
 
-    // shop window (left of door)
-    final winL = shopL + shopW * 0.08;
-    final winTop2 = shopTop + 28;
-    final winW = shopW * 0.24;
-    final winH = (shopBot - shopTop - 28) * 0.38;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(winL, winTop2, winW, winH),
-        const Radius.circular(3),
-      ),
-      fill(AppColors.border),
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(winL, winTop2, winW, winH),
-        const Radius.circular(3),
-      ),
-      stroke(AppColors.borderStrong, 1.0),
-    );
-    // window cross divider
+    // ── Large leaves (left of shop) ────────────────────────────────────
+    final leafFill = fill(AppColors.accentSuccess.withValues(alpha: 0.65));
+    final leafStroke = stroke(AppColors.accentSuccess.withValues(alpha: 0.8), 0.8);
+    // leaf 1 — sweeping left
+    final leaf1 = Path()
+      ..moveTo(shopL - 2, shopBot - 4)
+      ..quadraticBezierTo(shopL - 26, shopBot - 32, shopL - 18, shopBot - 44)
+      ..quadraticBezierTo(shopL + 4, shopBot - 28, shopL - 2, shopBot - 4);
+    canvas.drawPath(leaf1, leafFill);
+    canvas.drawPath(leaf1, leafStroke);
+    // leaf 2 — sweeping more upward
+    final leaf2 = Path()
+      ..moveTo(shopL + 6, shopBot - 4)
+      ..quadraticBezierTo(shopL - 10, shopBot - 42, shopL + 4, shopBot - 56)
+      ..quadraticBezierTo(shopL + 20, shopBot - 36, shopL + 6, shopBot - 4);
+    canvas.drawPath(leaf2, leafFill);
+    canvas.drawPath(leaf2, leafStroke);
+    // stem
     canvas.drawLine(
-      Offset(winL + winW / 2, winTop2),
-      Offset(winL + winW / 2, winTop2 + winH),
-      stroke(AppColors.borderStrong, 0.8),
-    );
-    canvas.drawLine(
-      Offset(winL, winTop2 + winH / 2),
-      Offset(winL + winW, winTop2 + winH / 2),
-      stroke(AppColors.borderStrong, 0.8),
+      Offset(shopL + 2, shopBot - 4),
+      Offset(shopL - 8, shopBot - 36),
+      stroke(AppColors.accentSuccess.withValues(alpha: 0.7), 1.0),
     );
 
-    // ── Leaves / plant (bottom-left of shop) ─────────────────────────
-    final leafPaint = fill(AppColors.accentSuccess.withValues(alpha: 0.55));
-    for (int i = 0; i < 3; i++) {
-      final lx = shopL - 2 + i * 7.0;
-      final ly = shopBot - 2.0;
-      final leaf = Path()
-        ..moveTo(lx, ly)
-        ..quadraticBezierTo(lx - 8 + i * 4, ly - 18, lx + 2, ly - 14)
-        ..quadraticBezierTo(lx + 10 - i * 2, ly - 8, lx, ly);
-      canvas.drawPath(leaf, leafPaint);
-    }
-
-    // ── Coin stack (right of shop) ────────────────────────────────────
-    final coinCx = w * 0.80;
-    final coinCy = h * 0.74;
-    final coinRx = w * 0.085;
-    final coinRy = coinRx * 0.28;
-    final stackOffsets = [12.0, 7.0, 2.0]; // bottom → top
-    for (final dy in stackOffsets) {
-      // coin side thickness
+    // ── Coin stack (between shop and bars) ────────────────────────────
+    final coinCx = w * 0.75;
+    final coinBaseY = h * 0.82;
+    final coinRx = w * 0.072;
+    final coinRy = coinRx * 0.30;
+    const coinCount = 4;
+    const coinSpacing = 5.5;
+    for (int i = coinCount - 1; i >= 0; i--) {
+      final cy = coinBaseY - i * coinSpacing;
+      // side face (thickness shadow)
       canvas.drawOval(
         Rect.fromCenter(
-          center: Offset(coinCx, coinCy + dy + coinRy),
+          center: Offset(coinCx, cy + coinRy * 0.9),
           width: coinRx * 2,
-          height: coinRy * 2,
+          height: coinRy * 1.6,
         ),
-        fill(AppColors.textHint.withValues(alpha: 0.6)),
+        fill(AppColors.borderStrong.withValues(alpha: 0.55)),
       );
-      // coin top face
+      // top face
       canvas.drawOval(
         Rect.fromCenter(
-          center: Offset(coinCx, coinCy + dy),
+          center: Offset(coinCx, cy),
           width: coinRx * 2,
           height: coinRy * 2,
         ),
@@ -1051,26 +1067,26 @@ class _FinanceIllustration extends CustomPainter {
       );
       canvas.drawOval(
         Rect.fromCenter(
-          center: Offset(coinCx, coinCy + dy),
+          center: Offset(coinCx, cy),
           width: coinRx * 2,
           height: coinRy * 2,
         ),
-        stroke(AppColors.borderStrong, 1.0),
+        stroke(AppColors.borderStrong, 0.9),
       );
     }
-    // featured rupee coin (larger, front)
-    final rcx = coinCx + 18;
-    final rcy = coinCy + 4;
-    final rr = w * 0.11;
+
+    // ── Rupee coin (prominent, front right) ───────────────────────────
+    final rcx = coinCx + coinRx * 1.1;
+    final rcy = coinBaseY - coinCount * coinSpacing - coinRy * 2.5;
+    final rr = coinRx * 1.15;
     canvas.drawCircle(Offset(rcx, rcy), rr, fill(AppColors.surfaceMuted));
-    canvas.drawCircle(Offset(rcx, rcy), rr, stroke(AppColors.ink, 1.4));
-    // ₹ symbol via TextPainter
+    canvas.drawCircle(Offset(rcx, rcy), rr, stroke(AppColors.ink, 1.5));
     final tp = TextPainter(
       text: TextSpan(
         text: '₹',
         style: TextStyle(
           color: AppColors.ink,
-          fontSize: rr * 1.1,
+          fontSize: rr * 1.05,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -1078,7 +1094,7 @@ class _FinanceIllustration extends CustomPainter {
     )..layout();
     tp.paint(canvas, Offset(rcx - tp.width / 2, rcy - tp.height / 2));
 
-    // ── Ground line ───────────────────────────────────────────────────
+    // ── Ground line ────────────────────────────────────────────────────
     canvas.drawLine(
       Offset(w * 0.04, h * 0.86),
       Offset(w * 0.96, h * 0.86),
