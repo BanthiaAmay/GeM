@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' show pi, sin;
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/motion.dart';
@@ -1294,6 +1295,7 @@ class _SectionCompleteOverlayState extends State<_SectionCompleteOverlay>
   // nothing is scheduled, so a plain timer would stall the test
   // clock before it could fire.
   late final AnimationController _holdTimer;
+  final _chime = AudioPlayer();
   bool _reduced = false;
   bool _decided = false;
   bool _finished = false;
@@ -1323,6 +1325,7 @@ class _SectionCompleteOverlayState extends State<_SectionCompleteOverlay>
       _check.value = 1;
       _text.value = 1;
       HapticFeedback.mediumImpact();
+      unawaited(_chime.play(AssetSource('sounds/section_complete.mp3')));
       await _holdTimer.animateTo(1, duration: _reducedHold);
       _finish();
       return;
@@ -1332,6 +1335,7 @@ class _SectionCompleteOverlayState extends State<_SectionCompleteOverlay>
     await _check.forward();
     if (_finished || !mounted) return;
     HapticFeedback.mediumImpact();
+    unawaited(_chime.play(AssetSource('sounds/section_complete.mp3')));
     await _text.forward();
     if (_finished || !mounted) return;
     await _holdTimer.forward();
@@ -1348,6 +1352,7 @@ class _SectionCompleteOverlayState extends State<_SectionCompleteOverlay>
 
   @override
   void dispose() {
+    _chime.dispose();
     _scrim.dispose();
     _check.dispose();
     _text.dispose();

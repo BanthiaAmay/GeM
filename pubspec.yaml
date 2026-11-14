@@ -52,6 +52,7 @@ dependencies:
   image_picker: any
   pasteboard: ^0.5.0
   speech_to_text: ^7.5.0
+  audioplayers: ^6.1.0
 
 dev_dependencies:
   flutter_test:
@@ -85,6 +86,7 @@ flutter:
     - assets/welcome_illustration.png
     - assets/illustrations/
     - assets/icons/
+    - assets/sounds/
   fonts:
     - family: NotoSansDevanagari
       fonts:
