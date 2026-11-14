@@ -28,33 +28,43 @@ import 'youtube_video.dart' show openYouTubeVideo;
 /// 101, rather than each being its own destination.
 enum _Tab { home, tools, calculators, financialHub, profile }
 
-/// Shared (tab, outlined icon, filled icon, label) definitions for both
-/// the phone bottom nav ([_HomeNav]) and the wide-layout [NavigationRail],
-/// so the two stay in lockstep instead of drifting apart.
-List<(_Tab, IconData, IconData, String)> _navItems(AppStore s) => [
-  (_Tab.home, Icons.home_outlined, Icons.home, s.t('Home', 'होम')),
-  (_Tab.tools, Icons.build_outlined, Icons.build, s.t('Documentation Assist', 'दस्तावेज़ सहायक')),
-  (
-    _Tab.calculators,
-    Icons.calculate_outlined,
-    Icons.calculate,
-    s.t('Calculators', 'कैलकुलेटर'),
-  ),
-  (
-    // Short form in the nav bar so the label never wraps next to
-    // "GeM 101" and "Profile" at phone width; the tab's own page
-    _Tab.financialHub,
-    Icons.account_balance_outlined,
-    Icons.account_balance,
-    s.t('Finance', 'वित्त'),
-  ),
-  (
-    _Tab.profile,
-    Icons.person_outline,
-    Icons.person,
-    s.t('Profile', 'प्रोफ़ाइल'),
-  ),
-];
+/// Shared (tab, outlined icon, filled icon, label, short label) definitions
+/// for both the phone bottom nav ([_HomeNav]) and the wide-layout
+/// [NavigationRail], so the two stay in lockstep instead of drifting apart.
+/// The rail shows the full label; the bottom nav shows the short one,
+/// because five tabs at 320px leave each label about 54px, and
+/// `test/home_nav_fit_test.dart` checks every short label fits in all
+/// 9 languages.
+List<(_Tab, IconData, IconData, String, String)> _navItems(AppStore s) {
+  final home = s.t('Home', 'होम');
+  final finance = s.t('Finance', 'वित्त');
+  final profile = s.t('Profile', 'प्रोफ़ाइल');
+  return [
+    (_Tab.home, Icons.home_outlined, Icons.home, home, home),
+    (
+      _Tab.tools,
+      Icons.build_outlined,
+      Icons.build,
+      s.t('Documentation Assist', 'दस्तावेज़ सहायक'),
+      s.t('Docs', 'दस्तावेज़'),
+    ),
+    (
+      _Tab.calculators,
+      Icons.calculate_outlined,
+      Icons.calculate,
+      s.t('Calculators', 'कैलकुलेटर'),
+      s.t('Calc', 'कैलकुलेटर'),
+    ),
+    (
+      _Tab.financialHub,
+      Icons.account_balance_outlined,
+      Icons.account_balance,
+      finance,
+      finance,
+    ),
+    (_Tab.profile, Icons.person_outline, Icons.person, profile, profile),
+  ];
+}
 
 /// The screen a returning user lands on after onboarding — everything
 /// here is illustrative/demo content (a sample bid, a static
@@ -368,7 +378,7 @@ class _HomePageState extends State<HomePage>
                     fontWeight: FontWeight.w400,
                   ),
                   destinations: [
-                    for (final (_, outlinedIcon, filledIcon, label) in items)
+                    for (final (_, outlinedIcon, filledIcon, label, _) in items)
                       NavigationRailDestination(
                         icon: Icon(outlinedIcon),
                         selectedIcon: Icon(filledIcon),
@@ -1335,14 +1345,15 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
             ),
           ),
           const SizedBox(height: AppSpace.sm),
-          Row(
+          Wrap(
+            spacing: AppSpace.sm,
+            runSpacing: AppSpace.sm,
             children: [
               _FilterPill(
                 label: s.t('All', 'सभी'),
                 selected: !_unreadOnly,
                 onTap: () => setState(() => _unreadOnly = false),
               ),
-              const SizedBox(width: AppSpace.sm),
               _FilterPill(
                 label: s.t('Unread', 'अपठित'),
                 selected: _unreadOnly,
@@ -1363,11 +1374,13 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
                     size: AppIconSize.md,
                   ),
                   const SizedBox(width: AppSpace.md),
-                  Text(
-                    _unreadOnly
-                        ? s.t('No unread alerts', 'कोई अपठित अलर्ट नहीं')
-                        : s.t('No alerts yet', 'अभी कोई अलर्ट नहीं'),
-                    style: AppText.secondary(AppText.bodySmall),
+                  Expanded(
+                    child: Text(
+                      _unreadOnly
+                          ? s.t('No unread alerts', 'कोई अपठित अलर्ट नहीं')
+                          : s.t('No alerts yet', 'अभी कोई अलर्ट नहीं'),
+                      style: AppText.secondary(AppText.bodySmall),
+                    ),
                   ),
                 ],
               ),
@@ -1764,7 +1777,7 @@ class _QuickActionsSection extends StatelessWidget {
         SectionHeader(s.t('Quick actions', 'त्वरित कार्य')),
         const SizedBox(height: AppSpace.sm),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _QuickActionTile(
               icon: Icons.bar_chart_outlined,
@@ -1816,30 +1829,36 @@ class _QuickActionTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    child: GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: AppSize.tap,
-            height: AppSize.tap,
-            decoration: BoxDecoration(
-              color: tileColor,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
+  // Each tile takes an equal share of the row, so its label wraps (up to
+  // two lines) instead of pushing the row past narrow screens.
+  Widget build(BuildContext context) => Expanded(
+    child: Semantics(
+      button: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: AppSize.tap,
+              height: AppSize.tap,
+              decoration: BoxDecoration(
+                color: tileColor,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+              ),
+              child: Icon(icon, size: AppIconSize.md, color: iconColor),
             ),
-            child: Icon(icon, size: AppIconSize.md, color: iconColor),
-          ),
-          const SizedBox(height: AppSpace.xs),
-          Text(
-            label,
-            style: AppText.caption,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-          ),
-        ],
+            const SizedBox(height: AppSpace.xs),
+            Text(
+              label,
+              style: AppText.caption,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     ),
   );
@@ -1965,7 +1984,7 @@ class _HomeNav extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            for (final (tab, outlinedIcon, filledIcon, label) in items)
+            for (final (tab, outlinedIcon, filledIcon, _, label) in items)
               Expanded(
                 child: Semantics(
                   button: true,
@@ -2013,6 +2032,7 @@ class _HomeNav extends StatelessWidget {
                               const SizedBox(height: AppSpace.xs),
                               Text(
                                 label,
+                                key: ValueKey('nav-label-${tab.name}'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppText.label.copyWith(

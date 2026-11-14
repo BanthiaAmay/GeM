@@ -197,10 +197,14 @@ class FactTicket extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: AppSpace.sm),
-                        Text(
-                          store.t('GeM FACT', 'GeM तथ्य'),
-                          style: AppText.overline.copyWith(
-                            color: AppColors.ink,
+                        Flexible(
+                          child: Text(
+                            store.t('GeM FACT', 'GeM तथ्य'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppText.overline.copyWith(
+                              color: AppColors.ink,
+                            ),
                           ),
                         ),
                         const Spacer(),
@@ -439,17 +443,27 @@ class _FactDeckState extends State<FactDeck> with TickerProviderStateMixin {
               children: [
                 Row(
                   children: [
-                    Text(
-                      s.t('WHY GeM?', 'GeM क्यों?'),
-                      style: AppText.overline.copyWith(
-                        color: AppColors.surface,
+                    // Both labels may shorten so long translations never
+                    // push the swipe hint past narrow screens.
+                    Flexible(
+                      child: Text(
+                        s.t('WHY GeM?', 'GeM क्यों?'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.overline.copyWith(
+                          color: AppColors.surface,
+                        ),
                       ),
                     ),
                     const Spacer(),
-                    Text(
-                      s.t('Swipe', 'स्वाइप करें'),
-                      style: AppText.tick.copyWith(
-                        color: AppColors.surface.withValues(alpha: 0.75),
+                    Flexible(
+                      child: Text(
+                        s.t('Swipe', 'स्वाइप करें'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.tick.copyWith(
+                          color: AppColors.surface.withValues(alpha: 0.75),
+                        ),
                       ),
                     ),
                     const SizedBox(width: AppSpace.xs),
@@ -628,7 +642,9 @@ class _FactCarouselState extends State<FactCarousel>
     return Column(
       children: [
         SizedBox(
-          height: 186,
+          // Grows with the user's text size so the ticket's text never
+          // spills past its fixed-height page.
+          height: MediaQuery.textScalerOf(context).scale(186),
           child: PageView.builder(
             controller: _page,
             padEnds: true,

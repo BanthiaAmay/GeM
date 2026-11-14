@@ -397,13 +397,17 @@ class SectionHeader extends StatelessWidget {
           child: Semantics(header: true, child: Text(title, style: AppText.h3)),
         ),
         if (actionLabel != null)
-          AppButton(
-            label: actionLabel!,
-            onPressed: onAction,
-            variant: AppButtonVariant.tertiary,
-            size: AppButtonSize.sm,
-            expand: false,
-            haptic: false,
+          // Flexible so a long translated action label shortens with an
+          // ellipsis instead of pushing the header past narrow screens.
+          Flexible(
+            child: AppButton(
+              label: actionLabel!,
+              onPressed: onAction,
+              variant: AppButtonVariant.tertiary,
+              size: AppButtonSize.sm,
+              expand: false,
+              haptic: false,
+            ),
           ),
       ],
     ),
@@ -745,11 +749,27 @@ class _AppProgressBarState extends State<AppProgressBar>
     );
   }
 
+  /// How many times the shimmer sweeps before it rests. A decorative
+  /// loop that never ends keeps the screen repainting and never lets
+  /// the page settle, so it plays a few times (like the fact deck's
+  /// capped auto-advance) and then stops.
+  static const _sweeps = 3;
+  int _swept = 0;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!Motion.reduced(context) && !_shimmer.isAnimating) {
-      _shimmer.repeat();
+    if (!Motion.reduced(context) && _swept == 0 && !_shimmer.isAnimating) {
+      _shimmer.addStatusListener((status) {
+        if (status != AnimationStatus.completed) return;
+        _swept++;
+        if (_swept < _sweeps) {
+          _shimmer.forward(from: 0);
+        } else {
+          _shimmer.value = 0;
+        }
+      });
+      _shimmer.forward();
     }
   }
 

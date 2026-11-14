@@ -321,7 +321,9 @@ void main() {
         find.byKey(const ValueKey('whatsapp-number')),
         '9876543210',
       );
-      await tap(tester, 'Email me a code');
+      // Sign-up is by password, then an emailed code confirms the address.
+      await fillPassword(tester, 'Strong-password1!');
+      await tap(tester, 'Create account');
       await tester.enterText(find.byType(TextField).last, '123456');
       await tap(tester, 'Verify and sign in');
       expect(store.authenticated, isTrue);
@@ -344,7 +346,7 @@ void main() {
     final nav = tester.state<NavigatorState>(find.byType(Navigator));
     nav.pushNamed('/gem-check');
     await tester.pumpAndSettle();
-    expect(find.text('Email me a code'), findsOneWidget);
+    expect(find.text('Create account'), findsOneWidget);
     expect(find.text('Is your business already on GeM?'), findsNothing);
   });
 
@@ -355,7 +357,7 @@ void main() {
     await tester.pumpWidget(SaathiApp(store: store, ready: Future.value()));
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
-    expect(find.text('Email me a code'), findsOneWidget);
+    expect(find.text('Create account'), findsOneWidget);
     await tap(tester, 'Log in');
     await tester.enterText(
       find.byType(TextFormField).first,
@@ -391,14 +393,16 @@ void main() {
         find.byType(TextFormField).first,
         'seller@example.com',
       );
-      await tap(tester, 'Email me a code');
-      expect(store.otpRequests, 0);
+      await fillPassword(tester, 'Strong-password1!');
+      await tap(tester, 'Create account');
+      expect(store.passwordSignUps, 0);
       await tester.enterText(
         find.byKey(const ValueKey('whatsapp-number')),
         '9876543210',
       );
-      await tap(tester, 'Email me a code');
-      expect(store.createsUser, isTrue);
+      await fillPassword(tester, 'Strong-password1!');
+      await tap(tester, 'Create account');
+      expect(store.passwordSignUps, 1);
       await tester.enterText(find.byType(TextField).last, '12345678');
       await tap(tester, 'Verify and sign in');
       expect(store.verifiedCode, '12345678');
@@ -430,7 +434,7 @@ void main() {
     store.googleAvailable = true;
     await boot(tester);
     expect(find.text('Continue with Google'), findsNothing);
-    expect(find.text('Email me a code'), findsOneWidget);
+    expect(find.text('Create account'), findsOneWidget);
     expect(store.authenticated, isFalse);
   });
 
@@ -447,7 +451,8 @@ void main() {
         find.byKey(const ValueKey('whatsapp-number')),
         '9876543210',
       );
-      await tap(tester, 'Email me a code');
+      await fillPassword(tester, 'Strong-password1!');
+      await tap(tester, 'Create account');
       await tester.enterText(find.byType(TextField).last, '123456');
       await tap(tester, 'Verify and sign in');
       expect(store.authenticated, isTrue);
@@ -486,7 +491,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Email me a code'));
+    await tester.ensureVisible(find.text('Create account'));
     expect(tester.takeException(), isNull);
   });
 

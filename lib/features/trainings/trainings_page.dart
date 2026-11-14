@@ -321,36 +321,46 @@ class _ModuleGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = store;
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: AppSpace.md,
-        mainAxisSpacing: AppSpace.md,
-        childAspectRatio: 0.88,
-      ),
-      itemCount: kTrainingModules.length,
-      itemBuilder: (context, i) {
-        final mod = kTrainingModules[i];
-        final total = mod.videos.length;
-        final done = mod.videos
-            .where((v) => watchedIds.contains(v.videoId))
-            .length;
-        final allWatched = done == total;
-        final quizPassed = s.trainingQuizPassed.contains(mod.id);
-        final tint = _tints[i % _tints.length];
-        return _ModuleGridCard(
-          store: s,
-          module: mod,
-          index: i + 1,
-          done: done,
-          total: total,
-          allWatched: allWatched,
-          quizPassed: quizPassed,
-          tint: tint,
-        );
-      },
+    // Two cards per row, each row as tall as its taller card, so long
+    // titles or large text never overflow a fixed-ratio grid tile.
+    Widget card(int i) {
+      final mod = kTrainingModules[i];
+      final total = mod.videos.length;
+      final done = mod.videos
+          .where((v) => watchedIds.contains(v.videoId))
+          .length;
+      final allWatched = done == total;
+      final quizPassed = s.trainingQuizPassed.contains(mod.id);
+      final tint = _tints[i % _tints.length];
+      return _ModuleGridCard(
+        store: s,
+        module: mod,
+        index: i + 1,
+        done: done,
+        total: total,
+        allWatched: allWatched,
+        quizPassed: quizPassed,
+        tint: tint,
+      );
+    }
+
+    final n = kTrainingModules.length;
+    return Column(
+      children: [
+        for (var r = 0; r < n; r += 2) ...[
+          if (r > 0) const SizedBox(height: AppSpace.md),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: card(r)),
+                const SizedBox(width: AppSpace.md),
+                Expanded(child: r + 1 < n ? card(r + 1) : const SizedBox()),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

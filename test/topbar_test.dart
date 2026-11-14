@@ -70,7 +70,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Notifications'));
     await tester.pumpAndSettle();
-    expect(find.text('Opportunities, on your terms.'), findsOneWidget);
+    expect(find.text('Bid alerts'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
 

@@ -24,6 +24,7 @@ void main() {
       await tester.pumpWidget(SaathiApp(store: s, ready: s.initialize()));
       await tester.pump(const Duration(seconds: 2));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Get started'));
       await tester.tap(find.text('Get started'));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Continue'));
@@ -62,6 +63,7 @@ void main() {
       // 4. Location — Getting started, 4 of 4.
       expect(find.text('Where is your business based?'), findsOneWidget);
       expectHeading('Getting started', 'GETTING STARTED · 3 OF 3');
+      await tester.ensureVisible(find.text('Choose state'));
       await tester.tap(find.text('Choose state'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Andhra Pradesh').last);
@@ -92,12 +94,14 @@ void main() {
 
       // 6. Business form — Your business, 2 of 6.
       expectHeading('Your business', 'YOUR BUSINESS · 2 OF 6');
+      await tester.ensureVisible(find.text('Proprietorship'));
       await tester.tap(find.text('Proprietorship'));
       await tester.pumpAndSettle();
       await continueTap();
 
       // 7. Sector — 3 of 6.
       expectHeading('Your business', 'YOUR BUSINESS · 3 OF 6');
+      await tester.ensureVisible(find.text('Manufacturing'));
       await tester.tap(find.text('Manufacturing'));
       await tester.pumpAndSettle();
       await continueTap();
@@ -122,12 +126,14 @@ void main() {
 
       // 8. Role — 5 of 6.
       expectHeading('Your business', 'YOUR BUSINESS · 5 OF 6');
+      await tester.ensureVisible(find.text('Owner / Proprietor'));
       await tester.tap(find.text('Owner / Proprietor'));
       await tester.pumpAndSettle();
       await continueTap();
 
       // 9. Authorised person — 6 of 6 (last of the section).
       expectHeading('Your business', 'YOUR BUSINESS · 6 OF 6');
+      await tester.ensureVisible(find.text('Yes'));
       await tester.tap(find.text('Yes'));
       await tester.pumpAndSettle();
       await continueTap();
@@ -167,6 +173,7 @@ void main() {
       await tester.ensureVisible(
         find.text('I understand this is a preparation guide.'),
       );
+      await tester.ensureVisible(find.text('I understand this is a preparation guide.'));
       await tester.tap(find.text('I understand this is a preparation guide.'));
       await tester.pumpAndSettle();
       await continueTap();
@@ -180,6 +187,7 @@ void main() {
 
       // 12. PAN readiness — 3 of 4.
       expectHeading('Get ready', 'GET READY · 3 OF 4');
+      await tester.ensureVisible(find.text('Yes'));
       await tester.tap(find.text('Yes'));
       await tester.pumpAndSettle();
       await continueTap();

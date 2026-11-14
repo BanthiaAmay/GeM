@@ -200,14 +200,15 @@ class _BidFeedState extends State<BidFeed> {
           },
         ),
         const SizedBox(height: AppSpace.sm),
-        Row(
+        Wrap(
+          spacing: AppSpace.sm,
+          runSpacing: AppSpace.sm,
           children: [
             _ActionChip(
               icon: Icons.refresh,
               label: s.t('Refresh', 'ताज़ा करें'),
               onTap: loading ? null : refresh,
             ),
-            const SizedBox(width: AppSpace.sm),
             _ActionChip(
               icon: Icons.filter_list,
               label: _currentFilter.activeCount > 0
@@ -216,7 +217,6 @@ class _BidFeedState extends State<BidFeed> {
               onTap: bids.isEmpty ? null : _openFilter,
               active: _currentFilter.activeCount > 0,
             ),
-            const SizedBox(width: AppSpace.sm),
             _ActionChip(
               icon: Icons.tune_outlined,
               label: s.t('Set alerts', 'अलर्ट चुनें'),

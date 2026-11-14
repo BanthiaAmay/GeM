@@ -1066,12 +1066,14 @@ class _TutorialLink extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 13, color: fg),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: AppText.caption.copyWith(
-                color: fg,
-                fontWeight: FontWeight.w600,
+            const SizedBox(width: AppSpace.xs),
+            Flexible(
+              child: Text(
+                label,
+                style: AppText.caption.copyWith(
+                  color: fg,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],

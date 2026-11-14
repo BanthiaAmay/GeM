@@ -196,7 +196,8 @@ void main() {
     store.push = push;
     store.alertPreferences = {'in_app_enabled': false, 'keywords': []};
     await show(tester, AlertsPage(store: store));
-    final toggle = find.text('App notifications for matching bids');
+    // The App Notifications row is first; its switch is the control.
+    final toggle = find.byType(Switch).first;
     await tester.ensureVisible(toggle);
     await tester.tap(toggle);
     await tester.pumpAndSettle();
