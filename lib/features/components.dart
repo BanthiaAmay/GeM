@@ -352,7 +352,7 @@ class AppCard extends StatelessWidget {
           AppCardTone.outlined => AppColors.surface,
           AppCardTone.muted => AppColors.surfaceAlt,
           AppCardTone.brand => AppColors.accentInfoTint,
-          AppCardTone.hero => AppColors.ink,
+          AppCardTone.hero => AppColors.heroCard,
         },
         borderRadius: r,
         border: tone == AppCardTone.outlined

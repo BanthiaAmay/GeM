@@ -16,8 +16,11 @@ abstract final class AppColors {
   // The faint blue-green cast in [ink] keeps it mature without reading as
   // a pure #000 void; the off-white surface keeps the UI from feeling
   // clinical.
-  /// Primary text, headings, primary buttons, hero cards. 19.8:1 on [surface].
+  /// Primary text, headings, primary buttons. 19.8:1 on [surface].
   static const ink = Color(0xFF091315);
+
+  /// Hero card background (home greeting, account hero). Blue brand moment.
+  static const heroCard = Color(0xFF4569B2);
 
   /// Primary button fill while pressed.
   static const inkPressed = Color(0xFF1A2325);
