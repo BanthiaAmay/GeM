@@ -19,8 +19,8 @@ abstract final class AppColors {
   /// Primary text, headings, primary buttons. 19.8:1 on [surface].
   static const ink = Color(0xFF091315);
 
-  /// Hero card background (home greeting, account hero). Lavender blue.
-  static const heroCard = Color(0xFFE0E6FF);
+  /// Hero card background (home greeting, account hero). Cornflower blue.
+  static const heroCard = Color(0xFF4A69B0);
 
   /// Primary button fill while pressed.
   static const inkPressed = Color(0xFF1A2325);

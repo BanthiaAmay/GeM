@@ -1541,7 +1541,7 @@ class _GreetingSection extends StatelessWidget {
               name.isEmpty
                   ? s.t('Hello.', 'नमस्ते.')
                   : s.t('Hello, {name}', 'नमस्ते, {name}', vars: {'name': name}),
-              style: AppText.h1.copyWith(color: AppColors.ink),
+              style: AppText.h1.copyWith(color: AppColors.surface),
             ),
           ),
           const SizedBox(height: AppSpace.xs),
@@ -1551,7 +1551,7 @@ class _GreetingSection extends StatelessWidget {
               'आपकी GeM यात्रा, एक बोली एक कदम।',
             ),
             style: AppText.body.copyWith(
-              color: AppColors.textSecondary,
+              color: AppColors.surface.withValues(alpha: 0.72),
             ),
           ),
           const SizedBox(height: AppSpace.lg),
@@ -1561,7 +1561,7 @@ class _GreetingSection extends StatelessWidget {
                 child: _MetricTile(
                   label: s.t('Alerts', 'अलर्ट'),
                   value: '${s.unreadAlerts}',
-                  dark: false,
+                  dark: true,
                   onTap: () => Navigator.of(context).pushNamed('/alerts'),
                 ),
               ),
@@ -1571,7 +1571,7 @@ class _GreetingSection extends StatelessWidget {
                   label: s.t('Saved Bids', 'सहेजी बोलियाँ'),
                   value: _fmtCount(s.savedBidsCount),
                   subtitle: s.t('Your shortlist', 'आपकी शॉर्टलिस्ट'),
-                  dark: false,
+                  dark: true,
                   onTap: () =>
                       Navigator.of(context).pushNamed('/saved-bids'),
                 ),
@@ -1590,7 +1590,7 @@ class _GreetingSection extends StatelessWidget {
                           'आपके ${s.bidNotifications.length} अलर्ट',
                         )
                       : s.t('From your alerts', 'अलर्ट से'),
-                  dark: false,
+                  dark: true,
                   onTap: () => Navigator.of(context).pushNamed('/alerts'),
                 ),
               ),
