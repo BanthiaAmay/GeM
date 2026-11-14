@@ -88,8 +88,8 @@ class AuthTestStore extends AppStore {
 
   @override
   Future<void> saveAlertPreferences({
-    required String phone,
-    required bool whatsapp,
+    String phone = '',
+    bool whatsapp = false,
     bool inApp = true,
     List<String> keywords = const [],
     List<String> states = const [],

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
+import 'bid_valuation_sheet.dart';
 import 'components.dart';
 import 'widgets.dart' show openLink;
 
@@ -581,6 +582,20 @@ class _BidCardState extends State<_BidCard> {
                       );
                     }
                   },
+                ),
+              if (n['bid_id'] is String)
+                AppButton(
+                  label: s.t('Estimated value', 'अनुमानित मूल्य'),
+                  icon: Icons.currency_rupee,
+                  variant: AppButtonVariant.secondary,
+                  size: AppButtonSize.sm,
+                  expand: false,
+                  onPressed: () => showBidValuation(
+                    context,
+                    s,
+                    n['bid_id'] as String,
+                    n['title'] as String? ?? '',
+                  ),
                 ),
               AppButton(
                 label: s.t('View on GeM', 'GeM पर देखें'),

@@ -230,8 +230,23 @@ class AppStore extends ChangeNotifier {
     );
   }
 
-  /// Min/max EMD values across the alert bids dataset (null until loaded or if no data).
-  ({double min, double max})? alertsBidValueRange;
+  /// Estimated contract value of the user's open matched bids closing in the
+  /// next 10 days (IST), from `my_open_bids_value`. Null until loaded.
+  /// [completeValue] sums only bids with every item priced; [partialValue]
+  /// is the priced part of the rest and is never added to it.
+  /// [pending], [failed] and [noPrice] split the not-complete bids so a
+  /// bid that was never valued is never shown as ₹0.
+  ({
+    int open,
+    int complete,
+    int incomplete,
+    int pending,
+    int failed,
+    int noPrice,
+    double completeValue,
+    double partialValue,
+  })?
+  openBidsValue;
 
   Timer? _gemStatsTimer;
 
@@ -343,7 +358,7 @@ class AppStore extends ChangeNotifier {
             outcomes = [];
             alertPreferences = {};
             bidNotifications = [];
-            alertsBidValueRange = null;
+            openBidsValue = null;
             _read();
             notifyListeners();
           }
@@ -956,7 +971,7 @@ class AppStore extends ChangeNotifier {
     outcomes = [];
     alertPreferences = {};
     bidNotifications = [];
-    alertsBidValueRange = null;
+    openBidsValue = null;
     savedBids = [];
     _savedBidIds = {};
     analyticsData = [];
@@ -980,7 +995,7 @@ class AppStore extends ChangeNotifier {
       outcomes = [];
       alertPreferences = {};
       bidNotifications = [];
-      alertsBidValueRange = null;
+      openBidsValue = null;
       _loadedCloud = false;
       await prefs.remove('saathi.auth.pending_guest');
       await prefs.remove(accountStorageKey);
@@ -1011,7 +1026,7 @@ class AppStore extends ChangeNotifier {
       outcomes = [];
       alertPreferences = {};
       bidNotifications = [];
-      alertsBidValueRange = null;
+      openBidsValue = null;
       _loadedCloud = false;
       await persist();
       notifyListeners();
@@ -1059,8 +1074,8 @@ class AppStore extends ChangeNotifier {
       unawaited(loadSavedBids());
       // Background: load tender analytics data.
       unawaited(loadAnalyticsData());
-      // Background: compute bid value range from the same alert bids dataset.
-      unawaited(_loadAlertsBidValueRange());
+      // Background: estimated value of open matched bids.
+      unawaited(loadOpenBidsValue());
     } catch (_) {
       if (currentUser?.id != userId) return;
       alertsError = 'Could not load alerts. Check your connection and retry.';
@@ -1082,49 +1097,39 @@ class AppStore extends ChangeNotifier {
     }
   }
 
-  /// Computes the min/max EMD range across the alert-bids dataset.
-  /// Uses the GEM IDs already in bidNotifications — no independent full-table scan.
-  Future<void> _loadAlertsBidValueRange() async {
-    if (client == null || bidNotifications.isEmpty) return;
-    // Extract unique GEM bid IDs from each notification's body field.
-    final gemIds = <String>{};
-    for (final n in bidNotifications) {
-      final body = n['body'] as String? ?? '';
-      for (final part in body.split(' · ')) {
-        final trimmed = part.trim();
-        if (trimmed.startsWith('GEM/')) {
-          gemIds.add(trimmed);
-          break;
-        }
-      }
-    }
-    if (gemIds.isEmpty) return;
+  /// Loads [openBidsValue]. Totals stay hidden if the RPC is unavailable.
+  Future<void> loadOpenBidsValue() async {
+    if (client == null || !signedIn) return;
+    final userId = currentUser?.id;
     try {
-      final rows = await client!
-          .from('gem_bids')
-          .select('source_id,details')
-          .inFilter('source_id', gemIds.toList());
-      double? minVal, maxVal;
-      for (final rawRow in rows) {
-        final row = Map<String, dynamic>.from(rawRow as Map);
-        final details = row['details'] as Map<String, dynamic>? ?? {};
-        final raw = details['emd_amount'];
-        if (raw == null) continue;
-        final emd = double.tryParse(
-          raw.toString().replaceAll(RegExp(r'[^\d.]'), ''),
-        );
-        if (emd != null && emd > 0) {
-          if (minVal == null || emd < minVal) minVal = emd;
-          if (maxVal == null || emd > maxVal) maxVal = emd;
-        }
-      }
-      if (minVal != null && maxVal != null) {
-        alertsBidValueRange = (min: minVal, max: maxVal);
-        notifyListeners();
-      }
+      final raw = await client!.rpc('my_open_bids_value');
+      if (currentUser?.id != userId || raw is! Map) return;
+      final row = Map<String, dynamic>.from(raw);
+      openBidsValue = (
+        open: (row['open_count'] as num?)?.toInt() ?? 0,
+        complete: (row['complete_count'] as num?)?.toInt() ?? 0,
+        incomplete: (row['incomplete_count'] as num?)?.toInt() ?? 0,
+        pending: (row['pending_count'] as num?)?.toInt() ?? 0,
+        failed: (row['failed_count'] as num?)?.toInt() ?? 0,
+        noPrice: (row['no_price_count'] as num?)?.toInt() ?? 0,
+        completeValue: (row['complete_value_inr'] as num?)?.toDouble() ?? 0,
+        partialValue: (row['partial_value_inr'] as num?)?.toDouble() ?? 0,
+      );
+      notifyListeners();
     } catch (_) {
-      // Non-fatal — tile stays at "--"
+      // Non-fatal: the card shows its loading state.
     }
+  }
+
+  /// One bid's valuation status ('valued', 'failed' or 'pending') and
+  /// breakdown. Null if the bid is not in the caller's own inbox.
+  Future<Map<String, dynamic>?> bidValuationDetail(String bidId) async {
+    if (client == null || !signedIn) return null;
+    final raw = await client!.rpc(
+      'bid_valuation_detail',
+      params: {'p_bid_id': bidId},
+    );
+    return raw is Map ? Map<String, dynamic>.from(raw) : null;
   }
 
   /// Fetches bid document pages for rows missing dates and updates Supabase.
@@ -1250,8 +1255,8 @@ class AppStore extends ChangeNotifier {
       if (startDate == null && endDate == null) return;
 
       final updates = <String, String>{
-        if (startDate != null) 'bid_start_date': startDate,
-        if (endDate != null) 'bid_end_date': endDate,
+        'bid_start_date': ?startDate,
+        'bid_end_date': ?endDate,
       };
       await client!.from('bid_notifications').update(updates).eq('id', id);
       final idx = bidNotifications.indexWhere((n) => n['id'] == id);
