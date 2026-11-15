@@ -12,15 +12,6 @@ import 'glass.dart';
 
 String _money(num v) => money(v);
 
-num _tenderValue(Map<String, dynamic> bid) {
-  final d = Map<String, dynamic>.from(bid['details'] as Map? ?? {});
-  for (final k in ['tender_value', 'estimated_value', 'contract_value']) {
-    final raw = (d[k] ?? bid[k])?.toString().replaceAll(',', '') ?? '';
-    final v = num.tryParse(raw);
-    if (v != null && v > 0) return v;
-  }
-  return 0;
-}
 
 bool _isActive(Map<String, dynamic> row) {
   final bid = Map<String, dynamic>.from(row['bid_data'] as Map? ?? row);
@@ -563,18 +554,37 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
     ('other_cost', 'Other Costs', 'अन्य लागत'),
   ];
 
+  // Live totals computed from controllers (update on every keystroke)
+  num get _liveCost {
+    num sum = 0;
+    for (final (key, _, _) in _costFields) {
+      sum += num.tryParse(_costCtrls[key]?.text ?? '') ?? 0;
+    }
+    for (final c in _extraAmounts) {
+      sum += num.tryParse(c.text) ?? 0;
+    }
+    return sum;
+  }
+
+  num get _liveRevenue => num.tryParse(_sellingCtrl.text) ?? 0;
+
+  void _onAnyField() => setState(() {});
+
   @override
   void initState() {
     super.initState();
     _expanded = widget.startExpanded;
     final ad = widget.store.getAnalyticsDatum(_sourceId(widget.row));
     for (final (key, _, _) in _costFields) {
-      _costCtrls[key] =
+      final ctrl =
           TextEditingController(text: (ad[key] as num?)?.toString() ?? '');
+      ctrl.addListener(_onAnyField);
+      _costCtrls[key] = ctrl;
     }
     _sellingCtrl = TextEditingController(
       text: (ad['selling_price'] as num?)?.toString() ?? '',
     );
+    _sellingCtrl.addListener(_onAnyField);
     _loadExtraControllers(ad);
     // If store already has data for this bid, mark as saved
     _saved = _totalCost(ad) > 0 || (ad['selling_price'] as num? ?? 0) > 0;
@@ -599,10 +609,19 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
 
   @override
   void dispose() {
-    for (final c in _costCtrls.values) c.dispose();
+    for (final c in _costCtrls.values) {
+      c.removeListener(_onAnyField);
+      c.dispose();
+    }
+    _sellingCtrl.removeListener(_onAnyField);
     _sellingCtrl.dispose();
-    for (final c in _extraLabels) c.dispose();
-    for (final c in _extraAmounts) c.dispose();
+    for (final c in _extraLabels) {
+      c.dispose();
+    }
+    for (final c in _extraAmounts) {
+      c.removeListener(_onAnyField);
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -698,17 +717,24 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
       _costCtrls[key]!.text = '';
     }
     _sellingCtrl.text = '';
-    for (final c in _extraLabels) c.dispose();
-    for (final c in _extraAmounts) c.dispose();
+    for (final c in _extraLabels) {
+      c.dispose();
+    }
+    for (final c in _extraAmounts) {
+      c.removeListener(_onAnyField);
+      c.dispose();
+    }
     _extraLabels.clear();
     _extraAmounts.clear();
     setState(() => _saved = false);
   }
 
   void _addExtraCost() {
+    final amountCtrl = TextEditingController();
+    amountCtrl.addListener(_onAnyField);
     setState(() {
       _extraLabels.add(TextEditingController());
-      _extraAmounts.add(TextEditingController());
+      _extraAmounts.add(amountCtrl);
     });
   }
 
@@ -716,12 +742,10 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
   Widget build(BuildContext context) {
     super.build(context); // required by AutomaticKeepAliveClientMixin
     final s = widget.store;
-    final sourceId = _sourceId(widget.row);
-    final ad = s.getAnalyticsDatum(sourceId);
 
-    // Live totals from store (reflects last save)
-    final cost = _totalCost(ad);
-    final sp = (ad['selling_price'] as num?) ?? 0;
+    // Live totals from controllers (updates on every keystroke)
+    final cost = _liveCost;
+    final sp = _liveRevenue;
     final profit = sp > 0 || cost > 0 ? sp - cost : null;
     final margin =
         sp > 0 ? ((profit! / sp) * 100).toStringAsFixed(1) : null;

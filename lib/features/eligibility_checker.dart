@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../core/models.dart' show money, Enterprise, classify;
+import '../core/models.dart' show Enterprise, classify;
 import '../core/tokens.dart';
 import '../data/app_store.dart';
 import 'components.dart';
