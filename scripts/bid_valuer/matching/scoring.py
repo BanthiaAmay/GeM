@@ -4,6 +4,7 @@ A listing is accepted only when its unit converts, nothing conflicts, the
 product type agrees, and at least one structured attribute (brand/model,
 size, technical spec or material) actually matches. Similar names alone
 never pass."""
+from __future__ import annotations
 from dataclasses import dataclass, field
 import re
 

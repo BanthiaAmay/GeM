@@ -9,6 +9,7 @@ are excluded from pricing.
 Pricing uses only fresh, accepted, INR, GST-inclusive offers, one per seller.
 Outliers outside 0.5x-2x of the median are dropped; the median of the rest
 is the unit price."""
+from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import hashlib

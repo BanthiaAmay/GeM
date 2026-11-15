@@ -1,5 +1,6 @@
 """Units, pack sizes, prices, GST and seller identity, normalised so offers
 compare like with like. Nothing here guesses: unknown stays unknown."""
+from __future__ import annotations
 from dataclasses import dataclass
 import re
 

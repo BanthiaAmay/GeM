@@ -5,6 +5,7 @@ Rules for every source: one identifiable User-Agent, robots.txt respected,
 at most one request per second per host, backoff on 429/503, and no
 CAPTCHA, login or other access control is ever bypassed: a challenge page
 marks the source blocked for the run."""
+from __future__ import annotations
 from dataclasses import dataclass, field
 import json
 import re

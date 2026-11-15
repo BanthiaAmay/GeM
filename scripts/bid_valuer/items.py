@@ -4,6 +4,7 @@ Sources, in order: a BOQ table (attachment or PDF table), else the GeM bid
 document's single item (category, specification table, consignee table).
 A multi-product bid without per-item quantities is marked incomplete; its
 category x total quantity is never used as a valuation."""
+from __future__ import annotations
 from dataclasses import dataclass, field
 import re
 
