@@ -1036,12 +1036,9 @@ class _SimulatorTabState extends State<_SimulatorTab> {
       }
       final ad = s.getAnalyticsDatum(sid);
       // Use user-entered data as baseline; fall back to tender value estimates
-      final sp = (ad['selling_price'] as num?) ??
-          (_tenderValue(b) > 0 ? _tenderValue(b) * 0.95 : 0);
+      final sp = (ad['selling_price'] as num?) ?? 0;
       totalRevSel += sp;
-      totalCostSel += _totalCost(ad) > 0
-          ? _totalCost(ad)
-          : _tenderValue(b) * 0.72;
+      totalCostSel += _totalCost(ad);
     }
 
     final expWins = (selCount * _winRate).ceil();
