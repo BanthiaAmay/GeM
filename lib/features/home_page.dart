@@ -1764,11 +1764,11 @@ class _QuickActionsSection extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _QuickActionTile(
-              icon: Icons.bar_chart_outlined,
-              label: s.t('ROI Calc', 'ROI कैल्क'),
+              icon: Icons.checklist_outlined,
+              label: s.t('Eligibility', 'पात्रता'),
               tileColor: AppColors.infoTint,
               iconColor: AppColors.info,
-              onTap: () => go(context, s, 'roi'),
+              onTap: () => Navigator.of(context).pushNamed('/eligibility'),
             ),
             _QuickActionTile(
               icon: Icons.chat_bubble_outline,
