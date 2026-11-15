@@ -643,6 +643,95 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
     data['extra_costs_json'] = jsonEncode(extras);
     widget.store.saveAnalyticsDatum(sourceId, data);
     setState(() => _saved = true);
+    _showMarginSummary();
+  }
+
+  void _showMarginSummary() {
+    final s = widget.store;
+    final cost = _liveCost;
+    final rev = _liveRevenue;
+    if (cost == 0 && rev == 0) return;
+    final profit = rev - cost;
+    final margin = rev > 0 ? ((profit / rev) * 100).toStringAsFixed(1) : null;
+    final isProfit = profit >= 0;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpace.gutter,
+          AppSpace.lg,
+          AppSpace.gutter,
+          AppSpace.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  isProfit ? Icons.trending_up : Icons.trending_down,
+                  color: isProfit ? AppColors.brand : AppColors.danger,
+                ),
+                const SizedBox(width: AppSpace.sm),
+                Text(
+                  s.t('Profit Margin Summary', 'लाभ मार्जिन सारांश'),
+                  style: AppText.h3,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpace.lg),
+            _SummaryRow(
+              label: s.t('Total Cost', 'कुल लागत'),
+              value: _money(cost),
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(height: AppSpace.sm),
+            _SummaryRow(
+              label: s.t('Revenue (Bid Price)', 'राजस्व (बोली मूल्य)'),
+              value: _money(rev),
+              color: AppColors.textSecondary,
+            ),
+            const Divider(height: AppSpace.lg),
+            _SummaryRow(
+              label: s.t('Net Profit', 'शुद्ध लाभ'),
+              value: _money(profit),
+              color: isProfit ? AppColors.brand : AppColors.danger,
+              bold: true,
+            ),
+            if (margin != null) ...[
+              const SizedBox(height: AppSpace.sm),
+              _SummaryRow(
+                label: s.t('Profit Margin', 'लाभ मार्जिन'),
+                value: '$margin%',
+                color: isProfit ? AppColors.brand : AppColors.danger,
+                bold: true,
+              ),
+            ],
+            const SizedBox(height: AppSpace.xl),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brand,
+                  foregroundColor: AppColors.surface,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: Text(s.t('Got it', 'ठीक है')),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _confirmDelete(BuildContext context) {
@@ -1072,6 +1161,32 @@ class _SummaryChip extends StatelessWidget {
       ],
     ),
   );
+}
+
+class _SummaryRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final bool bold;
+
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    required this.color,
+    this.bold = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final style = bold ? AppText.bodyStrong : AppText.body;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: style.copyWith(color: AppColors.textSecondary)),
+        Text(value, style: style.copyWith(color: color)),
+      ],
+    );
+  }
 }
 
 class _CostField extends StatelessWidget {
