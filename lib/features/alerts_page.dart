@@ -33,11 +33,7 @@ class AlertsBody extends StatefulWidget {
 }
 
 class _AlertsBodyState extends State<AlertsBody> {
-  final form = GlobalKey<FormState>();
-  final keywords = TextEditingController();
-  final states = TextEditingController();
-  bool inApp = true, busy = false, dirty = false;
-  bool? _feedbackOk;
+  bool inApp = true, busy = false;
   String? feedback;
   AppStore get s => widget.store;
 
@@ -50,78 +46,20 @@ class _AlertsBodyState extends State<AlertsBody> {
 
   void hydrate() {
     final p = s.alertPreferences;
-    keywords.text = s.bidKeywords.join(', ');
-    states.text = List<String>.from(p['states'] ?? []).join(', ');
     inApp = p['in_app_enabled'] != false;
   }
 
   Future<void> refresh() async {
     await s.loadAlerts();
-    if (mounted && !dirty) setState(hydrate);
-  }
-
-  List<String> split(String value) => value
-      .split(',')
-      .map((e) => e.trim())
-      .where((e) => e.isNotEmpty)
-      .toSet()
-      .toList();
-
-  String? filterError(String? value) {
-    final entries = split(value ?? '');
-    return entries.length > 10 || entries.any((v) => v.length > 80)
-        ? s.t(
-            'Use up to 10 filters, each under 81 characters.',
-            'अधिकतम 10 फ़िल्टर दें, प्रत्येक 81 अक्षरों से छोटा।',
-          )
-        : null;
-  }
-
-  Future<void> save() async {
-    if (!form.currentState!.validate()) return;
-    setState(() {
-      busy = true;
-      feedback = null;
-      _feedbackOk = null;
-    });
-    try {
-      await s.saveAlertPreferences(
-        inApp: inApp,
-        keywords: split(keywords.text),
-        states: split(states.text),
-      );
-      if (mounted) {
-        setState(() {
-          dirty = false;
-          _feedbackOk = true;
-          feedback = s.t('Preferences saved.', 'पसंद सहेजी गई।');
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _feedbackOk = false;
-          feedback = s.t(
-            'Could not save. Check your connection and retry.',
-            'सहेजा नहीं गया। इंटरनेट जाँचकर फिर कोशिश करें।',
-          );
-        });
-      }
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
+    if (mounted) setState(hydrate);
   }
 
   Future<void> setInApp(bool value) async {
-    setState(() {
-      inApp = value;
-      dirty = true;
-    });
+    setState(() => inApp = value);
     if (!value || !s.pushSupported) return;
     final allowed = await s.push!.enable();
     if (!allowed && mounted) {
       setState(() {
-        _feedbackOk = false;
         feedback = s.t(
           'Notifications are off for Bid2Scale. Allow them in your phone settings to get alerts on this phone.',
           'Bid2Scale की सूचनाएँ बंद हैं। इस फ़ोन पर अलर्ट पाने के लिए फ़ोन की सेटिंग में अनुमति दें।',
@@ -132,8 +70,6 @@ class _AlertsBodyState extends State<AlertsBody> {
 
   @override
   void dispose() {
-    keywords.dispose();
-    states.dispose();
     super.dispose();
   }
 
@@ -143,22 +79,6 @@ class _AlertsBodyState extends State<AlertsBody> {
     builder: (context, _) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          s.t(
-            'Find GeM opportunities that match your business.',
-            'अपने व्यवसाय से मेल खाते GeM अवसर खोजें।',
-          ),
-          style: AppText.h2,
-        ),
-        const SizedBox(height: AppSpace.sm),
-        Text(
-          s.t(
-            'Add your products or services and delivery locations. We\'ll notify you when matching bids become available.',
-            'अपने उत्पाद या सेवाएँ और वितरण स्थान डालें। मेल खाती बोलियाँ मिलने पर हम आपको सूचित करेंगे।',
-          ),
-          style: AppText.body.copyWith(color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: AppSpace.xxl),
         if (!s.signedIn) ...[
           Text(
             s.t(
@@ -173,74 +93,6 @@ class _AlertsBodyState extends State<AlertsBody> {
             onPressed: () => Navigator.pushNamed(context, '/auth'),
           ),
         ] else ...[
-          // --- Setup card ---
-          AppCard(
-            tone: AppCardTone.outlined,
-            child: Form(
-              key: form,
-              onChanged: () => dirty = true,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SectionHeader(s.t('Alert settings', 'अलर्ट सेटिंग')),
-                  const SizedBox(height: AppSpace.lg),
-                  TextFormField(
-                    controller: keywords,
-                    enabled: !busy,
-                    validator: filterError,
-                    decoration: InputDecoration(
-                      labelText: s.t('Products or services', 'उत्पाद या सेवाएँ'),
-                      hintText: s.t(
-                        'e.g. stationery, laptops, cleaning',
-                        'उदा. stationery, laptops, cleaning',
-                      ),
-                      helperText: s.t(
-                        'Enter keywords separated by commas. We\'ll match bids that contain your keywords.',
-                        'अल्पविराम से अलग करें। आपके कीवर्ड वाली बोलियाँ मेल खाएंगी।',
-                      ),
-                      helperMaxLines: 3,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpace.xl),
-                  TextFormField(
-                    controller: states,
-                    enabled: !busy,
-                    validator: filterError,
-                    decoration: InputDecoration(
-                      labelText: s.t('Delivery states', 'वितरण राज्य'),
-                      hintText: 'Maharashtra, Gujarat',
-                      helperText: s.t(
-                        'Enter delivery states separated by commas. Leave blank to include all of India.',
-                        'राज्यों के नाम अल्पविराम से अलग करें। खाली छोड़ने पर पूरा भारत।',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpace.xl),
-                  if (feedback != null)
-                    Semantics(
-                      liveRegion: true,
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpace.md),
-                        child: Text(
-                          feedback!,
-                          style: AppText.bodySmall.copyWith(
-                            color: _feedbackOk == true
-                                ? AppColors.accentSuccess
-                                : AppColors.accentDanger,
-                          ),
-                        ),
-                      ),
-                    ),
-                  AppButton(
-                    label: s.t('Save preferences', 'पसंद सहेजें'),
-                    onPressed: busy ? null : save,
-                    loading: busy,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpace.lg),
           // --- Notification preferences card ---
           AppCard(
             tone: AppCardTone.outlined,
@@ -282,7 +134,6 @@ class _AlertsBodyState extends State<AlertsBody> {
                           } catch (_) {
                             if (mounted) {
                               setState(() {
-                                _feedbackOk = false;
                                 feedback = s.t(
                                   'Could not save. Check your connection and retry.',
                                   'सहेजा नहीं गया। इंटरनेट जाँचकर फिर कोशिश करें।',
@@ -328,8 +179,8 @@ class _AlertsBodyState extends State<AlertsBody> {
             _InboxState(
               icon: Icons.inbox_outlined,
               message: s.t(
-                'No bid alerts yet. Add keywords above to start getting matched opportunities.',
-                'अभी कोई बोली अलर्ट नहीं। ऊपर कीवर्ड जोड़कर मेल खाते अवसर पाएं।',
+                'No bid alerts yet. Set up your products and delivery locations during onboarding to get matched opportunities.',
+                'अभी कोई बोली अलर्ट नहीं। मेल खाते अवसर पाने के लिए ऑनबोर्डिंग में उत्पाद और वितरण स्थान जोड़ें।',
               ),
             )
           else
@@ -341,10 +192,7 @@ class _AlertsBodyState extends State<AlertsBody> {
                   store: s,
                   onError: (msg) {
                     if (mounted) {
-                      setState(() {
-                        _feedbackOk = false;
-                        feedback = msg;
-                      });
+                      setState(() => feedback = msg);
                     }
                   },
                 ),
