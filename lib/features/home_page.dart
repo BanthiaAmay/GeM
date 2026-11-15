@@ -2114,7 +2114,6 @@ class _ActiveBidsCard extends StatelessWidget {
         (kTranslations[key]?[lang] ?? kTranslations[key]?['en'] ?? key);
 
     final count = store.gemActiveBids;
-    final closing = store.gemDeadlinesCount;
 
     return Container(
       decoration: BoxDecoration(
@@ -2125,39 +2124,18 @@ class _ActiveBidsCard extends StatelessWidget {
         horizontal: AppSpace.md,
         vertical: AppSpace.sm,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  count != null ? count.toString() : '—',
-                  style: AppText.h2.copyWith(color: AppColors.ink),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  tr('Active bids on GeM'),
-                  style: AppText.caption.copyWith(color: AppColors.textSecondary),
-                ),
-              ],
-            ),
+          Text(
+            count != null ? count.toString() : '—',
+            style: AppText.h2.copyWith(color: AppColors.ink),
           ),
-          if (closing != null && closing > 0)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  closing.toString(),
-                  style: AppText.h3.copyWith(color: AppColors.warning),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  tr('Closing within 2 days'),
-                  style: AppText.caption.copyWith(color: AppColors.textSecondary),
-                ),
-              ],
-            ),
+          const SizedBox(height: 2),
+          Text(
+            tr('Active bids on GeM'),
+            style: AppText.caption.copyWith(color: AppColors.textSecondary),
+          ),
         ],
       ),
     );
