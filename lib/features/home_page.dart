@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/models.dart';
 import '../core/motion.dart';
+import '../core/translations.dart';
 import '../core/theme.dart';
 import '../core/transitions.dart';
 import '../data/app_store.dart';
@@ -1228,141 +1229,8 @@ class _GreetingSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpace.lg),
-          Row(
-            children: [
-              Expanded(
-                child: _MetricTile(
-                  label: s.t('Alerts', 'अलर्ट'),
-                  value: '${s.unreadAlerts}',
-                  dark: true,
-                  onTap: () => Navigator.of(context).pushNamed('/alerts'),
-                ),
-              ),
-              const SizedBox(width: AppSpace.sm),
-              Expanded(
-                child: _MetricTile(
-                  label: s.t('Matching', 'मिलान'),
-                  value: s.matchingBidsCount != null
-                      ? _fmtCount(s.matchingBidsCount!)
-                      : '--',
-                  subtitle: s.t('Live bids for you', 'आपके लिए बोलियाँ'),
-                  dark: true,
-                  onTap: () => Navigator.of(context).pushNamed('/bids'),
-                ),
-              ),
-              const SizedBox(width: AppSpace.sm),
-              Expanded(
-                child: _MetricTile(
-                  label: s.t('Bid Range', 'मूल्य सीमा'),
-                  value: s.alertsBidValueRange != null
-                      ? '${_fmtRupee(s.alertsBidValueRange!.min)}–'
-                        '${_fmtRupee(s.alertsBidValueRange!.max)}'
-                      : '--',
-                  subtitle: s.alertsBidValueRange != null
-                      ? s.t(
-                          'Across your ${s.bidNotifications.length} alerts',
-                          'आपके ${s.bidNotifications.length} अलर्ट',
-                        )
-                      : s.t('From your alerts', 'अलर्ट से'),
-                  dark: true,
-                  onTap: () => Navigator.of(context).pushNamed('/alerts'),
-                ),
-              ),
-            ],
-          ),
+          _ActiveBidsCard(store: s),
         ],
-      ),
-    );
-  }
-}
-
-String _fmtCount(int n) {
-  if (n >= 10000000) return '${(n / 10000000).toStringAsFixed(1)}Cr';
-  if (n >= 100000) return '${(n / 100000).toStringAsFixed(1)}L';
-  if (n >= 1000) return '${(n / 1000).toStringAsFixed(0)}K';
-  return '$n';
-}
-
-String _fmtRupee(double v) {
-  if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(1)}Cr';
-  if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(0)}L';
-  if (v >= 1000) return '₹${(v / 1000).toStringAsFixed(0)}K';
-  return '₹${v.toStringAsFixed(0)}';
-}
-
-class _MetricTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final String? subtitle;
-  final VoidCallback? onTap;
-  final bool dark;
-  const _MetricTile({
-    required this.label,
-    required this.value,
-    this.subtitle,
-    this.onTap,
-    this.dark = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final r = AppRadius.card;
-    final bgColor = dark
-        ? AppColors.surface.withValues(alpha: 0.14)
-        : AppColors.surface;
-    final borderColor = dark
-        ? AppColors.surface.withValues(alpha: 0.2)
-        : AppColors.border;
-    final valueStyle = dark
-        ? AppText.h2.copyWith(color: AppColors.surface)
-        : AppText.h2.copyWith(color: AppColors.brand);
-    final labelStyle = dark
-        ? AppText.overline.copyWith(
-            color: AppColors.surface.withValues(alpha: 0.72),
-          )
-        : AppText.overline.copyWith(color: AppColors.textSecondary);
-    return Ink(
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: r,
-        border: Border.all(color: borderColor),
-        boxShadow: dark ? null : AppShadow.card,
-      ),
-      child: InkWell(
-        borderRadius: r,
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpace.md,
-            vertical: AppSpace.lg,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(value, style: valueStyle),
-              ),
-              const SizedBox(height: AppSpace.xs),
-              Text(label, style: labelStyle),
-              if (subtitle != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  subtitle!,
-                  style: dark
-                      ? AppText.caption.copyWith(
-                          color: AppColors.surface.withValues(alpha: 0.5),
-                          fontSize: 10,
-                        )
-                      : AppText.caption.copyWith(fontSize: 10),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -2173,6 +2041,76 @@ class _SaathiButton extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ActiveBidsCard extends StatelessWidget {
+  const _ActiveBidsCard({required this.store});
+  final AppStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = Localizations.localeOf(context).languageCode;
+    final t = kTranslations;
+    String tr(String key) =>
+        (t[key]?[lang] ?? t[key]?['en'] ?? key);
+
+    final count = store.gemActiveBids;
+    final closing = store.gemDeadlinesCount;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpace.md,
+        vertical: AppSpace.sm,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  count != null ? count.toString() : '—',
+                  style: AppText.h2.copyWith(
+                    color: AppColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  tr('Active bids on GeM'),
+                  style: AppText.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (closing != null && closing > 0)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  closing.toString(),
+                  style: AppText.h3.copyWith(
+                    color: AppColors.warning,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  tr('Closing within 2 days'),
+                  style: AppText.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }
