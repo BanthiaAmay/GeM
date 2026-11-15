@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
-import 'bid_valuation_sheet.dart';
 import 'components.dart';
 import 'widgets.dart' show openLink;
 
@@ -352,11 +351,6 @@ class _AlertsBodyState extends State<AlertsBody> {
               ),
           const SizedBox(height: AppSpace.xxl),
         ],
-        AppButton(
-          label: s.t('GeM registration guide', 'GeM पंजीकरण गाइड'),
-          variant: AppButtonVariant.secondary,
-          onPressed: () => Navigator.pushNamed(context, '/gem-guide'),
-        ),
         const SizedBox(height: AppSpace.gutter),
       ],
     ),
@@ -564,39 +558,6 @@ class _BidCardState extends State<_BidCard> {
             spacing: AppSpace.sm,
             runSpacing: AppSpace.sm,
             children: [
-              if (_unread)
-                AppButton(
-                  label: s.t('Mark read', 'पढ़ा हुआ बताएँ'),
-                  variant: AppButtonVariant.secondary,
-                  size: AppButtonSize.sm,
-                  expand: false,
-                  onPressed: () async {
-                    try {
-                      await s.markAlertRead(n['id'] as String);
-                    } catch (_) {
-                      widget.onError(
-                        s.t(
-                          'Could not update this alert. Try again.',
-                          'अलर्ट अपडेट नहीं हुआ। फिर कोशिश करें।',
-                        ),
-                      );
-                    }
-                  },
-                ),
-              if (n['bid_id'] is String)
-                AppButton(
-                  label: s.t('Estimated value', 'अनुमानित मूल्य'),
-                  icon: Icons.currency_rupee,
-                  variant: AppButtonVariant.secondary,
-                  size: AppButtonSize.sm,
-                  expand: false,
-                  onPressed: () => showBidValuation(
-                    context,
-                    s,
-                    n['bid_id'] as String,
-                    n['title'] as String? ?? '',
-                  ),
-                ),
               AppButton(
                 label: s.t('View on GeM', 'GeM पर देखें'),
                 icon: Icons.open_in_new,
