@@ -1,6 +1,5 @@
-# Bid valuer only (scripts/bid_valuer, office PC). Also needs Tesseract OCR for
+# Bid valuer only (scripts/bid_valuer). Also needs Tesseract OCR for
 # scanned pages and `python -m playwright install chromium` for JavaScript sites.
--r requirements-worker.txt
 pymupdf==1.26.5
 pdfplumber==0.11.7
 pytesseract==0.3.13
