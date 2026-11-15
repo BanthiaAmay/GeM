@@ -534,6 +534,7 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
 
   late bool _expanded;
   bool _saved = false; // true once explicitly saved this session
+  bool _loadedFromStore = false; // guards one-time reload when store arrives
 
   // All cost field controllers owned by this state
   final Map<String, TextEditingController> _costCtrls = {};
@@ -574,20 +575,48 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
   void initState() {
     super.initState();
     _expanded = widget.startExpanded;
-    final ad = widget.store.getAnalyticsDatum(_sourceId(widget.row));
+    // Create controllers (possibly empty if store hasn't loaded from DB yet)
     for (final (key, _, _) in _costFields) {
-      final ctrl =
-          TextEditingController(text: (ad[key] as num?)?.toString() ?? '');
+      final ctrl = TextEditingController();
       ctrl.addListener(_onAnyField);
       _costCtrls[key] = ctrl;
     }
-    _sellingCtrl = TextEditingController(
-      text: (ad['selling_price'] as num?)?.toString() ?? '',
-    );
+    _sellingCtrl = TextEditingController();
     _sellingCtrl.addListener(_onAnyField);
+    // Fill from store now (may already have data if load completed before build)
+    _fillControllersFromStore();
+    // Also listen for future store updates (e.g. loadAnalyticsData completing)
+    widget.store.addListener(_onStoreUpdate);
+  }
+
+  void _fillControllersFromStore() {
+    final ad = widget.store.getAnalyticsDatum(_sourceId(widget.row));
+    final hasData =
+        _totalCost(ad) > 0 || (ad['selling_price'] as num? ?? 0) > 0;
+    if (!hasData) return;
+    for (final (key, _, _) in _costFields) {
+      _costCtrls[key]!.text = (ad[key] as num?)?.toString() ?? '';
+    }
+    _sellingCtrl.text = (ad['selling_price'] as num?)?.toString() ?? '';
+    // Reload extra cost rows
+    for (final c in _extraLabels) {
+      c.dispose();
+    }
+    for (final c in _extraAmounts) {
+      c.removeListener(_onAnyField);
+      c.dispose();
+    }
+    _extraLabels.clear();
+    _extraAmounts.clear();
     _loadExtraControllers(ad);
-    // If store already has data for this bid, mark as saved
-    _saved = _totalCost(ad) > 0 || (ad['selling_price'] as num? ?? 0) > 0;
+    _saved = true;
+    _loadedFromStore = true;
+  }
+
+  void _onStoreUpdate() {
+    if (_loadedFromStore) return; // already filled, don't overwrite user edits
+    _fillControllersFromStore();
+    if (_loadedFromStore) setState(() {}); // trigger rebuild once data arrives
   }
 
   void _loadExtraControllers(Map<String, dynamic> ad) {
@@ -598,17 +627,18 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
         _extraLabels.add(
           TextEditingController(text: item['label'] as String? ?? ''),
         );
-        _extraAmounts.add(
-          TextEditingController(
-            text: (item['amount'] as num?)?.toString() ?? '',
-          ),
+        final amountCtrl = TextEditingController(
+          text: (item['amount'] as num?)?.toString() ?? '',
         );
+        amountCtrl.addListener(_onAnyField);
+        _extraAmounts.add(amountCtrl);
       }
     } catch (_) {}
   }
 
   @override
   void dispose() {
+    widget.store.removeListener(_onStoreUpdate);
     for (final c in _costCtrls.values) {
       c.removeListener(_onAnyField);
       c.dispose();
@@ -642,6 +672,7 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
     }
     data['extra_costs_json'] = jsonEncode(extras);
     widget.store.saveAnalyticsDatum(sourceId, data);
+    _loadedFromStore = true; // prevent store listener from overwriting edits
     setState(() => _saved = true);
     _showMarginSummary();
   }
