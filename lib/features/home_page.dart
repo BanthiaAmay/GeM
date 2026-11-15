@@ -1325,11 +1325,7 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
           SectionHeader(
             s.t('Bid Alerts', 'बोली अलर्ट'),
             actionLabel: s.t('See all', 'सभी देखें'),
-            onAction: () => openLink(
-              context,
-              s,
-              'https://bidplus.gem.gov.in/bidlists',
-            ),
+            onAction: () => Navigator.of(context).pushNamed('/bids'),
           ),
           const SizedBox(height: AppSpace.sm),
           Row(
