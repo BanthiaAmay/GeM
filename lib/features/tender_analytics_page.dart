@@ -536,8 +536,17 @@ class _BidFinancialCard extends StatefulWidget {
   State<_BidFinancialCard> createState() => _BidFinancialCardState();
 }
 
-class _BidFinancialCardState extends State<_BidFinancialCard> {
+class _BidFinancialCardState extends State<_BidFinancialCard>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   late bool _expanded;
+  bool _saved = false; // true once explicitly saved this session
+
+  // All cost field controllers owned by this state
+  final Map<String, TextEditingController> _costCtrls = {};
+  late TextEditingController _sellingCtrl;
   final List<TextEditingController> _extraLabels = [];
   final List<TextEditingController> _extraAmounts = [];
 
@@ -558,11 +567,20 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
   void initState() {
     super.initState();
     _expanded = widget.startExpanded;
-    _loadExtraControllers();
+    final ad = widget.store.getAnalyticsDatum(_sourceId(widget.row));
+    for (final (key, _, _) in _costFields) {
+      _costCtrls[key] =
+          TextEditingController(text: (ad[key] as num?)?.toString() ?? '');
+    }
+    _sellingCtrl = TextEditingController(
+      text: (ad['selling_price'] as num?)?.toString() ?? '',
+    );
+    _loadExtraControllers(ad);
+    // If store already has data for this bid, mark as saved
+    _saved = _totalCost(ad) > 0 || (ad['selling_price'] as num? ?? 0) > 0;
   }
 
-  void _loadExtraControllers() {
-    final ad = widget.store.getAnalyticsDatum(_sourceId(widget.row));
+  void _loadExtraControllers(Map<String, dynamic> ad) {
     final raw = ad['extra_costs_json'] as String? ?? '[]';
     try {
       final list = jsonDecode(raw) as List;
@@ -581,23 +599,110 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
 
   @override
   void dispose() {
+    for (final c in _costCtrls.values) c.dispose();
+    _sellingCtrl.dispose();
     for (final c in _extraLabels) c.dispose();
     for (final c in _extraAmounts) c.dispose();
     super.dispose();
   }
 
-  void _saveExtraCosts(String sourceId) {
-    final list = <Map<String, dynamic>>[];
+  void _saveAll() {
+    final sourceId = _sourceId(widget.row);
+    final data = <String, dynamic>{};
+    for (final (key, _, _) in _costFields) {
+      data[key] = num.tryParse(_costCtrls[key]!.text);
+    }
+    data['selling_price'] = num.tryParse(_sellingCtrl.text);
+    final extras = <Map<String, dynamic>>[];
     for (var i = 0; i < _extraLabels.length; i++) {
       final label = _extraLabels[i].text.trim();
       final amount = num.tryParse(_extraAmounts[i].text);
       if (label.isNotEmpty || (amount != null && amount > 0)) {
-        list.add({'label': label, 'amount': amount});
+        extras.add({'label': label, 'amount': amount});
       }
     }
-    widget.store.saveAnalyticsDatum(sourceId, {
-      'extra_costs_json': jsonEncode(list),
-    });
+    data['extra_costs_json'] = jsonEncode(extras);
+    widget.store.saveAnalyticsDatum(sourceId, data);
+    setState(() => _saved = true);
+  }
+
+  void _confirmDelete(BuildContext context) {
+    final s = widget.store;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(AppSpace.gutter),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              s.t('Delete financial data?', 'वित्तीय डेटा हटाएँ?'),
+              style: AppText.h3,
+            ),
+            const SizedBox(height: AppSpace.sm),
+            Text(
+              s.t(
+                'All costs and revenue data for this bid will be cleared. This cannot be undone.',
+                'इस बोली की सभी लागत और राजस्व जानकारी हट जाएगी। यह क्रिया वापस नहीं की जा सकती।',
+              ),
+              style: AppText.body.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: AppSpace.xl),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(s.t('Cancel', 'रद्द करें')),
+                  ),
+                ),
+                const SizedBox(width: AppSpace.sm),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.danger,
+                      foregroundColor: AppColors.surface,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _deleteAll();
+                    },
+                    child: Text(s.t('Delete', 'हटाएँ')),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpace.md),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _deleteAll() {
+    final sourceId = _sourceId(widget.row);
+    final empty = <String, dynamic>{};
+    for (final (key, _, _) in _costFields) {
+      empty[key] = null;
+    }
+    empty['selling_price'] = null;
+    empty['extra_costs_json'] = '[]';
+    widget.store.saveAnalyticsDatum(sourceId, empty);
+    // Reset all controllers
+    for (final (key, _, _) in _costFields) {
+      _costCtrls[key]!.text = '';
+    }
+    _sellingCtrl.text = '';
+    for (final c in _extraLabels) c.dispose();
+    for (final c in _extraAmounts) c.dispose();
+    _extraLabels.clear();
+    _extraAmounts.clear();
+    setState(() => _saved = false);
   }
 
   void _addExtraCost() {
@@ -609,9 +714,12 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // required by AutomaticKeepAliveClientMixin
     final s = widget.store;
     final sourceId = _sourceId(widget.row);
     final ad = s.getAnalyticsDatum(sourceId);
+
+    // Live totals from store (reflects last save)
     final cost = _totalCost(ad);
     final sp = (ad['selling_price'] as num?) ?? 0;
     final profit = sp > 0 || cost > 0 ? sp - cost : null;
@@ -625,11 +733,22 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            _title(widget.row),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppText.bodyStrong,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _title(widget.row),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.bodyStrong,
+                ),
+              ),
+              if (_saved)
+                Padding(
+                  padding: const EdgeInsets.only(left: AppSpace.sm),
+                  child: Icon(Icons.check_circle, size: 16, color: AppColors.brand),
+                ),
+            ],
           ),
           if (ca != null) ...[
             const SizedBox(height: AppSpace.xs),
@@ -674,7 +793,7 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
               children: [
                 Text(
                   _expanded
-                      ? s.t('Hide cost details', 'लागत विवरण छुपाएँ')
+                      ? s.t('Hide details', 'विवरण छुपाएँ')
                       : s.t('Enter / Edit Costs', 'लागत दर्ज / संपादित करें'),
                   style: AppText.label.copyWith(color: AppColors.brand),
                 ),
@@ -699,32 +818,23 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
             for (final (key, en, hi) in _costFields)
               _CostField(
                 label: s.t(en, hi),
-                initialValue: (ad[key] as num?)?.toString() ?? '',
-                onChanged: (v) {
-                  final parsed = num.tryParse(v);
-                  s.saveAnalyticsDatum(sourceId, {key: parsed});
-                },
+                controller: _costCtrls[key]!,
               ),
             for (var i = 0; i < _extraLabels.length; i++)
               _ExtraCostRow(
                 labelCtrl: _extraLabels[i],
                 amountCtrl: _extraAmounts[i],
                 index: i + 1,
-                onChanged: () => _saveExtraCosts(sourceId),
+                onChanged: () {},
               ),
             GestureDetector(
               onTap: _addExtraCost,
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: AppSpace.sm),
+                padding: const EdgeInsets.symmetric(vertical: AppSpace.sm),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.add_circle_outline,
-                      size: 16,
-                      color: AppColors.brand,
-                    ),
+                    Icon(Icons.add_circle_outline, size: 16, color: AppColors.brand),
                     const SizedBox(width: AppSpace.xs),
                     Text(
                       s.t('Add Other Cost', 'अन्य लागत जोड़ें'),
@@ -748,11 +858,7 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
                 'Expected Bid / Selling Amount',
                 'अपेक्षित बोली / बिक्री राशि',
               ),
-              initialValue: (ad['selling_price'] as num?)?.toString() ?? '',
-              onChanged: (v) {
-                final parsed = num.tryParse(v);
-                s.saveAnalyticsDatum(sourceId, {'selling_price': parsed});
-              },
+              controller: _sellingCtrl,
             ),
             if (margin != null) ...[
               const SizedBox(height: AppSpace.sm),
@@ -769,10 +875,7 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
                   ),
                   const SizedBox(width: AppSpace.xs),
                   Text(
-                    s.t(
-                      'Profit Margin: $margin%',
-                      'लाभ मार्जिन: $margin%',
-                    ),
+                    s.t('Profit Margin: $margin%', 'लाभ मार्जिन: $margin%'),
                     style: AppText.bodyStrong.copyWith(
                       color: double.parse(margin) >= 0
                           ? AppColors.brand
@@ -788,6 +891,46 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
                 'Enter only non-recoverable costs. Recoverable GST (input tax credit) should not be included as an expense.',
                 'केवल अप्रतिदेय लागत दर्ज करें। वसूली योग्य GST (इनपुट टैक्स क्रेडिट) को खर्च में शामिल न करें।',
               ),
+            ),
+            const SizedBox(height: AppSpace.lg),
+            // ── Save / Delete action row ──────────────────────────────
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.save_outlined, size: 16),
+                    label: Text(s.t('Save', 'सहेजें')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brand,
+                      foregroundColor: AppColors.surface,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                    ),
+                    onPressed: _saveAll,
+                  ),
+                ),
+                const SizedBox(width: AppSpace.sm),
+                OutlinedButton.icon(
+                  icon: Icon(Icons.delete_outline, size: 16, color: AppColors.danger),
+                  label: Text(
+                    s.t('Delete', 'हटाएँ'),
+                    style: TextStyle(color: AppColors.danger),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.danger),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpace.md,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                  ),
+                  onPressed: () => _confirmDelete(context),
+                ),
+              ],
             ),
           ],
         ],
@@ -907,33 +1050,10 @@ class _SummaryChip extends StatelessWidget {
   );
 }
 
-class _CostField extends StatefulWidget {
+class _CostField extends StatelessWidget {
   final String label;
-  final String initialValue;
-  final void Function(String) onChanged;
-  const _CostField({
-    required this.label,
-    required this.initialValue,
-    required this.onChanged,
-  });
-  @override
-  State<_CostField> createState() => _CostFieldState();
-}
-
-class _CostFieldState extends State<_CostField> {
-  late final TextEditingController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(text: widget.initialValue);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+  final TextEditingController controller;
+  const _CostField({required this.label, required this.controller});
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -943,7 +1063,7 @@ class _CostFieldState extends State<_CostField> {
         SizedBox(
           width: 120,
           child: Text(
-            widget.label,
+            label,
             style: AppText.caption,
             overflow: TextOverflow.ellipsis,
           ),
@@ -951,7 +1071,7 @@ class _CostFieldState extends State<_CostField> {
         const SizedBox(width: AppSpace.sm),
         Expanded(
           child: TextField(
-            controller: _ctrl,
+            controller: controller,
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
@@ -973,8 +1093,6 @@ class _CostFieldState extends State<_CostField> {
               ),
               isDense: true,
             ),
-            onSubmitted: widget.onChanged,
-            onEditingComplete: () => widget.onChanged(_ctrl.text),
           ),
         ),
       ],
