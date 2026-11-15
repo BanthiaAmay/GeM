@@ -4,12 +4,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/models.dart';
 import '../core/motion.dart';
 import '../core/theme.dart';
+import '../core/translations.dart';
 import '../core/transitions.dart';
 import '../data/app_store.dart';
 import 'brand_logo.dart';
 import 'components.dart';
 import 'oem/oem_page.dart';
-import 'open_bids_value_card.dart';
 import 'search/search_engine.dart';
 import 'search/search_store.dart';
 import 'tools_hub/tool_card.dart';
@@ -1281,10 +1281,7 @@ class _GreetingSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpace.lg),
-          OpenBidsValueCard(
-            store: s,
-            onTap: () => Navigator.of(context).pushNamed('/alerts'),
-          ),
+          _ActiveBidsCard(store: s),
         ],
       ),
     );
@@ -2099,6 +2096,69 @@ class _SaathiButton extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Active Bids Card ─────────────────────────────────────────────────────────
+
+class _ActiveBidsCard extends StatelessWidget {
+  const _ActiveBidsCard({required this.store});
+  final AppStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = Localizations.localeOf(context).languageCode;
+    String tr(String key) =>
+        (kTranslations[key]?[lang] ?? kTranslations[key]?['en'] ?? key);
+
+    final count = store.gemActiveBids;
+    final closing = store.gemDeadlinesCount;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpace.md,
+        vertical: AppSpace.sm,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  count != null ? count.toString() : '—',
+                  style: AppText.h2.copyWith(color: AppColors.ink),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  tr('Active bids on GeM'),
+                  style: AppText.caption.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          if (closing != null && closing > 0)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  closing.toString(),
+                  style: AppText.h3.copyWith(color: AppColors.warning),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  tr('Closing within 2 days'),
+                  style: AppText.caption.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }
