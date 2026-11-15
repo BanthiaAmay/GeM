@@ -334,24 +334,7 @@ class _AlertsBodyState extends State<AlertsBody> {
                     Text(n['title'] as String, style: AppText.title),
                     const SizedBox(height: AppSpace.sm),
                     Text(n['body'] as String, style: AppText.bodySmall),
-                    if (n['read_at'] == null)
-                      TextButton(
-                        onPressed: () async {
-                          try {
-                            await s.markAlertRead(n['id'] as String);
-                          } catch (_) {
-                            if (mounted) {
-                              setState(
-                                () => feedback = s.t(
-                                  'Could not update this alert. Try again.',
-                                  'अलर्ट अपडेट नहीं हुआ। फिर कोशिश करें।',
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        child: Text(s.t('Mark as read', 'पढ़ा हुआ बताएँ')),
-                      ),
+                    const SizedBox(height: AppSpace.sm),
                     TextButton.icon(
                       onPressed: () =>
                           openLink(context, s, n['source_url'] as String),
@@ -364,11 +347,6 @@ class _AlertsBodyState extends State<AlertsBody> {
             ),
         ],
         const SizedBox(height: AppSpace.xxl),
-        AppButton(
-          label: s.t('GeM registration guide', 'GeM पंजीकरण गाइड'),
-          variant: AppButtonVariant.secondary,
-          onPressed: () => Navigator.pushNamed(context, '/gem-guide'),
-        ),
       ],
     ),
   );
