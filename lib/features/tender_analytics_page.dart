@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -10,12 +11,6 @@ import 'glass.dart';
 // ── File-level helpers ──────────────────────────────────────────────────────
 
 String _money(num v) => money(v);
-
-num _emd(Map<String, dynamic> bid) {
-  final d = Map<String, dynamic>.from(bid['details'] as Map? ?? {});
-  final raw = (d['emd_amount'] ?? '').toString().replaceAll(',', '');
-  return num.tryParse(raw) ?? 0;
-}
 
 num _tenderValue(Map<String, dynamic> bid) {
   final d = Map<String, dynamic>.from(bid['details'] as Map? ?? {});
@@ -38,14 +33,26 @@ num _totalCost(Map<String, dynamic> ad) {
   num sum = 0;
   for (final k in [
     'procurement_cost',
-    'manufacturing_cost',
     'labour_cost',
+    'manufacturing_cost', // backward compat with older data
     'packaging_cost',
     'logistics_cost',
+    'installation_cost',
+    'taxes_cost',
+    'compliance_cost',
+    'warranty_cost',
+    'financing_cost',
     'other_cost',
   ]) {
     sum += (ad[k] as num?) ?? 0;
   }
+  final extraJson = ad['extra_costs_json'] as String? ?? '[]';
+  try {
+    final extras = jsonDecode(extraJson) as List;
+    for (final e in extras) {
+      sum += (e['amount'] as num?) ?? 0;
+    }
+  } catch (_) {}
   return sum;
 }
 
@@ -62,35 +69,6 @@ String _title(Map<String, dynamic> row) {
 String _sourceId(Map<String, dynamic> row) =>
     (row['source_id'] as String? ?? '').trim();
 
-// Status cycle
-const _statuses = [
-  'saved',
-  'shortlisted',
-  'participating',
-  'submitted',
-  'awarded',
-  'closed',
-];
-
-String _statusLabel(AppStore s, String status) => switch (status) {
-  'saved' => s.t('Saved', 'सहेजा'),
-  'shortlisted' => s.t('Shortlisted', 'शॉर्टलिस्टेड'),
-  'participating' => s.t('Participating', 'भागीदारी'),
-  'submitted' => s.t('Submitted', 'जमा किया'),
-  'awarded' => s.t('Awarded', 'पुरस्कृत'),
-  'closed' => s.t('Closed', 'बंद'),
-  _ => status,
-};
-
-Color _statusColor(String status) => switch (status) {
-  'awarded' => AppColors.brand,
-  'submitted' => AppColors.info,
-  'participating' => AppColors.warning,
-  'shortlisted' => AppColors.violet,
-  'closed' => AppColors.textHint,
-  _ => AppColors.textSecondary,
-};
-
 // ── Entry point ─────────────────────────────────────────────────────────────
 
 class TenderAnalyticsPage extends StatefulWidget {
@@ -102,7 +80,7 @@ class TenderAnalyticsPage extends StatefulWidget {
 
 class _TenderAnalyticsPageState extends State<TenderAnalyticsPage> {
   int _tab = 0;
-  final _tabs = ['Overview', 'Financial', 'Lifecycle', 'Simulator', 'Payments'];
+  final _tabs = ['Overview', 'Financial', 'Simulator'];
 
   @override
   Widget build(BuildContext context) {
@@ -135,7 +113,6 @@ class _TenderAnalyticsPageState extends State<TenderAnalyticsPage> {
                 ],
               ),
             ),
-            // Tab bar
             SizedBox(
               height: 44,
               child: ListView.separated(
@@ -157,14 +134,17 @@ class _TenderAnalyticsPageState extends State<TenderAnalyticsPage> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: active ? AppColors.brand : AppColors.surfaceMuted,
+                        color: active
+                            ? AppColors.brand
+                            : AppColors.surfaceMuted,
                         borderRadius: BorderRadius.circular(AppRadius.pill),
                       ),
                       child: Text(
                         _tabs[i],
                         style: AppText.label.copyWith(
-                          color:
-                              active ? AppColors.surface : AppColors.textSecondary,
+                          color: active
+                              ? AppColors.surface
+                              : AppColors.textSecondary,
                           fontWeight:
                               active ? FontWeight.w600 : FontWeight.normal,
                         ),
@@ -181,11 +161,12 @@ class _TenderAnalyticsPageState extends State<TenderAnalyticsPage> {
                 builder: (context, _) {
                   if (s.savedBids.isEmpty) return _emptyState(context, s);
                   return switch (_tab) {
-                    0 => _OverviewTab(store: s, onTabChange: (t) => setState(() => _tab = t)),
+                    0 => _OverviewTab(
+                        store: s,
+                        onTabChange: (t) => setState(() => _tab = t),
+                      ),
                     1 => _FinancialTab(store: s),
-                    2 => _LifecycleTab(store: s),
-                    3 => _SimulatorTab(store: s),
-                    4 => _PaymentsTab(store: s),
+                    2 => _SimulatorTab(store: s),
                     _ => const SizedBox(),
                   };
                 },
@@ -204,7 +185,7 @@ class _TenderAnalyticsPageState extends State<TenderAnalyticsPage> {
       'अपने अवसरों का विश्लेषण शुरू करें',
     ),
     message: s.t(
-      'Save bids from Find Bids to understand their financial requirements, estimated costs, potential returns and payment timelines.',
+      'Save bids from Find Bids to understand their financial requirements, estimated costs and potential returns.',
       'Find Bids से बोलियाँ सहेजें ताकि उनकी वित्तीय आवश्यकताओं को समझ सकें।',
     ),
     actionLabel: s.t('Explore Find Bids', 'बोलियाँ खोजें'),
@@ -220,6 +201,8 @@ class _MetricCard extends StatelessWidget {
   final Color color;
   final String? tooltip;
   final String? sub;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   const _MetricCard({
     required this.label,
@@ -227,6 +210,8 @@ class _MetricCard extends StatelessWidget {
     this.color = AppColors.ink,
     this.tooltip,
     this.sub,
+    this.actionLabel,
+    this.onAction,
   });
 
   @override
@@ -275,7 +260,27 @@ class _MetricCard extends StatelessWidget {
           Text(value, style: AppText.h2.copyWith(color: color)),
           if (sub != null) ...[
             const SizedBox(height: 2),
-            Text(sub!, style: AppText.caption.copyWith(color: AppColors.textHint)),
+            Text(
+              sub!,
+              style: AppText.caption.copyWith(color: AppColors.textHint),
+            ),
+          ],
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: AppSpace.sm),
+            GestureDetector(
+              onTap: onAction,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    actionLabel!,
+                    style: AppText.label.copyWith(color: AppColors.brand),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(Icons.arrow_forward, size: 14, color: AppColors.brand),
+                ],
+              ),
+            ),
           ],
         ],
       ),
@@ -301,9 +306,33 @@ class _OverviewTab extends StatelessWidget {
       (d) => activeBidIds.contains(d['source_id'] as String? ?? ''),
     );
 
-    final totalEmd = active.fold<num>(0, (a, r) => a + _emd(_bid(r)));
-    final totalValue = active.fold<num>(0, (a, r) => a + _tenderValue(_bid(r)));
+    // EMD: sum across active bids, respecting nil/unavailable per-bid
+    num emdTotal = 0;
+    bool emdInfoFound = false;
+    for (final r in active) {
+      final d =
+          Map<String, dynamic>.from(_bid(r)['details'] as Map? ?? {});
+      final req = (d['emd_required'] ?? '').toString().toLowerCase();
+      if (req.isEmpty) continue;
+      emdInfoFound = true;
+      if (req != 'no' && req != 'nil' && req != 'none' && req != '0') {
+        final raw =
+            (d['emd_amount'] ?? '').toString().replaceAll(',', '');
+        emdTotal += num.tryParse(raw) ?? 0;
+      }
+    }
+    final emdDisplay = !emdInfoFound && active.isNotEmpty
+        ? s.t('Not Available', 'उपलब्ध नहीं')
+        : emdTotal == 0
+            ? '₹0'
+            : _money(emdTotal);
+    final emdColor = !emdInfoFound && active.isNotEmpty
+        ? AppColors.textHint
+        : emdTotal > 0
+            ? AppColors.warning
+            : AppColors.ink;
 
+    // Financial metrics — require user input in Financial tab
     num? execCost;
     num? revenue;
     for (final d in adActive) {
@@ -312,25 +341,16 @@ class _OverviewTab extends StatelessWidget {
       if (c > 0) execCost = (execCost ?? 0) + c;
       if (sp > 0) revenue = (revenue ?? 0) + sp;
     }
-    final netProfit = (revenue != null && execCost != null)
-        ? revenue - execCost
-        : null;
+    final netProfit =
+        (revenue != null && execCost != null) ? revenue - execCost : null;
 
-    // Upcoming deadlines
-    final now = DateTime.now();
-    final urgent = <Map<String, dynamic>>[];
-    final upcoming = <Map<String, dynamic>>[];
-    for (final r in bids) {
-      final b = _bid(r);
-      final ca = DateTime.tryParse(b['closes_at'] as String? ?? '');
-      if (ca == null) continue;
-      final days = ca.difference(now).inDays;
-      if (days >= 0 && days <= 7) {
-        urgent.add(r);
-      } else if (days > 7 && days <= 30) {
-        upcoming.add(r);
-      }
-    }
+    final halfWidth =
+        (MediaQuery.of(context).size.width -
+            AppSpace.gutter * 2 -
+            AppSpace.sm) /
+        2;
+    final fullWidth =
+        MediaQuery.of(context).size.width - AppSpace.gutter * 2;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
@@ -344,8 +364,8 @@ class _OverviewTab extends StatelessWidget {
         children: [
           Text(
             s.t(
-              'Financial intelligence for your saved tenders',
-              'सहेजी बोलियों की वित्तीय समझ',
+              'Financial overview of your saved bids',
+              'सहेजी बोलियों का वित्तीय अवलोकन',
             ),
             style: AppText.caption.copyWith(color: AppColors.textSecondary),
           ),
@@ -355,11 +375,14 @@ class _OverviewTab extends StatelessWidget {
             runSpacing: AppSpace.sm,
             children: [
               SizedBox(
-                width: (MediaQuery.of(context).size.width - AppSpace.gutter * 2 - AppSpace.sm) / 2,
+                width: halfWidth,
                 child: _MetricCard(
                   label: s.t('Active Saved Bids', 'सक्रिय सहेजी बोलियाँ'),
                   value: '${active.length}',
                   color: AppColors.brand,
+                  actionLabel: s.t('View Saved Bids', 'सहेजी बोलियाँ देखें'),
+                  onAction: () =>
+                      Navigator.pushNamed(context, '/saved-bids'),
                   tooltip: s.t(
                     'Saved bids whose submission deadline has not yet passed.',
                     'सहेजी बोलियाँ जिनकी समय-सीमा नहीं गुज़री।',
@@ -367,23 +390,15 @@ class _OverviewTab extends StatelessWidget {
                 ),
               ),
               SizedBox(
-                width: (MediaQuery.of(context).size.width - AppSpace.gutter * 2 - AppSpace.sm) / 2,
-                child: _MetricCard(
-                  label: s.t('Combined Tender Value', 'संयुक्त टेंडर मूल्य'),
-                  value: totalValue > 0 ? _money(totalValue) : '—',
-                  tooltip: s.t(
-                    'Sum of estimated values of all active saved tenders.',
-                    'सभी सक्रिय सहेजी बोलियों का अनुमानित मूल्य।',
-                  ),
-                ),
-              ),
-              SizedBox(
-                width: (MediaQuery.of(context).size.width - AppSpace.gutter * 2 - AppSpace.sm) / 2,
+                width: halfWidth,
                 child: _MetricCard(
                   label: s.t('Total EMD Requirement', 'कुल EMD आवश्यकता'),
-                  value: totalEmd > 0 ? _money(totalEmd) : '—',
-                  color: AppColors.warning,
-                  sub: s.t('May be nil for MSME', 'MSME के लिए शून्य हो सकता है'),
+                  value: emdDisplay,
+                  color: emdColor,
+                  sub: s.t(
+                    'May be nil for MSME',
+                    'MSME के लिए शून्य हो सकता है',
+                  ),
                   tooltip: s.t(
                     'Combined EMD across active saved bids. MSME-registered sellers may be exempt.',
                     'सक्रिय बोलियों पर कुल EMD। MSME विक्रेता छूट के पात्र हो सकते हैं।',
@@ -391,250 +406,119 @@ class _OverviewTab extends StatelessWidget {
                 ),
               ),
               SizedBox(
-                width: (MediaQuery.of(context).size.width - AppSpace.gutter * 2 - AppSpace.sm) / 2,
+                width: halfWidth,
                 child: _MetricCard(
                   label: s.t('Est. Execution Cost', 'अनु. निष्पादन लागत'),
-                  value: execCost != null ? _money(execCost) : '—',
+                  value: execCost != null
+                      ? _money(execCost)
+                      : s.t('Not entered', 'दर्ज नहीं'),
+                  color: execCost != null
+                      ? AppColors.ink
+                      : AppColors.textHint,
+                  actionLabel: s.t('Calculate Costs', 'लागत दर्ज करें'),
+                  onAction: () => onTabChange(1),
                   tooltip: s.t(
-                    'Sum of costs entered in Financial tab. Enter costs to see this.',
+                    'Sum of costs entered in the Financial tab for active bids.',
                     'Financial टैब में दर्ज लागत का योग।',
                   ),
                 ),
               ),
               SizedBox(
-                width: (MediaQuery.of(context).size.width - AppSpace.gutter * 2 - AppSpace.sm) / 2,
+                width: halfWidth,
                 child: _MetricCard(
                   label: s.t('Potential Revenue', 'संभावित राजस्व'),
-                  value: revenue != null ? _money(revenue) : '—',
-                  color: AppColors.brand,
+                  value: revenue != null
+                      ? _money(revenue)
+                      : s.t('Not entered', 'दर्ज नहीं'),
+                  color: revenue != null
+                      ? AppColors.brand
+                      : AppColors.textHint,
                   tooltip: s.t(
-                    'Sum of selling prices entered in Financial tab. Not guaranteed revenue.',
-                    'Financial टैब में दर्ज बिक्री मूल्यों का योग। गारंटीड राजस्व नहीं।',
+                    'Sum of expected bid amounts entered in the Financial tab. Not guaranteed revenue.',
+                    'Financial टैब में दर्ज अपेक्षित बिक्री मूल्यों का योग।',
                   ),
                 ),
               ),
               SizedBox(
-                width: (MediaQuery.of(context).size.width - AppSpace.gutter * 2 - AppSpace.sm) / 2,
+                width: fullWidth,
                 child: _MetricCard(
                   label: s.t('Est. Net Profit', 'अनु. शुद्ध लाभ'),
-                  value: netProfit != null ? _money(netProfit) : '—',
+                  value: netProfit != null
+                      ? _money(netProfit)
+                      : s.t(
+                          'Enter costs and revenue in Financial tab',
+                          'Financial टैब में लागत और राजस्व दर्ज करें',
+                        ),
                   color: netProfit != null
-                      ? (netProfit >= 0 ? AppColors.brand : AppColors.danger)
-                      : AppColors.ink,
+                      ? (netProfit >= 0
+                          ? AppColors.brand
+                          : AppColors.danger)
+                      : AppColors.textHint,
                   tooltip: s.t(
-                    'Estimated revenue minus estimated execution costs. Enter costs to see this.',
-                    'अनुमानित राजस्व घटाएं अनुमानित लागत।',
+                    'Potential revenue minus estimated execution costs. Enter data in Financial tab.',
+                    'संभावित राजस्व घटाएं अनुमानित निष्पादन लागत।',
                   ),
                 ),
               ),
             ],
           ),
-
-          // Upcoming deadlines
-          if (urgent.isNotEmpty || upcoming.isNotEmpty) ...[
-            const SizedBox(height: AppSpace.xxl),
-            Text(
-              s.t('Upcoming Deadlines', 'आने वाली समय-सीमाएँ'),
-              style: AppText.h3,
-            ),
-            const SizedBox(height: AppSpace.md),
+          if (execCost == null || revenue == null) ...[
+            const SizedBox(height: AppSpace.xl),
             AppCard(
-              padding: EdgeInsets.zero,
-              child: DividedList(
+              tone: AppCardTone.muted,
+              padding: const EdgeInsets.all(AppSpace.lg),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final r in [...urgent, ...upcoming])
-                    _DeadlineRow(
-                      row: r,
-                      urgent: urgent.contains(r),
-                      onTap: () => onTabChange(1),
+                  Icon(
+                    Icons.lightbulb_outline,
+                    size: 16,
+                    color: AppColors.info,
+                  ),
+                  const SizedBox(width: AppSpace.sm),
+                  Expanded(
+                    child: Text(
+                      s.t(
+                        'Open the Financial tab to enter costs and expected revenue for each bid. This will show your execution cost, potential revenue and estimated net profit here.',
+                        'प्रत्येक बोली के लिए लागत और अपेक्षित राजस्व दर्ज करने के लिए Financial टैब खोलें। इससे यहाँ निष्पादन लागत, संभावित राजस्व और अनुमानित शुद्ध लाभ दिखेगा।',
+                      ),
+                      style: AppText.body.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
+                  ),
                 ],
               ),
             ),
           ],
-
-          // Financial highlights
-          const SizedBox(height: AppSpace.xxl),
-          Text(s.t('Financial Highlights', 'वित्तीय मुख्य बातें'), style: AppText.h3),
-          const SizedBox(height: AppSpace.md),
-          AppCard(
-            tone: AppCardTone.muted,
-            padding: const EdgeInsets.all(AppSpace.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (totalEmd > 0)
-                  _HighlightBullet(
-                    s.t(
-                      'Your combined EMD requirement is ${_money(totalEmd)} across ${active.length} active bid(s).',
-                      'आपकी कुल EMD आवश्यकता ${active.length} सक्रिय बोली(यों) में ${_money(totalEmd)} है।',
-                    ),
-                    icon: Icons.lock_outline,
-                    color: AppColors.warning,
-                  ),
-                if (urgent.isNotEmpty)
-                  _HighlightBullet(
-                    s.t(
-                      '${urgent.length} saved bid(s) closing within the next 7 days.',
-                      '${urgent.length} सहेजी बोली(याँ) अगले 7 दिनों में बंद होती हैं।',
-                    ),
-                    icon: Icons.timer_outlined,
-                    color: AppColors.danger,
-                  ),
-                if (execCost != null)
-                  _HighlightBullet(
-                    s.t(
-                      'Your estimated execution cost across selected bids is ${_money(execCost)}.',
-                      'चुनी बोलियों की अनुमानित निष्पादन लागत ${_money(execCost)} है।',
-                    ),
-                    icon: Icons.payments_outlined,
-                    color: AppColors.info,
-                  ),
-                if (totalEmd == 0 && urgent.isEmpty && execCost == null)
-                  Text(
-                    s.t(
-                      'Enter costs in the Financial tab to see personalised insights.',
-                      'व्यक्तिगत अंतर्दृष्टि देखने के लिए Financial टैब में लागत दर्ज करें।',
-                    ),
-                    style: AppText.body.copyWith(color: AppColors.textSecondary),
-                  ),
-              ],
-            ),
-          ),
         ],
       ),
     );
   }
 }
 
-class _DeadlineRow extends StatelessWidget {
-  final Map<String, dynamic> row;
-  final bool urgent;
-  final VoidCallback onTap;
-  const _DeadlineRow({required this.row, required this.urgent, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final b = _bid(row);
-    final ca = DateTime.tryParse(b['closes_at'] as String? ?? '');
-    final days = ca?.difference(DateTime.now()).inDays;
-    return AppListTile(
-      icon: Icons.calendar_today_outlined,
-      title: _title(row),
-      subtitle: ca != null ? _fmt(ca) : '',
-      trailing: days != null
-          ? StatusChip(
-              '$days d',
-              tone: urgent ? StatusTone.danger : StatusTone.warning,
-            )
-          : null,
-      onTap: onTap,
-    );
-  }
-}
-
-class _HighlightBullet extends StatelessWidget {
-  final String text;
-  final IconData icon;
-  final Color color;
-  const _HighlightBullet(this.text, {required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: AppSpace.md),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 16, color: color),
-        const SizedBox(width: AppSpace.sm),
-        Expanded(child: Text(text, style: AppText.body)),
-      ],
-    ),
-  );
-}
-
 // ── Tab 1 — Financial ────────────────────────────────────────────────────────
 
-class _FinancialTab extends StatefulWidget {
+class _FinancialTab extends StatelessWidget {
   final AppStore store;
   const _FinancialTab({required this.store});
-  @override
-  State<_FinancialTab> createState() => _FinancialTabState();
-}
-
-class _FinancialTabState extends State<_FinancialTab> {
-  String _filter = 'all';
 
   @override
   Widget build(BuildContext context) {
-    final s = widget.store;
-    final bids = s.savedBids.where((r) {
-      if (_filter == 'all') return true;
-      if (_filter == 'active') return _isActive(r);
-      final ad = s.getAnalyticsDatum(_sourceId(r));
-      if (_filter == 'awarded') return (ad['status'] ?? 'saved') == 'awarded';
-      return true;
-    }).toList();
+    final s = store;
+    final bids = s.savedBids;
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpace.gutter,
-            vertical: AppSpace.sm,
-          ),
-          child: Row(
-            children: [
-              for (final (k, label) in [
-                ('all', s.t('All', 'सभी')),
-                ('active', s.t('Active', 'सक्रिय')),
-                ('awarded', s.t('Awarded', 'पुरस्कृत')),
-              ])
-                Padding(
-                  padding: const EdgeInsets.only(right: AppSpace.sm),
-                  child: GestureDetector(
-                    onTap: () => setState(() => _filter = k),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpace.md,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _filter == k
-                            ? AppColors.brand
-                            : AppColors.surfaceMuted,
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                      child: Text(
-                        label,
-                        style: AppText.label.copyWith(
-                          color: _filter == k
-                              ? AppColors.surface
-                              : AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpace.gutter,
-              AppSpace.xs,
-              AppSpace.gutter,
-              80,
-            ),
-            itemCount: bids.length,
-            separatorBuilder: (_, i) => const SizedBox(height: AppSpace.md),
-            itemBuilder: (context, i) =>
-                _BidFinancialCard(store: s, row: bids[i]),
-          ),
-        ),
-      ],
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpace.gutter,
+        AppSpace.md,
+        AppSpace.gutter,
+        80,
+      ),
+      itemCount: bids.length,
+      separatorBuilder: (_, i) => const SizedBox(height: AppSpace.md),
+      itemBuilder: (context, i) =>
+          _BidFinancialCard(store: s, row: bids[i], startExpanded: true),
     );
   }
 }
@@ -642,35 +526,97 @@ class _FinancialTabState extends State<_FinancialTab> {
 class _BidFinancialCard extends StatefulWidget {
   final AppStore store;
   final Map<String, dynamic> row;
-  const _BidFinancialCard({required this.store, required this.row});
+  final bool startExpanded;
+  const _BidFinancialCard({
+    required this.store,
+    required this.row,
+    this.startExpanded = false,
+  });
   @override
   State<_BidFinancialCard> createState() => _BidFinancialCardState();
 }
 
 class _BidFinancialCardState extends State<_BidFinancialCard> {
-  bool _expanded = false;
+  late bool _expanded;
+  final List<TextEditingController> _extraLabels = [];
+  final List<TextEditingController> _extraAmounts = [];
 
   static const _costFields = [
-    ('procurement_cost', 'Procurement', 'खरीद लागत'),
-    ('manufacturing_cost', 'Manufacturing', 'निर्माण लागत'),
-    ('labour_cost', 'Labour', 'श्रम लागत'),
-    ('packaging_cost', 'Packaging', 'पैकेजिंग'),
-    ('logistics_cost', 'Logistics', 'रसद लागत'),
-    ('other_cost', 'Other', 'अन्य लागत'),
+    ('procurement_cost', 'Procurement Costs', 'खरीद लागत'),
+    ('labour_cost', 'Labour & Manufacturing Costs', 'श्रम एवं निर्माण लागत'),
+    ('packaging_cost', 'Packaging Costs', 'पैकेजिंग लागत'),
+    ('logistics_cost', 'Logistics Costs', 'रसद लागत'),
+    ('installation_cost', 'Installation Costs', 'स्थापना लागत'),
+    ('taxes_cost', 'Taxes (non-recoverable)', 'कर (अपूरणीय)'),
+    ('compliance_cost', 'Compliance Costs', 'अनुपालन लागत'),
+    ('warranty_cost', 'Warranty Costs', 'वारंटी लागत'),
+    ('financing_cost', 'Financing Costs', 'वित्तपोषण लागत'),
+    ('other_cost', 'Other Costs', 'अन्य लागत'),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _expanded = widget.startExpanded;
+    _loadExtraControllers();
+  }
+
+  void _loadExtraControllers() {
+    final ad = widget.store.getAnalyticsDatum(_sourceId(widget.row));
+    final raw = ad['extra_costs_json'] as String? ?? '[]';
+    try {
+      final list = jsonDecode(raw) as List;
+      for (final item in list) {
+        _extraLabels.add(
+          TextEditingController(text: item['label'] as String? ?? ''),
+        );
+        _extraAmounts.add(
+          TextEditingController(
+            text: (item['amount'] as num?)?.toString() ?? '',
+          ),
+        );
+      }
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    for (final c in _extraLabels) c.dispose();
+    for (final c in _extraAmounts) c.dispose();
+    super.dispose();
+  }
+
+  void _saveExtraCosts(String sourceId) {
+    final list = <Map<String, dynamic>>[];
+    for (var i = 0; i < _extraLabels.length; i++) {
+      final label = _extraLabels[i].text.trim();
+      final amount = num.tryParse(_extraAmounts[i].text);
+      if (label.isNotEmpty || (amount != null && amount > 0)) {
+        list.add({'label': label, 'amount': amount});
+      }
+    }
+    widget.store.saveAnalyticsDatum(sourceId, {
+      'extra_costs_json': jsonEncode(list),
+    });
+  }
+
+  void _addExtraCost() {
+    setState(() {
+      _extraLabels.add(TextEditingController());
+      _extraAmounts.add(TextEditingController());
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final s = widget.store;
     final sourceId = _sourceId(widget.row);
     final ad = s.getAnalyticsDatum(sourceId);
-    final status = (ad['status'] as String?) ?? 'saved';
     final cost = _totalCost(ad);
     final sp = (ad['selling_price'] as num?) ?? 0;
     final profit = sp > 0 || cost > 0 ? sp - cost : null;
     final margin =
         sp > 0 ? ((profit! / sp) * 100).toStringAsFixed(1) : null;
-    final tv = _tenderValue(_bid(widget.row));
     final b = _bid(widget.row);
     final ca = DateTime.tryParse(b['closes_at'] as String? ?? '');
 
@@ -679,40 +625,11 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _title(widget.row),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.bodyStrong,
-                ),
-              ),
-              const SizedBox(width: AppSpace.sm),
-              GestureDetector(
-                onTap: () {
-                  final idx = _statuses.indexOf(status);
-                  final next = _statuses[(idx + 1) % _statuses.length];
-                  s.saveAnalyticsDatum(sourceId, {'status': next});
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpace.sm,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _statusColor(status).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    border: Border.all(color: _statusColor(status).withValues(alpha: 0.4)),
-                  ),
-                  child: Text(
-                    _statusLabel(s, status),
-                    style: AppText.label.copyWith(color: _statusColor(status)),
-                  ),
-                ),
-              ),
-            ],
+          Text(
+            _title(widget.row),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppText.bodyStrong,
           ),
           if (ca != null) ...[
             const SizedBox(height: AppSpace.xs),
@@ -722,13 +639,20 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
             ),
           ],
           const SizedBox(height: AppSpace.md),
-          // Summary row
           Row(
             children: [
               Expanded(
                 child: _SummaryChip(
                   s.t('Cost', 'लागत'),
                   cost > 0 ? _money(cost) : '—',
+                ),
+              ),
+              const SizedBox(width: AppSpace.sm),
+              Expanded(
+                child: _SummaryChip(
+                  s.t('Revenue', 'राजस्व'),
+                  sp > 0 ? _money(sp) : '—',
+                  color: sp > 0 ? AppColors.brand : null,
                 ),
               ),
               const SizedBox(width: AppSpace.sm),
@@ -741,21 +665,8 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
                       : null,
                 ),
               ),
-              const SizedBox(width: AppSpace.sm),
-              Expanded(
-                child: _SummaryChip(
-                  s.t('Margin', 'मार्जिन'),
-                  margin != null ? '$margin%' : '—',
-                  color: margin != null
-                      ? (double.parse(margin) >= 0
-                          ? AppColors.brand
-                          : AppColors.danger)
-                      : null,
-                ),
-              ),
             ],
           ),
-          // Expand/collapse
           const SizedBox(height: AppSpace.sm),
           GestureDetector(
             onTap: () => setState(() => _expanded = !_expanded),
@@ -764,7 +675,7 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
                 Text(
                   _expanded
                       ? s.t('Hide cost details', 'लागत विवरण छुपाएँ')
-                      : s.t('Enter / edit costs', 'लागत दर्ज करें'),
+                      : s.t('Enter / Edit Costs', 'लागत दर्ज / संपादित करें'),
                   style: AppText.label.copyWith(color: AppColors.brand),
                 ),
                 Icon(
@@ -776,7 +687,15 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
             ),
           ),
           if (_expanded) ...[
-            const SizedBox(height: AppSpace.md),
+            const SizedBox(height: AppSpace.lg),
+            Text(
+              s.t('Execution Costs', 'निष्पादन लागत'),
+              style: AppText.caption.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: AppSpace.sm),
             for (final (key, en, hi) in _costFields)
               _CostField(
                 label: s.t(en, hi),
@@ -786,57 +705,170 @@ class _BidFinancialCardState extends State<_BidFinancialCard> {
                   s.saveAnalyticsDatum(sourceId, {key: parsed});
                 },
               ),
+            for (var i = 0; i < _extraLabels.length; i++)
+              _ExtraCostRow(
+                labelCtrl: _extraLabels[i],
+                amountCtrl: _extraAmounts[i],
+                index: i + 1,
+                onChanged: () => _saveExtraCosts(sourceId),
+              ),
+            GestureDetector(
+              onTap: _addExtraCost,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: AppSpace.sm),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.add_circle_outline,
+                      size: 16,
+                      color: AppColors.brand,
+                    ),
+                    const SizedBox(width: AppSpace.xs),
+                    Text(
+                      s.t('Add Other Cost', 'अन्य लागत जोड़ें'),
+                      style: AppText.label.copyWith(color: AppColors.brand),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const Divider(height: AppSpace.xl),
+            Text(
+              s.t('Expected Revenue', 'अपेक्षित राजस्व'),
+              style: AppText.caption.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: AppSpace.sm),
             _CostField(
-              label: s.t('Selling Price', 'बिक्री मूल्य'),
+              label: s.t(
+                'Expected Bid / Selling Amount',
+                'अपेक्षित बोली / बिक्री राशि',
+              ),
               initialValue: (ad['selling_price'] as num?)?.toString() ?? '',
               onChanged: (v) {
                 final parsed = num.tryParse(v);
                 s.saveAnalyticsDatum(sourceId, {'selling_price': parsed});
               },
             ),
-            _CostField(
-              label: s.t('GST Rate %', 'GST दर %'),
-              initialValue: (ad['gst_rate'] as num?)?.toString() ?? '18',
-              onChanged: (v) {
-                final parsed = num.tryParse(v);
-                s.saveAnalyticsDatum(sourceId, {'gst_rate': parsed ?? 18});
-              },
-            ),
-            if (tv > 0) ...[
+            if (margin != null) ...[
               const SizedBox(height: AppSpace.sm),
-              GestureDetector(
-                onTap: () {
-                  final est = tv * 0.72;
-                  s.saveAnalyticsDatum(sourceId, {'procurement_cost': est});
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpace.md,
-                    vertical: AppSpace.sm,
+              Row(
+                children: [
+                  Icon(
+                    double.parse(margin) >= 0
+                        ? Icons.trending_up
+                        : Icons.trending_down,
+                    size: 15,
+                    color: double.parse(margin) >= 0
+                        ? AppColors.brand
+                        : AppColors.danger,
                   ),
-                  decoration: BoxDecoration(
-                    color: AppColors.infoTint,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  const SizedBox(width: AppSpace.xs),
+                  Text(
+                    s.t(
+                      'Profit Margin: $margin%',
+                      'लाभ मार्जिन: $margin%',
+                    ),
+                    style: AppText.bodyStrong.copyWith(
+                      color: double.parse(margin) >= 0
+                          ? AppColors.brand
+                          : AppColors.danger,
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.auto_fix_high, size: 15, color: AppColors.info),
-                      const SizedBox(width: AppSpace.sm),
-                      Expanded(
-                        child: Text(
-                          s.t(
-                            'Est. Execution Cost (72% of tender value = ${_money(tv * 0.72)}) — assumption',
-                            'अनु. निष्पादन लागत (टेंडर मूल्य का 72% = ${_money(tv * 0.72)}) — अनुमान',
-                          ),
-                          style: AppText.caption.copyWith(color: AppColors.info),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ),
             ],
+            const SizedBox(height: AppSpace.md),
+            ReassuranceNote(
+              s.t(
+                'Enter only non-recoverable costs. Recoverable GST (input tax credit) should not be included as an expense.',
+                'केवल अप्रतिदेय लागत दर्ज करें। वसूली योग्य GST (इनपुट टैक्स क्रेडिट) को खर्च में शामिल न करें।',
+              ),
+            ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ExtraCostRow extends StatelessWidget {
+  final TextEditingController labelCtrl;
+  final TextEditingController amountCtrl;
+  final int index;
+  final VoidCallback onChanged;
+  const _ExtraCostRow({
+    required this.labelCtrl,
+    required this.amountCtrl,
+    required this.index,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpace.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            flex: 3,
+            child: TextField(
+              controller: labelCtrl,
+              decoration: InputDecoration(
+                hintText: 'Cost $index name',
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.sm,
+                  vertical: AppSpace.sm,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                isDense: true,
+              ),
+              onSubmitted: (_) => onChanged(),
+              onEditingComplete: onChanged,
+            ),
+          ),
+          const SizedBox(width: AppSpace.sm),
+          Expanded(
+            flex: 3,
+            child: TextField(
+              controller: amountCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+              ],
+              decoration: InputDecoration(
+                prefixText: '₹ ',
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.sm,
+                  vertical: AppSpace.sm,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                isDense: true,
+              ),
+              onSubmitted: (_) => onChanged(),
+              onEditingComplete: onChanged,
+            ),
+          ),
         ],
       ),
     );
@@ -909,7 +941,7 @@ class _CostFieldState extends State<_CostField> {
     child: Row(
       children: [
         SizedBox(
-          width: 110,
+          width: 120,
           child: Text(
             widget.label,
             style: AppText.caption,
@@ -920,7 +952,8 @@ class _CostFieldState extends State<_CostField> {
         Expanded(
           child: TextField(
             controller: _ctrl,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
             ],
@@ -949,185 +982,7 @@ class _CostFieldState extends State<_CostField> {
   );
 }
 
-// ── Tab 2 — Lifecycle ────────────────────────────────────────────────────────
-
-class _LifecycleTab extends StatelessWidget {
-  final AppStore store;
-  const _LifecycleTab({required this.store});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = store;
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpace.gutter,
-        AppSpace.md,
-        AppSpace.gutter,
-        80,
-      ),
-      itemCount: s.savedBids.length,
-      separatorBuilder: (_, i) => const SizedBox(height: AppSpace.md),
-      itemBuilder: (context, i) =>
-          _BidLifecycleCard(store: s, row: s.savedBids[i]),
-    );
-  }
-}
-
-class _BidLifecycleCard extends StatefulWidget {
-  final AppStore store;
-  final Map<String, dynamic> row;
-  const _BidLifecycleCard({required this.store, required this.row});
-  @override
-  State<_BidLifecycleCard> createState() => _BidLifecycleCardState();
-}
-
-class _BidLifecycleCardState extends State<_BidLifecycleCard> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final s = widget.store;
-    final sourceId = _sourceId(widget.row);
-    final ad = s.getAnalyticsDatum(sourceId);
-    final b = _bid(widget.row);
-    final savedAt = DateTime.tryParse(widget.row['saved_at'] as String? ?? '');
-    final submissionAt = DateTime.tryParse(b['closes_at'] as String? ?? '');
-    final awardAt = DateTime.tryParse(ad['award_date'] as String? ?? '');
-    final deliveryAt = DateTime.tryParse(ad['delivery_date'] as String? ?? '');
-    final invoiceAt = DateTime.tryParse(ad['invoice_date'] as String? ?? '');
-    final payAt = DateTime.tryParse(ad['payment_received_date'] as String? ?? '');
-
-    // Estimate result date ~21 days after submission
-    final resultAt = submissionAt?.add(const Duration(days: 21));
-
-    final stages = [
-      (s.t('Bid Saved', 'बोली सहेजी'), savedAt, false),
-      (s.t('Submission Deadline', 'जमा करने की अंतिम तिथि'), submissionAt, false),
-      (s.t('Evaluation / Result', 'मूल्यांकन / परिणाम'), resultAt, true),
-      (s.t('Award', 'पुरस्कार'), awardAt, ad['award_date'] == null),
-      (s.t('Delivery', 'डिलीवरी'), deliveryAt, ad['delivery_date'] == null),
-      (s.t('Invoice', 'चालान'), invoiceAt, ad['invoice_date'] == null),
-      (s.t('Payment', 'भुगतान'), payAt, ad['payment_received_date'] == null),
-    ];
-
-    return AppCard(
-      padding: const EdgeInsets.all(AppSpace.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: () => setState(() => _expanded = !_expanded),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _title(widget.row),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.bodyStrong,
-                  ),
-                ),
-                Icon(
-                  _expanded ? Icons.expand_less : Icons.expand_more,
-                  color: AppColors.textHint,
-                ),
-              ],
-            ),
-          ),
-          if (_expanded) ...[
-            const SizedBox(height: AppSpace.lg),
-            for (var i = 0; i < stages.length; i++)
-              _StageRow(
-                label: stages[i].$1,
-                date: stages[i].$2,
-                isEstimated: stages[i].$3,
-                isLast: i == stages.length - 1,
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _StageRow extends StatelessWidget {
-  final String label;
-  final DateTime? date;
-  final bool isEstimated;
-  final bool isLast;
-  const _StageRow({
-    required this.label,
-    required this.date,
-    required this.isEstimated,
-    required this.isLast,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final past = date != null && date!.isBefore(now);
-    final dotColor = date == null
-        ? AppColors.border
-        : past
-            ? AppColors.brand
-            : AppColors.borderStrong;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
-          children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: dotColor,
-                border: Border.all(
-                  color: past ? AppColors.brand : AppColors.borderStrong,
-                  width: 2,
-                ),
-              ),
-            ),
-            if (!isLast)
-              Container(
-                width: 2,
-                height: 32,
-                color: AppColors.border,
-              ),
-          ],
-        ),
-        const SizedBox(width: AppSpace.md),
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpace.md),
-            child: Row(
-              children: [
-                Expanded(child: Text(label, style: AppText.body)),
-                if (date != null)
-                  Text(
-                    isEstimated
-                        ? '${_fmt(date!)} (Est.)'
-                        : _fmt(date!),
-                    style: AppText.caption.copyWith(
-                      color: isEstimated ? AppColors.textHint : AppColors.textSecondary,
-                    ),
-                  )
-                else
-                  Text(
-                    '—',
-                    style: AppText.caption.copyWith(color: AppColors.textHint),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ── Tab 3 — Simulator ────────────────────────────────────────────────────────
+// ── Tab 2 — Simulator ────────────────────────────────────────────────────────
 
 class _SimulatorTab extends StatefulWidget {
   final AppStore store;
@@ -1167,20 +1022,34 @@ class _SimulatorTabState extends State<_SimulatorTab> {
       final sid = _sourceId(r);
       if (!_selected.contains(sid)) continue;
       selCount++;
-      totalEmdSel += _emd(_bid(r));
+      final b = _bid(r);
+      final d = Map<String, dynamic>.from(b['details'] as Map? ?? {});
+      final req = (d['emd_required'] ?? '').toString().toLowerCase();
+      if (req.isNotEmpty &&
+          req != 'no' &&
+          req != 'nil' &&
+          req != 'none' &&
+          req != '0') {
+        final raw =
+            (d['emd_amount'] ?? '').toString().replaceAll(',', '');
+        totalEmdSel += num.tryParse(raw) ?? 0;
+      }
       final ad = s.getAnalyticsDatum(sid);
-      final sp = (ad['selling_price'] as num?) ?? (_tenderValue(_bid(r)) * 0.95);
+      // Use user-entered data as baseline; fall back to tender value estimates
+      final sp = (ad['selling_price'] as num?) ??
+          (_tenderValue(b) > 0 ? _tenderValue(b) * 0.95 : 0);
       totalRevSel += sp;
       totalCostSel += _totalCost(ad) > 0
           ? _totalCost(ad)
-          : _tenderValue(_bid(r)) * 0.72;
+          : _tenderValue(b) * 0.72;
     }
 
     final expWins = (selCount * _winRate).ceil();
     final expRev = totalRevSel * _winRate;
     final expCost = totalCostSel * (1 + _costOverrun);
     final expProfit = expRev - expCost;
-    final workingCap = (totalEmdSel + expCost - expRev).clamp(0, double.infinity);
+    final workingCap =
+        (totalEmdSel + expCost - expRev).clamp(0, double.infinity);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
@@ -1192,7 +1061,10 @@ class _SimulatorTabState extends State<_SimulatorTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(s.t('Select Bids to Simulate', 'अनुकरण के लिए बोलियाँ चुनें'), style: AppText.h3),
+          Text(
+            s.t('Select Bids to Simulate', 'अनुकरण के लिए बोलियाँ चुनें'),
+            style: AppText.h3,
+          ),
           const SizedBox(height: AppSpace.sm),
           AppCard(
             padding: EdgeInsets.zero,
@@ -1259,7 +1131,10 @@ class _SimulatorTabState extends State<_SimulatorTab> {
             ),
           ),
           const SizedBox(height: AppSpace.xl),
-          Text(s.t('Simulation Results', 'अनुकरण परिणाम'), style: AppText.h3),
+          Text(
+            s.t('Simulation Results', 'अनुकरण परिणाम'),
+            style: AppText.h3,
+          ),
           const SizedBox(height: AppSpace.sm),
           Text(
             s.t(
@@ -1274,7 +1149,10 @@ class _SimulatorTabState extends State<_SimulatorTab> {
             runSpacing: AppSpace.sm,
             children: [
               SizedBox(
-                width: (MediaQuery.of(context).size.width - AppSpace.gutter * 2 - AppSpace.sm) / 2,
+                width: (MediaQuery.of(context).size.width -
+                        AppSpace.gutter * 2 -
+                        AppSpace.sm) /
+                    2,
                 child: _MetricCard(
                   label: s.t('Expected Wins', 'अपेक्षित जीत'),
                   value: '$expWins of $selCount',
@@ -1282,7 +1160,10 @@ class _SimulatorTabState extends State<_SimulatorTab> {
                 ),
               ),
               SizedBox(
-                width: (MediaQuery.of(context).size.width - AppSpace.gutter * 2 - AppSpace.sm) / 2,
+                width: (MediaQuery.of(context).size.width -
+                        AppSpace.gutter * 2 -
+                        AppSpace.sm) /
+                    2,
                 child: _MetricCard(
                   label: s.t('Expected Revenue', 'अपेक्षित राजस्व'),
                   value: expRev > 0 ? _money(expRev) : '—',
@@ -1290,14 +1171,20 @@ class _SimulatorTabState extends State<_SimulatorTab> {
                 ),
               ),
               SizedBox(
-                width: (MediaQuery.of(context).size.width - AppSpace.gutter * 2 - AppSpace.sm) / 2,
+                width: (MediaQuery.of(context).size.width -
+                        AppSpace.gutter * 2 -
+                        AppSpace.sm) /
+                    2,
                 child: _MetricCard(
                   label: s.t('Expected Cost', 'अपेक्षित लागत'),
                   value: expCost > 0 ? _money(expCost) : '—',
                 ),
               ),
               SizedBox(
-                width: (MediaQuery.of(context).size.width - AppSpace.gutter * 2 - AppSpace.sm) / 2,
+                width: (MediaQuery.of(context).size.width -
+                        AppSpace.gutter * 2 -
+                        AppSpace.sm) /
+                    2,
                 child: _MetricCard(
                   label: s.t('Expected Net Profit', 'अपेक्षित शुद्ध लाभ'),
                   value: expRev > 0 ? _money(expProfit) : '—',
@@ -1305,9 +1192,13 @@ class _SimulatorTabState extends State<_SimulatorTab> {
                 ),
               ),
               SizedBox(
-                width: MediaQuery.of(context).size.width - AppSpace.gutter * 2,
+                width: MediaQuery.of(context).size.width -
+                    AppSpace.gutter * 2,
                 child: _MetricCard(
-                  label: s.t('Required Working Capital', 'आवश्यक कार्यशील पूंजी'),
+                  label: s.t(
+                    'Required Working Capital',
+                    'आवश्यक कार्यशील पूंजी',
+                  ),
                   value: workingCap > 0 ? _money(workingCap) : _money(0),
                   color: AppColors.warning,
                   tooltip: s.t(
@@ -1348,7 +1239,10 @@ class _SliderRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: AppText.body),
-          Text(display, style: AppText.bodyStrong.copyWith(color: AppColors.brand)),
+          Text(
+            display,
+            style: AppText.bodyStrong.copyWith(color: AppColors.brand),
+          ),
         ],
       ),
       SliderTheme(
@@ -1363,224 +1257,4 @@ class _SliderRow extends StatelessWidget {
       ),
     ],
   );
-}
-
-// ── Tab 4 — Payments ─────────────────────────────────────────────────────────
-
-class _PaymentsTab extends StatelessWidget {
-  final AppStore store;
-  const _PaymentsTab({required this.store});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = store;
-    final awarded = s.savedBids.where((r) {
-      final ad = s.getAnalyticsDatum(_sourceId(r));
-      final st = (ad['status'] as String?) ?? 'saved';
-      return st == 'awarded' || st == 'closed';
-    }).toList();
-
-    num totalExpected = 0;
-    num totalReceived = 0;
-    for (final r in awarded) {
-      final ad = s.getAnalyticsDatum(_sourceId(r));
-      totalExpected += (ad['po_value'] as num?) ?? 0;
-      totalReceived += (ad['amount_received'] as num?) ?? 0;
-    }
-    final totalPending = totalExpected - totalReceived;
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpace.gutter,
-            AppSpace.md,
-            AppSpace.gutter,
-            AppSpace.sm,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _MetricCard(
-                  label: s.t('Total Expected', 'कुल अपेक्षित'),
-                  value: totalExpected > 0 ? _money(totalExpected) : '—',
-                ),
-              ),
-              const SizedBox(width: AppSpace.sm),
-              Expanded(
-                child: _MetricCard(
-                  label: s.t('Received', 'प्राप्त'),
-                  value: totalReceived > 0 ? _money(totalReceived) : '—',
-                  color: AppColors.brand,
-                ),
-              ),
-              const SizedBox(width: AppSpace.sm),
-              Expanded(
-                child: _MetricCard(
-                  label: s.t('Pending', 'लंबित'),
-                  value: totalPending > 0 ? _money(totalPending) : '—',
-                  color: AppColors.warning,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: awarded.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpace.gutter),
-                    child: Text(
-                      s.t(
-                        "No awarded orders yet. Mark bids as 'Awarded' in Financial to track payments.",
-                        "अभी कोई पुरस्कृत ऑर्डर नहीं। भुगतान ट्रैक करने के लिए Financial में 'Awarded' चुनें।",
-                      ),
-                      textAlign: TextAlign.center,
-                      style: AppText.body.copyWith(color: AppColors.textSecondary),
-                    ),
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpace.gutter,
-                    AppSpace.xs,
-                    AppSpace.gutter,
-                    80,
-                  ),
-                  itemCount: awarded.length,
-                  separatorBuilder: (_, i) => const SizedBox(height: AppSpace.md),
-                  itemBuilder: (context, i) =>
-                      _PaymentCard(store: s, row: awarded[i]),
-                ),
-        ),
-      ],
-    );
-  }
-}
-
-class _PaymentCard extends StatelessWidget {
-  final AppStore store;
-  final Map<String, dynamic> row;
-  const _PaymentCard({required this.store, required this.row});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = store;
-    final sourceId = _sourceId(row);
-    final ad = s.getAnalyticsDatum(sourceId);
-    final poValue = (ad['po_value'] as num?) ?? 0;
-    final received = (ad['amount_received'] as num?) ?? 0;
-    final outstanding = poValue - received;
-
-    final deliveryAt = DateTime.tryParse(ad['delivery_date'] as String? ?? '');
-    final expectedPayment = deliveryAt?.add(const Duration(days: 15));
-    final invoiceAt = DateTime.tryParse(ad['invoice_date'] as String? ?? '');
-    final payAt = DateTime.tryParse(ad['payment_received_date'] as String? ?? '');
-
-    // Status
-    String payStatus = 'pending';
-    if (poValue > 0 && received >= poValue) {
-      payStatus = 'paid';
-    } else if (received > 0) {
-      payStatus = 'partial';
-    } else if (expectedPayment != null &&
-        expectedPayment.isBefore(DateTime.now()) &&
-        received == 0) {
-      payStatus = 'overdue';
-    }
-
-    final statusColor = switch (payStatus) {
-      'paid' => AppColors.brand,
-      'partial' => AppColors.warning,
-      'overdue' => AppColors.danger,
-      _ => AppColors.textSecondary,
-    };
-    final statusLabel = switch (payStatus) {
-      'paid' => s.t('Paid', 'भुगतान हो गया'),
-      'partial' => s.t('Partial', 'आंशिक'),
-      'overdue' => s.t('Overdue', 'अतिदेय'),
-      _ => s.t('Pending', 'लंबित'),
-    };
-
-    return AppCard(
-      padding: const EdgeInsets.all(AppSpace.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _title(row),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.bodyStrong,
-                ),
-              ),
-              StatusChip(
-                statusLabel,
-                tone: switch (payStatus) {
-                  'paid' => StatusTone.success,
-                  'overdue' => StatusTone.danger,
-                  'partial' => StatusTone.warning,
-                  _ => StatusTone.neutral,
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpace.md),
-          _CostField(
-            label: s.t('PO Value', 'PO मूल्य'),
-            initialValue: poValue > 0 ? poValue.toString() : '',
-            onChanged: (v) {
-              s.saveAnalyticsDatum(sourceId, {'po_value': num.tryParse(v)});
-            },
-          ),
-          _CostField(
-            label: s.t('Received', 'प्राप्त'),
-            initialValue: received > 0 ? received.toString() : '',
-            onChanged: (v) {
-              s.saveAnalyticsDatum(sourceId, {'amount_received': num.tryParse(v)});
-            },
-          ),
-          if (outstanding > 0) ...[
-            const SizedBox(height: AppSpace.sm),
-            Row(
-              children: [
-                Text(
-                  s.t('Outstanding: ', 'बकाया: '),
-                  style: AppText.caption,
-                ),
-                Text(
-                  _money(outstanding),
-                  style: AppText.bodyStrong.copyWith(color: statusColor),
-                ),
-              ],
-            ),
-          ],
-          if (expectedPayment != null) ...[
-            const SizedBox(height: AppSpace.xs),
-            Text(
-              '${s.t('Est. Payment Date', 'अनु. भुगतान तिथि')}: ${_fmt(expectedPayment)} (Est.)',
-              style: AppText.caption.copyWith(color: AppColors.textHint),
-            ),
-          ],
-          if (invoiceAt != null) ...[
-            const SizedBox(height: AppSpace.xs),
-            Text(
-              '${s.t('Invoice', 'चालान')}: ${_fmt(invoiceAt)}',
-              style: AppText.caption,
-            ),
-          ],
-          if (payAt != null) ...[
-            const SizedBox(height: AppSpace.xs),
-            Text(
-              '${s.t('Payment Received', 'भुगतान प्राप्त')}: ${_fmt(payAt)}',
-              style: AppText.caption.copyWith(color: AppColors.brand),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 }
