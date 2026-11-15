@@ -14,10 +14,13 @@ enum ToolGroup {
     'बोली दस्तावेज़',
     'Declarations and certificates your bid asks for.',
     'आपकी बोली में माँगी जाने वाली घोषणाएँ और प्रमाणपत्र।',
+  ),
+  analysis(
+    'Analysis',
+    'विश्लेषण',
+    'Check your eligibility and assess bid requirements.',
+    'अपनी पात्रता जाँचें और बोली आवश्यकताओं का आकलन करें।',
   );
-
-  // Future groups, e.g. `calculators`, `financing`, once those tools are
-  // moved onto this registry.
 
   final String titleEn;
   final String titleHi;
@@ -71,6 +74,17 @@ class ToolEntry {
 }
 
 const List<ToolEntry> kTools = [
+  ToolEntry(
+    id: 'eligibility-checker',
+    route: '/eligibility',
+    icon: Icons.checklist_outlined,
+    group: ToolGroup.analysis,
+    docCategory: DocCategory.templates,
+    titleEn: 'Bid Eligibility Checker',
+    titleHi: 'बोली पात्रता जाँच',
+    descriptionEn: 'Check if you meet a specific bid\'s requirements',
+    descriptionHi: 'जाँचें कि आप किसी विशिष्ट बोली की शर्तें पूरी करते हैं',
+  ),
   ToolEntry(
     id: 'mii-certificate',
     route: '/tool-mii',

@@ -710,8 +710,19 @@ class _BidCard extends StatelessWidget {
               ),
               const SizedBox(height: AppSpace.sm),
               AppButton(
-                label: s.t('View on GeM', 'GeM पर देखें'),
+                label: s.t('Check eligibility', 'पात्रता जाँचें'),
                 variant: AppButtonVariant.secondary,
+                icon: Icons.checklist_outlined,
+                onPressed: () => Navigator.pushNamed(
+                  context,
+                  '/eligibility',
+                  arguments: bid['source_id'] as String,
+                ),
+              ),
+              const SizedBox(height: AppSpace.sm),
+              AppButton(
+                label: s.t('View on GeM', 'GeM पर देखें'),
+                variant: AppButtonVariant.tertiary,
                 trailingIcon: Icons.open_in_new,
                 onPressed: () =>
                     openLink(context, s, bid['source_url'] as String),
