@@ -1367,78 +1367,15 @@ class AppStore extends ChangeNotifier {
   }
 
   /// Fetches the total active bids count on GeM and the count of bids closing
-  /// within the next 2 days. Uses the undocumented GeM bid-search endpoint;
-  /// silently no-ops on network failure (tiles show '--').
+  /// Count of GeM bids whose closing date is still in the future, from Supabase.
+  /// Silently no-ops on failure (tile shows '—').
   Future<void> loadGemStats() async {
     try {
-      // Handshake: get a session cookie + CSRF token from the advance-search page.
-      final sessResp = await http
-          .get(
-            Uri.parse('https://bidplus.gem.gov.in/advance-search'),
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36',
-              'Accept': 'text/html,*/*',
-            },
-          )
-          .timeout(const Duration(seconds: 20));
-      if (sessResp.statusCode != 200) return;
-
-      final cookies = sessResp.headers['set-cookie'] ?? '';
-      final csrfMatch =
-          RegExp(r'name="csrf_bd_gem_nk"\s+value="([^"]+)"').firstMatch(sessResp.body);
-      if (csrfMatch == null) return;
-      final csrfToken = csrfMatch.group(1)!;
-
-      final postHeaders = {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'X-Requested-With': 'XMLHttpRequest',
-        'Referer': 'https://bidplus.gem.gov.in/advance-search',
-        'Origin': 'https://bidplus.gem.gov.in',
-        'Cookie': cookies,
-      };
-
-      String buildBody(Map<String, dynamic> payload) =>
-          'payload=${Uri.encodeComponent(jsonEncode(payload))}'
-          '&csrf_bd_gem_nk=${Uri.encodeComponent(csrfToken)}';
-
-      int? parseCount(http.Response r) {
-        if (r.statusCode != 200) return null;
-        final j = jsonDecode(r.body);
-        if (j is Map && j['code'] == 200) {
-          return (j['response']?['response']?['numFound'] as num?)?.toInt();
-        }
-        return null;
-      }
-
-      // All active bids across GeM (no date filter = everything currently live).
-      final activeResp = await http
-          .post(
-            Uri.parse('https://bidplus.gem.gov.in/search-bids'),
-            headers: postHeaders,
-            body: buildBody({'searchType': 'all', 'page': 1}),
-          )
-          .timeout(const Duration(seconds: 20));
-      gemActiveBids = parseCount(activeResp);
-
-      // Bids closing within the next 2 days.
-      final today = DateTime.now();
-      final twoDaysOut = today.add(const Duration(days: 2));
-      final fmt = DateFormat('dd/MM/yyyy');
-      final deadlineResp = await http
-          .post(
-            Uri.parse('https://bidplus.gem.gov.in/search-bids'),
-            headers: postHeaders,
-            body: buildBody({
-              'searchType': 'all',
-              'bid_closing_date_from': fmt.format(today),
-              'bid_closing_date_to': fmt.format(twoDaysOut),
-              'page': 1,
-            }),
-          )
-          .timeout(const Duration(seconds: 20));
-      gemDeadlinesCount = parseCount(deadlineResp);
+      if (client == null) return;
+      final result = await client!.rpc('gem_active_bids_count');
+      gemActiveBids = (result as num?)?.toInt();
     } catch (_) {
-      // Network unavailable or API changed — fields stay null; tiles show '--'.
+      // Network or DB unavailable — field stays null; tile shows '—'.
     }
     notifyListeners();
   }
