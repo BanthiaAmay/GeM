@@ -1283,8 +1283,6 @@ class _SimulatorTab extends StatefulWidget {
 
 class _SimulatorTabState extends State<_SimulatorTab> {
   double _winRate = 0.5;
-  double _costOverrun = 0.0;
-  double _paymentDelay = 30;
   final Set<String> _selected = {};
   bool _selectionInit = false;
 
@@ -1304,7 +1302,6 @@ class _SimulatorTabState extends State<_SimulatorTab> {
     final s = widget.store;
     final bids = s.savedBids;
 
-    num totalEmdSel = 0;
     num totalRevSel = 0;
     num totalCostSel = 0;
     int selCount = 0;
@@ -1312,18 +1309,6 @@ class _SimulatorTabState extends State<_SimulatorTab> {
       final sid = _sourceId(r);
       if (!_selected.contains(sid)) continue;
       selCount++;
-      final b = _bid(r);
-      final d = Map<String, dynamic>.from(b['details'] as Map? ?? {});
-      final req = (d['emd_required'] ?? '').toString().toLowerCase();
-      if (req.isNotEmpty &&
-          req != 'no' &&
-          req != 'nil' &&
-          req != 'none' &&
-          req != '0') {
-        final raw =
-            (d['emd_amount'] ?? '').toString().replaceAll(',', '');
-        totalEmdSel += num.tryParse(raw) ?? 0;
-      }
       final ad = s.getAnalyticsDatum(sid);
       // Use user-entered data as baseline; fall back to tender value estimates
       final sp = (ad['selling_price'] as num?) ?? 0;
@@ -1333,10 +1318,8 @@ class _SimulatorTabState extends State<_SimulatorTab> {
 
     final expWins = (selCount * _winRate).ceil();
     final expRev = totalRevSel * _winRate;
-    final expCost = totalCostSel * (1 + _costOverrun);
+    final expCost = totalCostSel;
     final expProfit = expRev - expCost;
-    final workingCap =
-        (totalEmdSel + expCost - expRev).clamp(0, double.infinity);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
@@ -1395,24 +1378,6 @@ class _SimulatorTabState extends State<_SimulatorTab> {
                   max: 1,
                   display: '${(_winRate * 100).round()}%',
                   onChanged: (v) => setState(() => _winRate = v),
-                ),
-                const SizedBox(height: AppSpace.md),
-                _SliderRow(
-                  label: s.t('Cost Overrun', 'लागत वृद्धि'),
-                  value: _costOverrun,
-                  min: 0,
-                  max: 0.3,
-                  display: '+${(_costOverrun * 100).round()}%',
-                  onChanged: (v) => setState(() => _costOverrun = v),
-                ),
-                const SizedBox(height: AppSpace.md),
-                _SliderRow(
-                  label: s.t('Payment Delay', 'भुगतान विलंब'),
-                  value: _paymentDelay,
-                  min: 0,
-                  max: 90,
-                  display: '${_paymentDelay.round()} days',
-                  onChanged: (v) => setState(() => _paymentDelay = v),
                 ),
               ],
             ),
@@ -1476,22 +1441,6 @@ class _SimulatorTabState extends State<_SimulatorTab> {
                   label: s.t('Expected Net Profit', 'अपेक्षित शुद्ध लाभ'),
                   value: expRev > 0 ? _money(expProfit) : '—',
                   color: expProfit >= 0 ? AppColors.brand : AppColors.danger,
-                ),
-              ),
-              SizedBox(
-                width: MediaQuery.of(context).size.width -
-                    AppSpace.gutter * 2,
-                child: _MetricCard(
-                  label: s.t(
-                    'Required Working Capital',
-                    'आवश्यक कार्यशील पूंजी',
-                  ),
-                  value: workingCap > 0 ? _money(workingCap) : _money(0),
-                  color: AppColors.warning,
-                  tooltip: s.t(
-                    'Estimated capital needed before receiving payments (EMD + costs − expected revenue).',
-                    'भुगतान प्राप्त होने से पहले आवश्यक पूंजी (EMD + लागत − राजस्व)।',
-                  ),
                 ),
               ),
             ],
