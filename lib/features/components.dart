@@ -277,6 +277,44 @@ class _AppButtonState extends State<AppButton> {
   }
 }
 
+/// Wraps [child] with subtle press-scale feedback (0.98) without adding a
+/// second gesture recognizer — it only *observes* pointer down/up via
+/// [Listener], which never enters the tap gesture arena. The child's own
+/// tap handling (`InkWell`, `IconButton`, `PopupMenuButton`, ...) is
+/// untouched and fires exactly once, same as if this wrapper weren't here.
+/// Skips the animation under [Motion.reduced].
+class Pressable extends StatefulWidget {
+  final Widget child;
+  final double scale;
+  const Pressable({super.key, required this.child, this.scale = 0.98});
+
+  @override
+  State<Pressable> createState() => _PressableState();
+}
+
+class _PressableState extends State<Pressable> {
+  bool _pressed = false;
+  void _set(bool v) {
+    if (_pressed != v) setState(() => _pressed = v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduced = Motion.reduced(context);
+    return Listener(
+      onPointerDown: (_) => _set(true),
+      onPointerUp: (_) => _set(false),
+      onPointerCancel: (_) => _set(false),
+      child: AnimatedScale(
+        scale: !reduced && _pressed ? widget.scale : 1,
+        duration: Motion.of(context, Motion.fast),
+        curve: Motion.standard,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
 /// Icon-only button: 48px tap target, 24px glyph, required tooltip so it
 /// is always labelled for assistive tech. [tonal] adds a quiet circle.
 class AppIconButton extends StatelessWidget {
@@ -295,14 +333,17 @@ class AppIconButton extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => IconButton(
-    onPressed: onPressed,
-    tooltip: tooltip,
-    icon: Icon(icon, color: color),
-    style: tonal
-        ? IconButton.styleFrom(backgroundColor: AppColors.surfaceMuted)
-        : null,
-  );
+  Widget build(BuildContext context) {
+    final button = IconButton(
+      onPressed: onPressed,
+      tooltip: tooltip,
+      icon: Icon(icon, color: color),
+      style: tonal
+          ? IconButton.styleFrom(backgroundColor: AppColors.surfaceMuted)
+          : null,
+    );
+    return onPressed == null ? button : Pressable(child: button);
+  }
 }
 
 // ─────────────────────────── Surfaces ───────────────────────────
@@ -372,7 +413,9 @@ class AppCard extends StatelessWidget {
         type: MaterialType.transparency,
         child: onTap == null
             ? card
-            : InkWell(borderRadius: r, onTap: onTap, child: card),
+            : Pressable(
+                child: InkWell(borderRadius: r, onTap: onTap, child: card),
+              ),
       ),
     );
     return semanticLabel == null
@@ -578,48 +621,52 @@ class AppListTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: AppRadius.card,
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: AppSize.tap),
-      child: Row(
-        children: [
-          if (icon != null) ...[
-            DecoratedBox(
-              decoration: const BoxDecoration(
-                color: AppColors.accentInfoTint,
-                shape: BoxShape.circle,
-              ),
-              child: SizedBox(
-                width: 40,
-                height: 40,
-                child: DepthIcon(
-                  icon,
-                  size: AppIconSize.md - 4,
-                  color: AppColors.accentInfo,
+  Widget build(BuildContext context) {
+    final tile = InkWell(
+      onTap: onTap,
+      borderRadius: AppRadius.card,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: AppSize.tap),
+        child: Row(
+          children: [
+            if (icon != null) ...[
+              DecoratedBox(
+                decoration: const BoxDecoration(
+                  color: AppColors.accentInfoTint,
+                  shape: BoxShape.circle,
+                ),
+                child: SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: DepthIcon(
+                    icon,
+                    size: AppIconSize.md - 4,
+                    color: AppColors.accentInfo,
+                  ),
                 ),
               ),
+              const SizedBox(width: AppSpace.md),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AppText.body),
+                  if (subtitle != null)
+                    Text(subtitle!, style: AppText.caption),
+                ],
+              ),
             ),
-            const SizedBox(width: AppSpace.md),
+            trailing ??
+                (onTap != null
+                    ? const Icon(Icons.chevron_right, size: AppIconSize.md)
+                    : const SizedBox.shrink()),
           ],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: AppText.body),
-                if (subtitle != null) Text(subtitle!, style: AppText.caption),
-              ],
-            ),
-          ),
-          trailing ??
-              (onTap != null
-                  ? const Icon(Icons.chevron_right, size: AppIconSize.md)
-                  : const SizedBox.shrink()),
-        ],
+        ),
       ),
-    ),
-  );
+    );
+    return onTap == null ? tile : Pressable(child: tile);
+  }
 }
 
 // ─────────────────── Loading / empty / error ───────────────────
@@ -1149,46 +1196,52 @@ class AppDropdownChip<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final current = options.firstWhere((o) => o.$1 == value).$2;
-    return PopupMenuButton<T>(
-      tooltip: semanticLabel,
-      onSelected: onChanged,
-      initialValue: value,
-      position: PopupMenuPosition.under,
-      itemBuilder: (context) => [
-        for (final (v, label) in options)
-          PopupMenuItem<T>(
-            value: v,
-            height: AppSize.tap,
-            child: Row(
-              children: [
-                Expanded(child: Text(label, style: AppText.body)),
-                if (v == value) const Icon(Icons.check, size: AppIconSize.sm),
-              ],
-            ),
-          ),
-      ],
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: AppSize.tap),
-        child: Center(
-          widthFactor: 1,
-          child: Container(
-            height: AppSize.buttonSm,
-            padding: const EdgeInsets.only(
-              left: AppSpace.lg,
-              right: AppSpace.md,
-            ),
-            decoration: const ShapeDecoration(
-              shape: StadiumBorder(
-                side: BorderSide(color: AppColors.borderStrong, width: 1.4),
+    return Pressable(
+      child: PopupMenuButton<T>(
+        tooltip: semanticLabel,
+        onSelected: onChanged,
+        initialValue: value,
+        position: PopupMenuPosition.under,
+        itemBuilder: (context) => [
+          for (final (v, label) in options)
+            PopupMenuItem<T>(
+              value: v,
+              height: AppSize.tap,
+              child: Row(
+                children: [
+                  Expanded(child: Text(label, style: AppText.body)),
+                  if (v == value)
+                    const Icon(Icons.check, size: AppIconSize.sm),
+                ],
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(current, style: AppText.label.copyWith(fontSize: 13)),
-                const SizedBox(width: AppSpace.xs),
-                const Icon(Icons.keyboard_arrow_down, size: AppIconSize.md - 4),
-              ],
+        ],
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: AppSize.tap),
+          child: Center(
+            widthFactor: 1,
+            child: Container(
+              height: AppSize.buttonSm,
+              padding: const EdgeInsets.only(
+                left: AppSpace.lg,
+                right: AppSpace.md,
+              ),
+              decoration: const ShapeDecoration(
+                shape: StadiumBorder(
+                  side: BorderSide(color: AppColors.borderStrong, width: 1.4),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(current, style: AppText.label.copyWith(fontSize: 13)),
+                  const SizedBox(width: AppSpace.xs),
+                  const Icon(
+                    Icons.keyboard_arrow_down,
+                    size: AppIconSize.md - 4,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

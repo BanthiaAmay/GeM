@@ -2,11 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../core/models.dart' show money;
+import '../core/motion.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
 import 'bid_compare.dart' show CompareBar, CompareToggleButton;
 import 'bid_filter.dart';
 import 'components.dart';
+import 'onboarding_widgets.dart' show StaggeredEntrance;
 import 'widgets.dart' show openLink;
 
 enum _FeedView { matching, latest }
@@ -165,6 +167,91 @@ class _BidFeedState extends State<BidFeed> {
     );
   }
 
+  /// Crossfades between loading/error/empty/content. The 'content' key
+  /// stays stable across filter changes (only its inner list differs),
+  /// so filtering never disposes/replays the cards' own entrance state —
+  /// only a genuine state-kind change (e.g. loading finishing) animates.
+  Widget _buildStateBody(BuildContext context, AppStore s) {
+    final String stateKey;
+    final Widget body;
+    if (loading) {
+      stateKey = 'loading';
+      body = StateView(
+        kind: StateKind.loading,
+        title: s.t('Loading bids', 'बोलियाँ लोड हो रही हैं'),
+      );
+    } else if (error != null) {
+      stateKey = 'error';
+      body = StateView(
+        kind: StateKind.error,
+        title: error!,
+        actionLabel: s.t('Retry', 'फिर कोशिश करें'),
+        onAction: refresh,
+      );
+    } else if (bids.isEmpty) {
+      stateKey = 'empty';
+      body = _empty(s);
+    } else {
+      stateKey = 'content';
+      body = Column(
+        key: const ValueKey('content-inner'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Result count when filters are active
+          if (_currentFilter.hasAny) ...[
+            Builder(
+              builder: (_) {
+                final shown = _displayBids.length;
+                final total = bids.length;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpace.sm),
+                  child: Text(
+                    s.t(
+                      'Showing $shown of $total bids',
+                      '$total में से $shown बोलियाँ दिख रही हैं',
+                    ),
+                    style: AppText.caption.copyWith(color: AppColors.textHint),
+                  ),
+                );
+              },
+            ),
+          ],
+          if (_displayBids.isEmpty && bids.isNotEmpty)
+            StateView(
+              kind: StateKind.empty,
+              title: s.t(
+                'No bids match your filters',
+                'कोई बोली फ़िल्टर से नहीं मिली',
+              ),
+              message: s.t(
+                'Try removing some filters or clearing all.',
+                'कुछ फ़िल्टर हटाएँ या सब हटाएँ।',
+              ),
+              actionLabel: s.t('Clear filters', 'फ़िल्टर हटाएँ'),
+              onAction: () => _setCurrentFilter(BidFilterState.empty),
+            ),
+          for (final (i, bid) in _displayBids.indexed)
+            StaggeredEntrance(
+              key: ValueKey(bid['source_id'] as String? ?? i),
+              index: i.clamp(0, 8),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: AppSpace.lg),
+                child: _BidCard(store: s, bid: bid),
+              ),
+            ),
+        ],
+      );
+    }
+    return AnimatedSwitcher(
+      duration: Motion.of(context, Motion.normal),
+      switchInCurve: Motion.enter,
+      switchOutCurve: Motion.exit,
+      transitionBuilder: (child, animation) =>
+          FadeTransition(opacity: animation, child: child),
+      child: KeyedSubtree(key: ValueKey(stateKey), child: body),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = widget.store;
@@ -253,60 +340,7 @@ class _BidFeedState extends State<BidFeed> {
         ),
 
         // ── Content ─────────────────────────────────────────────────────────
-        if (loading)
-          StateView(
-            kind: StateKind.loading,
-            title: s.t('Loading bids', 'बोलियाँ लोड हो रही हैं'),
-          )
-        else if (error != null)
-          StateView(
-            kind: StateKind.error,
-            title: error!,
-            actionLabel: s.t('Retry', 'फिर कोशिश करें'),
-            onAction: refresh,
-          )
-        else if (bids.isEmpty)
-          _empty(s),
-        if (!loading && error == null) ...[
-          // Result count when filters are active
-          if (_currentFilter.hasAny) ...[
-            Builder(
-              builder: (_) {
-                final shown = _displayBids.length;
-                final total = bids.length;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpace.sm),
-                  child: Text(
-                    s.t(
-                      'Showing $shown of $total bids',
-                      '$total में से $shown बोलियाँ दिख रही हैं',
-                    ),
-                    style: AppText.caption.copyWith(color: AppColors.textHint),
-                  ),
-                );
-              },
-            ),
-          ],
-          if (_displayBids.isEmpty && bids.isNotEmpty)
-            StateView(
-              kind: StateKind.empty,
-              title: s.t(
-                'No bids match your filters',
-                'कोई बोली फ़िल्टर से नहीं मिली',
-              ),
-              message: s.t(
-                'Try removing some filters or clearing all.',
-                'कुछ फ़िल्टर हटाएँ या सब हटाएँ।',
-              ),
-              actionLabel: s.t('Clear filters', 'फ़िल्टर हटाएँ'),
-              onAction: () => _setCurrentFilter(BidFilterState.empty),
-            ),
-          for (final bid in _displayBids)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpace.lg),
-              child: _BidCard(store: s, bid: bid),
-            ),
-        ],
+        _buildStateBody(context, s),
         const SizedBox(height: AppSpace.xxl),
         AppButton(
           label: s.t('Browse official GeM bids', 'आधिकारिक GeM बोलियाँ देखें'),
@@ -794,8 +828,8 @@ class _DocChips extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.sheet,
       ),
       builder: (_) => SafeArea(
         child: Padding(

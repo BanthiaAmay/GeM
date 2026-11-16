@@ -561,7 +561,10 @@ class _HomeTab extends StatelessWidget {
         const SizedBox(height: AppSpace.xxxl),
         StaggeredEntrance(index: 1, child: _BidAlertsSection(store: s)),
         const SizedBox(height: AppSpace.xxxl),
-        _QuickActionsSection(store: s, onNavigate: onNavigate),
+        StaggeredEntrance(
+          index: 2,
+          child: _QuickActionsSection(store: s, onNavigate: onNavigate),
+        ),
         const SizedBox(height: AppSpace.xxxl),
         StaggeredEntrance(index: 3, child: _LearnSection(store: s)),
       ],
@@ -1344,39 +1347,48 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
             ],
           ),
           const SizedBox(height: AppSpace.md),
-          if (rows.isEmpty)
-            AppCard(
-              tone: AppCardTone.outlined,
-              padding: const EdgeInsets.all(AppSpace.lg),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.notifications_none_outlined,
-                    color: AppColors.textHint,
-                    size: AppIconSize.md,
+          AnimatedSwitcher(
+            duration: Motion.of(context, Motion.normal),
+            switchInCurve: Motion.enter,
+            switchOutCurve: Motion.exit,
+            transitionBuilder: (child, animation) =>
+                FadeTransition(opacity: animation, child: child),
+            child: rows.isEmpty
+                ? AppCard(
+                    key: const ValueKey('empty'),
+                    tone: AppCardTone.outlined,
+                    padding: const EdgeInsets.all(AppSpace.lg),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.notifications_none_outlined,
+                          color: AppColors.textHint,
+                          size: AppIconSize.md,
+                        ),
+                        const SizedBox(width: AppSpace.md),
+                        Text(
+                          _unreadOnly
+                              ? s.t('No unread alerts', 'कोई अपठित अलर्ट नहीं')
+                              : s.t('No alerts yet', 'अभी कोई अलर्ट नहीं'),
+                          style: AppText.secondary(AppText.bodySmall),
+                        ),
+                      ],
+                    ),
+                  )
+                : Column(
+                    key: const ValueKey('content'),
+                    children: [
+                      for (int i = 0; i < rows.length; i++) ...[
+                        if (i > 0) const SizedBox(height: AppSpace.sm),
+                        _BidAlertRow(
+                          alert: rows[i],
+                          onTap: () =>
+                              Navigator.of(context).pushNamed('/alerts'),
+                        ),
+                      ],
+                    ],
                   ),
-                  const SizedBox(width: AppSpace.md),
-                  Text(
-                    _unreadOnly
-                        ? s.t('No unread alerts', 'कोई अपठित अलर्ट नहीं')
-                        : s.t('No alerts yet', 'अभी कोई अलर्ट नहीं'),
-                    style: AppText.secondary(AppText.bodySmall),
-                  ),
-                ],
-              ),
-            )
-          else
-            Column(
-              children: [
-                for (int i = 0; i < rows.length; i++) ...[
-                  if (i > 0) const SizedBox(height: AppSpace.sm),
-                  _BidAlertRow(
-                    alert: rows[i],
-                    onTap: () => Navigator.of(context).pushNamed('/alerts'),
-                  ),
-                ],
-              ],
-            ),
+          ),
         ],
       ),
     );

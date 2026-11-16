@@ -134,16 +134,66 @@ class _BarsPainter extends CustomPainter {
       old.zero != zero;
 }
 
-class ChartGrowIn extends StatelessWidget {
+/// Grows a chart in from 0 on first build. If [seed] changes on a later
+/// build (the underlying data actually changed — e.g. after a Financial
+/// tab save), it regrows from 0 again; an unrelated rebuild with the same
+/// [seed] leaves the chart exactly where it is, never replaying.
+class ChartGrowIn extends StatefulWidget {
   final Widget Function(double t) builder;
-  const ChartGrowIn({super.key, required this.builder});
+  final Object? seed;
+  const ChartGrowIn({super.key, required this.builder, this.seed});
 
   @override
-  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
-    tween: Tween<double>(begin: 0, end: 1),
-    duration: Motion.of(context, Motion.slow),
-    curve: Motion.enter,
-    builder: (context, t, _) => builder(t),
+  State<ChartGrowIn> createState() => _ChartGrowInState();
+}
+
+class _ChartGrowInState extends State<ChartGrowIn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _curved;
+  bool _playedOnce = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: Motion.slow);
+    _curved = CurvedAnimation(parent: _controller, curve: Motion.enter);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_playedOnce) return;
+    _playedOnce = true;
+    if (Motion.reduced(context)) {
+      _controller.value = 1;
+    } else {
+      _controller.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ChartGrowIn old) {
+    super.didUpdateWidget(old);
+    if (widget.seed != old.seed) {
+      if (Motion.reduced(context)) {
+        _controller.value = 1;
+      } else {
+        _controller.forward(from: 0);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _curved,
+    builder: (context, _) => widget.builder(_curved.value),
   );
 }
 
@@ -189,6 +239,7 @@ class RangeChart extends StatelessWidget {
               ),
               const SizedBox(height: AppSpace.md),
               ChartGrowIn(
+                seed: '$low,$high',
                 builder: (t) => SizedBox(
                   height: _barHeight,
                   width: double.infinity,
@@ -264,6 +315,7 @@ class CompositionBar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ChartGrowIn(
+                seed: slices.map((s) => '${s.label}:${s.value}').join('|'),
                 builder: (t) => ClipRRect(
                   borderRadius: BorderRadius.circular(_barHeight / 2),
                   child: SizedBox(
@@ -375,6 +427,7 @@ class ValueBars extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpace.sm),
                 ChartGrowIn(
+                  seed: '${i.label}:${i.value}',
                   builder: (t) => SizedBox(
                     height: _barHeight,
                     width: double.infinity,

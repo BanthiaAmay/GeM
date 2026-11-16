@@ -252,6 +252,8 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
 
     // Bid summary header
     widgets.add(_bidHeader());
+    widgets.add(const SizedBox(height: AppSpace.lg));
+    widgets.add(_profileAssumptionsNote());
     widgets.add(const SizedBox(height: AppSpace.xxl));
 
     if (_conditions.isEmpty) {
@@ -329,6 +331,40 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
     return widgets;
   }
 
+  /// What this check assumes from the user's own profile — self-reported
+  /// during onboarding, never independently verified — so the user can
+  /// see exactly why a relaxation might apply and correct it if it's
+  /// out of date, instead of it silently driving the result.
+  Widget _profileAssumptionsNote() {
+    return AppCard(
+      tone: AppCardTone.outlined,
+      padding: const EdgeInsets.all(AppSpace.md),
+      child: Row(
+        children: [
+          const Icon(Icons.badge_outlined, size: 18, color: AppColors.textHint),
+          const SizedBox(width: AppSpace.sm),
+          Expanded(
+            child: Text(
+              s.t(
+                'From your profile (self-reported): MSME ${_isMse ? "Yes" : "No"}, Startup ${_isStartup ? "Yes" : "No"}.',
+                'आपकी प्रोफ़ाइल से (स्वयं-रिपोर्ट किया गया): MSME ${_isMse ? "हाँ" : "नहीं"}, स्टार्टअप ${_isStartup ? "हाँ" : "नहीं"}।',
+              ),
+              style: AppText.caption.copyWith(color: AppColors.textSecondary),
+            ),
+          ),
+          const SizedBox(width: AppSpace.sm),
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, '/account'),
+            child: Text(
+              s.t('Update', 'अपडेट करें'),
+              style: AppText.label.copyWith(color: AppColors.accentInfo),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _bidHeader() {
     final closesAt = DateTime.tryParse(_bid['closes_at'] as String? ?? '');
     final closesDisplay = closesAt != null
@@ -404,6 +440,13 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
             s.t('Your annual turnover', 'आपका वार्षिक टर्नओवर'),
             style: AppText.caption,
           ),
+          Text(
+            s.t(
+              'From your profile — self-reported, update if outdated',
+              'आपकी प्रोफ़ाइल से — स्वयं-रिपोर्ट किया गया, पुराना हो तो अपडेट करें',
+            ),
+            style: AppText.caption.copyWith(color: AppColors.textHint),
+          ),
           const SizedBox(height: AppSpace.sm),
           ...bands.map((b) => RadioListTile<String>(
             title: Text(b.$2, style: AppText.bodySmall),
@@ -473,9 +516,12 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
             ),
             const SizedBox(height: AppSpace.sm),
             StatusChip(
-              s.t('MSME EMD exemption applies', 'MSME EMD छूट लागू'),
-              tone: StatusTone.success,
-              icon: Icons.check_circle_outline,
+              s.t(
+                'You may qualify for an MSE EMD exemption — verify with the buyer',
+                'आप MSE EMD छूट के पात्र हो सकते हैं — खरीदार से पुष्टि करें',
+              ),
+              tone: StatusTone.warning,
+              icon: Icons.info_outline,
             ),
           ],
         ),
@@ -555,6 +601,14 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
             onChanged: (v) {
               _experienceYears = double.tryParse(v);
             },
+          ),
+          const SizedBox(height: AppSpace.xs),
+          Text(
+            s.t(
+              'From your profile — self-reported, update if outdated',
+              'आपकी प्रोफ़ाइल से — स्वयं-रिपोर्ट किया गया, पुराना हो तो अपडेट करें',
+            ),
+            style: AppText.caption.copyWith(color: AppColors.textHint),
           ),
         ],
       ),
@@ -733,6 +787,17 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
     } else {
       final overall = overallVerdict(_results);
       widgets.add(_overallBadge(overall));
+      widgets.add(const SizedBox(height: AppSpace.sm));
+      widgets.add(
+        Text(
+          s.t(
+            'Preliminary check only — not an official GeM decision.',
+            'केवल प्रारंभिक जाँच — आधिकारिक GeM निर्णय नहीं।',
+          ),
+          textAlign: TextAlign.center,
+          style: AppText.caption.copyWith(color: AppColors.textHint),
+        ),
+      );
       widgets.add(const SizedBox(height: AppSpace.xxl));
 
       widgets.add(SectionHeader(
@@ -790,7 +855,7 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
         Icons.check_circle_outline,
       ),
       Verdict.notEligible => (
-        s.t('Not eligible', 'अपात्र'),
+        s.t('Potentially ineligible', 'संभवतः अपात्र'),
         StatusTone.danger,
         Icons.cancel_outlined,
       ),
@@ -798,6 +863,11 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
         s.t('Needs verification', 'सत्यापन आवश्यक'),
         StatusTone.warning,
         Icons.help_outline,
+      ),
+      Verdict.insufficientInformation => (
+        s.t('Insufficient information', 'अपर्याप्त जानकारी'),
+        StatusTone.neutral,
+        Icons.info_outline,
       ),
     };
     final (fg, bg) = switch (tone) {
@@ -832,8 +902,15 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
   Widget _resultCard(ConditionResult r) {
     final (itemState, trailing) = switch (r.verdict) {
       Verdict.eligible => (ItemState.done, s.t('Eligible', 'पात्र')),
-      Verdict.notEligible => (ItemState.attention, s.t('Not Eligible', 'अपात्र')),
+      Verdict.notEligible => (
+        ItemState.attention,
+        s.t('Potentially ineligible', 'संभवतः अपात्र'),
+      ),
       Verdict.needsVerification => (ItemState.pending, s.t('Verify', 'सत्यापित करें')),
+      Verdict.insufficientInformation => (
+        ItemState.pending,
+        s.t('Insufficient information', 'अपर्याप्त जानकारी'),
+      ),
     };
     return AppCard(
       tone: AppCardTone.muted,

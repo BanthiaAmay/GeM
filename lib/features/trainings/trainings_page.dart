@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../core/tokens.dart';
 import '../../data/app_store.dart';
 import '../components.dart';
+import '../onboarding_widgets.dart' show StaggeredEntrance;
 import '../widgets.dart';
 import '../youtube_video.dart';
 import 'training_data.dart';
@@ -340,15 +341,19 @@ class _ModuleGrid extends StatelessWidget {
         final allWatched = done == total;
         final quizPassed = s.trainingQuizPassed.contains(mod.id);
         final tint = _tints[i % _tints.length];
-        return _ModuleGridCard(
-          store: s,
-          module: mod,
-          index: i + 1,
-          done: done,
-          total: total,
-          allWatched: allWatched,
-          quizPassed: quizPassed,
-          tint: tint,
+        return StaggeredEntrance(
+          key: ValueKey(mod.id),
+          index: i.clamp(0, 8),
+          child: _ModuleGridCard(
+            store: s,
+            module: mod,
+            index: i + 1,
+            done: done,
+            total: total,
+            allWatched: allWatched,
+            quizPassed: quizPassed,
+            tint: tint,
+          ),
         );
       },
     );

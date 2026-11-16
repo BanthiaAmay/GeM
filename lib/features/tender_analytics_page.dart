@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../core/models.dart' show money;
+import '../core/motion.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
 import 'components.dart';
@@ -150,16 +151,31 @@ class _TenderAnalyticsPageState extends State<TenderAnalyticsPage> {
               child: ListenableBuilder(
                 listenable: s,
                 builder: (context, _) {
-                  if (s.savedBids.isEmpty) return _emptyState(context, s);
-                  return switch (_tab) {
-                    0 => _OverviewTab(
-                        store: s,
-                        onTabChange: (t) => setState(() => _tab = t),
-                      ),
-                    1 => _FinancialTab(store: s),
-                    2 => _SimulatorTab(store: s),
-                    _ => const SizedBox(),
-                  };
+                  final body = s.savedBids.isEmpty
+                      ? KeyedSubtree(
+                          key: const ValueKey('empty'),
+                          child: _emptyState(context, s),
+                        )
+                      : RepaintBoundary(
+                          key: ValueKey(_tab),
+                          child: switch (_tab) {
+                            0 => _OverviewTab(
+                                store: s,
+                                onTabChange: (t) => setState(() => _tab = t),
+                              ),
+                            1 => _FinancialTab(store: s),
+                            2 => _SimulatorTab(store: s),
+                            _ => const SizedBox(),
+                          },
+                        );
+                  return AnimatedSwitcher(
+                    duration: Motion.of(context, Motion.normal),
+                    switchInCurve: Motion.enter,
+                    switchOutCurve: Motion.exit,
+                    transitionBuilder: (child, animation) =>
+                        FadeTransition(opacity: animation, child: child),
+                    child: body,
+                  );
                 },
               ),
             ),
@@ -537,6 +553,8 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
 
   late bool _expanded;
   bool _saved = false; // true once explicitly saved this session
+  bool _saving = false; // true while a save is in flight
+  bool _syncFailed = false; // signed in, but the last save never reached Supabase
   bool _loadedFromStore = false; // guards one-time reload when store arrives
 
   // All cost field controllers owned by this state
@@ -658,7 +676,7 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
     super.dispose();
   }
 
-  void _saveAll() {
+  Future<void> _saveAll() async {
     final sourceId = _sourceId(widget.row);
     final data = <String, dynamic>{};
     for (final (key, _, _) in _costFields) {
@@ -675,9 +693,38 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
     }
     data['extra_costs_json'] = jsonEncode(extras);
     _loadedFromStore = true; // prevent store listener from overwriting edits
-    widget.store.saveAnalyticsDatum(sourceId, data);
-    setState(() => _saved = true);
+    setState(() {
+      _saving = true;
+      _syncFailed = false;
+    });
+    final synced = await widget.store.saveAnalyticsDatum(sourceId, data);
+    if (!mounted) return;
+    final failedWhileSignedIn = !synced && widget.store.signedIn;
+    setState(() {
+      _saving = false;
+      _saved = true;
+      _syncFailed = failedWhileSignedIn;
+    });
     _showMarginSummary();
+    if (failedWhileSignedIn) _showSyncFailedSnackBar();
+  }
+
+  void _showSyncFailedSnackBar() {
+    final s = widget.store;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          s.t(
+            'Saved on this device. Cloud sync failed.',
+            'इस डिवाइस पर सहेजा गया। क्लाउड सिंक विफल रहा।',
+          ),
+        ),
+        action: SnackBarAction(
+          label: s.t('Retry', 'फिर कोशिश करें'),
+          onPressed: _saveAll,
+        ),
+      ),
+    );
   }
 
   void _showMarginSummary() {
@@ -826,7 +873,7 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
     );
   }
 
-  void _deleteAll() {
+  Future<void> _deleteAll() async {
     final sourceId = _sourceId(widget.row);
     final empty = <String, dynamic>{};
     for (final (key, _, _) in _costFields) {
@@ -834,7 +881,10 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
     }
     empty['selling_price'] = null;
     empty['extra_costs_json'] = '[]';
-    widget.store.saveAnalyticsDatum(sourceId, empty);
+    setState(() => _saving = true);
+    final synced = await widget.store.saveAnalyticsDatum(sourceId, empty);
+    if (!mounted) return;
+    final failedWhileSignedIn = !synced && widget.store.signedIn;
     // Reset all controllers
     for (final (key, _, _) in _costFields) {
       _costCtrls[key]!.text = '';
@@ -849,7 +899,28 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
     }
     _extraLabels.clear();
     _extraAmounts.clear();
-    setState(() => _saved = false);
+    setState(() {
+      _saving = false;
+      _saved = false;
+      _syncFailed = false;
+    });
+    if (failedWhileSignedIn) {
+      final s = widget.store;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            s.t(
+              'Deleted on this device. Cloud sync failed.',
+              'इस डिवाइस पर हटाया गया। क्लाउड सिंक विफल रहा।',
+            ),
+          ),
+          action: SnackBarAction(
+            label: s.t('Retry', 'फिर कोशिश करें'),
+            onPressed: _deleteAll,
+          ),
+        ),
+      );
+    }
   }
 
   void _addExtraCost() {
@@ -890,10 +961,41 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
                   style: AppText.bodyStrong,
                 ),
               ),
-              if (_saved)
+              if (_saving)
+                const Padding(
+                  padding: EdgeInsets.only(left: AppSpace.sm),
+                  child: SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else if (_syncFailed)
                 Padding(
                   padding: const EdgeInsets.only(left: AppSpace.sm),
-                  child: Icon(Icons.check_circle, size: 16, color: AppColors.brand),
+                  child: GestureDetector(
+                    onTap: _saveAll,
+                    child: Tooltip(
+                      message: s.t(
+                        'Not synced — tap to retry',
+                        'सिंक नहीं हुआ — फिर कोशिश करने के लिए टैप करें',
+                      ),
+                      child: const Icon(
+                        Icons.cloud_off_outlined,
+                        size: 16,
+                        color: AppColors.warning,
+                      ),
+                    ),
+                  ),
+                )
+              else if (_saved)
+                Padding(
+                  padding: const EdgeInsets.only(left: AppSpace.sm),
+                  child: Icon(
+                    s.signedIn ? Icons.check_circle : Icons.check_circle_outline,
+                    size: 16,
+                    color: s.signedIn ? AppColors.brand : AppColors.textHint,
+                  ),
                 ),
             ],
           ),

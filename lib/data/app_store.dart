@@ -30,6 +30,13 @@ abstract class PushBridge {
   String? takeLaunchRoute();
 }
 
+/// Cloud-sync outcome for one bid's saved financial data.
+/// [local]: saved on this device only (not signed in) — never shown as
+/// a plain "Saved" success. [failed]: signed in, but the write to
+/// Supabase did not go through; the in-memory data is kept and the UI
+/// should offer a retry, never silently treat this as saved.
+enum AnalyticsSyncStatus { local, syncing, synced, failed }
+
 /// One message in a Saathi conversation: 'user' or 'model'.
 class SaathiTurn {
   final String role;
@@ -184,6 +191,12 @@ class AppStore extends ChangeNotifier {
   // ── Tender Analytics Data ──────────────────────────────────────────────────
   List<Map<String, dynamic>> analyticsData = [];
 
+  /// Cloud-sync state per `source_id`, surfaced by the Financial tab so a
+  /// signed-in user can see — and retry — a save that reached this device
+  /// but never reached Supabase. Never conflated with "saved": [local]
+  /// means durable only on this device, not synced.
+  final Map<String, AnalyticsSyncStatus> analyticsSyncStatus = {};
+
   Future<void> loadAnalyticsData() async {
     if (client == null || !signedIn) return;
     try {
@@ -196,7 +209,14 @@ class AppStore extends ChangeNotifier {
     } catch (_) {}
   }
 
-  Future<void> saveAnalyticsDatum(
+  /// Saves a bid's financial data. Always updates [analyticsData]
+  /// immediately so the UI never loses what the user typed. Returns
+  /// `true` only when the write is durably confirmed in Supabase —
+  /// `false` covers both "not signed in" (saved on this device only,
+  /// [AnalyticsSyncStatus.local]) and a genuine write failure while
+  /// signed in ([AnalyticsSyncStatus.failed]), which callers should
+  /// surface with a retry, never as a silent success.
+  Future<bool> saveAnalyticsDatum(
     String sourceId,
     Map<String, dynamic> data,
   ) async {
@@ -212,14 +232,26 @@ class AppStore extends ChangeNotifier {
     } else {
       analyticsData.add(row);
     }
+    if (client == null || !signedIn) {
+      analyticsSyncStatus[sourceId] = AnalyticsSyncStatus.local;
+      notifyListeners();
+      return false;
+    }
+    analyticsSyncStatus[sourceId] = AnalyticsSyncStatus.syncing;
     notifyListeners();
-    if (client == null || !signedIn) return;
     try {
       await client!
           .from('tender_analytics_data')
           .upsert(row, onConflict: 'user_id,source_id');
+      analyticsSyncStatus[sourceId] = AnalyticsSyncStatus.synced;
+      notifyListeners();
+      return true;
     } catch (_) {
-      // silent — in-memory data is correct; don't revert on upsert failure
+      // In-memory data is kept exactly as entered — never reverted just
+      // because the cloud write failed.
+      analyticsSyncStatus[sourceId] = AnalyticsSyncStatus.failed;
+      notifyListeners();
+      return false;
     }
   }
 
