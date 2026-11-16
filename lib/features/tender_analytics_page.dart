@@ -938,7 +938,9 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
                 Text(
                   _expanded
                       ? s.t('Hide details', 'विवरण छुपाएँ')
-                      : s.t('Enter / Edit Costs', 'लागत दर्ज / संपादित करें'),
+                      : _saved
+                          ? s.t('Edit Costs', 'लागत संपादित करें')
+                          : s.t('Enter Costs', 'लागत दर्ज करें'),
                   style: AppText.label.copyWith(color: AppColors.brand),
                 ),
                 Icon(
