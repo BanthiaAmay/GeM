@@ -406,6 +406,7 @@ class _OverviewTab extends StatelessWidget {
                   color: execCost != null
                       ? AppColors.ink
                       : AppColors.textHint,
+                  sub: s.t('per unit', 'प्रति इकाई'),
                   actionLabel: s.t('Calculate Costs', 'लागत दर्ज करें'),
                   onAction: () => onTabChange(1),
                   tooltip: s.t(
@@ -424,6 +425,7 @@ class _OverviewTab extends StatelessWidget {
                   color: revenue != null
                       ? AppColors.brand
                       : AppColors.textHint,
+                  sub: s.t('per unit', 'प्रति इकाई'),
                   tooltip: s.t(
                     'Sum of expected bid amounts entered in the Financial tab. Not guaranteed revenue.',
                     'Financial टैब में दर्ज अपेक्षित बिक्री मूल्यों का योग।',
@@ -445,6 +447,7 @@ class _OverviewTab extends StatelessWidget {
                           ? AppColors.brand
                           : AppColors.danger)
                       : AppColors.textHint,
+                  sub: s.t('per unit', 'प्रति इकाई'),
                   tooltip: s.t(
                     'Potential revenue minus estimated execution costs. Enter data in Financial tab.',
                     'संभावित राजस्व घटाएं अनुमानित निष्पादन लागत।',
@@ -1251,6 +1254,7 @@ class _CostField extends StatelessWidget {
             ],
             decoration: InputDecoration(
               prefixText: '₹ ',
+              suffixText: '/unit',
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: AppSpace.sm,
                 vertical: AppSpace.sm,
@@ -1420,6 +1424,7 @@ class _SimulatorTabState extends State<_SimulatorTab> {
                   label: s.t('Expected Revenue', 'अपेक्षित राजस्व'),
                   value: expRev > 0 ? _money(expRev) : '—',
                   color: AppColors.brand,
+                  sub: s.t('per unit', 'प्रति इकाई'),
                 ),
               ),
               SizedBox(
@@ -1430,6 +1435,7 @@ class _SimulatorTabState extends State<_SimulatorTab> {
                 child: _MetricCard(
                   label: s.t('Expected Cost', 'अपेक्षित लागत'),
                   value: expCost > 0 ? _money(expCost) : '—',
+                  sub: s.t('per unit', 'प्रति इकाई'),
                 ),
               ),
               SizedBox(
@@ -1441,6 +1447,7 @@ class _SimulatorTabState extends State<_SimulatorTab> {
                   label: s.t('Expected Net Profit', 'अपेक्षित शुद्ध लाभ'),
                   value: expRev > 0 ? _money(expProfit) : '—',
                   color: expProfit >= 0 ? AppColors.brand : AppColors.danger,
+                  sub: s.t('per unit', 'प्रति इकाई'),
                 ),
               ),
             ],
