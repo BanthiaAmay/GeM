@@ -200,9 +200,8 @@ class AppStore extends ChangeNotifier {
     String sourceId,
     Map<String, dynamic> data,
   ) async {
-    if (client == null || !signedIn) return;
     final row = {
-      'user_id': currentUser!.id,
+      'user_id': currentUser?.id ?? '',
       'source_id': sourceId,
       ...data,
       'updated_at': DateTime.now().toIso8601String(),
@@ -214,12 +213,13 @@ class AppStore extends ChangeNotifier {
       analyticsData.add(row);
     }
     notifyListeners();
+    if (client == null || !signedIn) return;
     try {
       await client!
           .from('tender_analytics_data')
           .upsert(row, onConflict: 'user_id,source_id');
     } catch (_) {
-      await loadAnalyticsData();
+      // silent — in-memory data is correct; don't revert on upsert failure
     }
   }
 

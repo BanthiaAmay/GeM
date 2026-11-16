@@ -292,9 +292,9 @@ class _OverviewTab extends StatelessWidget {
     final bids = s.savedBids;
     final active = bids.where(_isActive).toList();
 
-    final activeBidIds = {for (final r in active) _sourceId(r)};
+    final allBidIds = {for (final r in bids) _sourceId(r)};
     final adActive = s.analyticsData.where(
-      (d) => activeBidIds.contains(d['source_id'] as String? ?? ''),
+      (d) => allBidIds.contains(d['source_id'] as String? ?? ''),
     );
 
     // EMD: sum across active bids, respecting nil/unavailable per-bid
@@ -671,8 +671,8 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
       }
     }
     data['extra_costs_json'] = jsonEncode(extras);
-    widget.store.saveAnalyticsDatum(sourceId, data);
     _loadedFromStore = true; // prevent store listener from overwriting edits
+    widget.store.saveAnalyticsDatum(sourceId, data);
     setState(() => _saved = true);
     _showMarginSummary();
   }
