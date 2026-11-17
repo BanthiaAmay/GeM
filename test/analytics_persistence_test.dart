@@ -42,6 +42,48 @@ http.Response _signedInTokenResponse(http.Request request) => http.Response(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  // ---------------------------------------------------------------------------
+  // Phase 3B: getAnalyticsDatum unit tests
+  // ---------------------------------------------------------------------------
+  group('getAnalyticsDatum', () {
+    late SharedPreferences prefs;
+    late AppStore store;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
+      store = AppStore(prefs, client: null);
+    });
+
+    tearDown(() => store.dispose());
+
+    test('returns empty map when no data exists for sourceId', () {
+      final result = store.getAnalyticsDatum('GEM/NONEXISTENT');
+      expect(result, isEmpty);
+      expect(result, isA<Map<String, dynamic>>());
+    });
+
+    test('merges correctly when partial data saved twice', () async {
+      await store.saveAnalyticsDatum('GEM/MERGE', {'procurement_cost': 100});
+      await store.saveAnalyticsDatum('GEM/MERGE', {'selling_price': 500});
+      final result = store.getAnalyticsDatum('GEM/MERGE');
+      // Both keys should be present after two separate saves
+      expect(result['procurement_cost'], 100);
+      expect(result['selling_price'], 500);
+    });
+
+    test('later save overwrites same key', () async {
+      await store.saveAnalyticsDatum('GEM/OVERWRITE', {'procurement_cost': 100});
+      await store.saveAnalyticsDatum('GEM/OVERWRITE', {'procurement_cost': 999});
+      final result = store.getAnalyticsDatum('GEM/OVERWRITE');
+      expect(result['procurement_cost'], 999);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Original persistence tests
+  // ---------------------------------------------------------------------------
+
   group('saveAnalyticsDatum — not signed in', () {
     late SharedPreferences prefs;
     late AppStore store;
