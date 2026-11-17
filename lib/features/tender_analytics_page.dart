@@ -680,9 +680,9 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
     final sourceId = _sourceId(widget.row);
     final data = <String, dynamic>{};
     for (final (key, _, _) in _costFields) {
-      data[key] = num.tryParse(_costCtrls[key]!.text);
+      data[key] = (num.tryParse(_costCtrls[key]!.text) ?? 0).clamp(0, double.infinity);
     }
-    data['selling_price'] = num.tryParse(_sellingCtrl.text);
+    data['selling_price'] = (num.tryParse(_sellingCtrl.text) ?? 0).clamp(0, double.infinity);
     final extras = <Map<String, dynamic>>[];
     for (var i = 0; i < _extraLabels.length; i++) {
       final label = _extraLabels[i].text.trim();
@@ -1159,7 +1159,7 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
                     ),
-                    onPressed: _saveAll,
+                    onPressed: _saving ? null : _saveAll,
                   ),
                 ),
                 const SizedBox(width: AppSpace.sm),

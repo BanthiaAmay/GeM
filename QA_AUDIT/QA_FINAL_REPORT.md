@@ -53,10 +53,10 @@ The audit was conducted in a headless cloud container. This imposes structural l
 |---|---|---|---|---|
 | DEF-H001 | High | AUTH/CORE | 36 pre-existing test failures (widget rendering in headless container) | KNOWN / PRE-EXISTING |
 | DEF-L001 | Low | CORE | 3 pre-existing flutter analyze deprecation infos | KNOWN / PRE-EXISTING |
-| DEF-M001 | Medium | TEND | Save button not disabled while save in-flight (double-tap vulnerability) | NEW — open |
-| DEF-M002 | Medium | BIDS | toggleSavedBid has no mutex; rapid double-tap causes UI flicker and conflicting DB ops | NEW — open |
-| DEF-L002 | Low | TEND | No validation against negative cost values in Financial tab | NEW — open |
-| DEF-L003 | Low | CORE | analyticsSyncStatus not cleared in signOut() | NEW — open |
+| DEF-M001 | Medium | TEND | Save button not disabled while save in-flight (double-tap vulnerability) | FIXED 2026-11-17 |
+| DEF-M002 | Medium | BIDS | toggleSavedBid has no mutex; rapid double-tap causes UI flicker and conflicting DB ops | FIXED 2026-11-17 |
+| DEF-L002 | Low | TEND | No validation against negative cost values in Financial tab | FIXED 2026-11-17 |
+| DEF-L003 | Low | CORE | analyticsSyncStatus not cleared in signOut() | FIXED 2026-11-17 |
 
 **New defects found this audit: 4 (0 Critical, 0 High, 2 Medium, 2 Low)**
 

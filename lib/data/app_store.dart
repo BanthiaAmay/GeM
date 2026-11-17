@@ -121,6 +121,7 @@ class AppStore extends ChangeNotifier {
   // ── Saved Bids ────────────────────────────────────────────────────────────
   List<Map<String, dynamic>> savedBids = [];
   Set<String> _savedBidIds = {};
+  bool _togglingBid = false;
 
   int get savedBidsCount => savedBids.length;
 
@@ -148,8 +149,11 @@ class AppStore extends ChangeNotifier {
 
   Future<bool> toggleSavedBid(Map<String, dynamic> bid) async {
     if (client == null || !signedIn) return false;
+    if (_togglingBid) return isSaved(bid);
     final sourceId = bid['source_id'] as String? ?? bid['id'] as String? ?? '';
     if (sourceId.isEmpty) return false;
+    _togglingBid = true;
+    try {
     if (_savedBidIds.contains(sourceId)) {
       // Remove
       _savedBidIds.remove(sourceId);
@@ -185,6 +189,9 @@ class AppStore extends ChangeNotifier {
         await loadSavedBids();
       }
       return true;
+    }
+    } finally {
+      _togglingBid = false;
     }
   }
 
@@ -1007,6 +1014,7 @@ class AppStore extends ChangeNotifier {
     savedBids = [];
     _savedBidIds = {};
     analyticsData = [];
+    analyticsSyncStatus.clear();
     _read();
     notifyListeners();
   }
