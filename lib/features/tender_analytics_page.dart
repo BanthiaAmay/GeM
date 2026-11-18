@@ -13,7 +13,6 @@ import 'glass.dart';
 
 String _money(num v) => money(v);
 
-
 bool _isActive(Map<String, dynamic> row) {
   final bid = Map<String, dynamic>.from(row['bid_data'] as Map? ?? row);
   final closesAt = DateTime.tryParse(bid['closes_at'] as String? ?? '');
@@ -137,8 +136,9 @@ class _TenderAnalyticsPageState extends State<TenderAnalyticsPage> {
                           color: active
                               ? AppColors.surface
                               : AppColors.textSecondary,
-                          fontWeight:
-                              active ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight: active
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                         ),
                       ),
                     ),
@@ -160,9 +160,9 @@ class _TenderAnalyticsPageState extends State<TenderAnalyticsPage> {
                           key: ValueKey(_tab),
                           child: switch (_tab) {
                             0 => _OverviewTab(
-                                store: s,
-                                onTabChange: (t) => setState(() => _tab = t),
-                              ),
+                              store: s,
+                              onTabChange: (t) => setState(() => _tab = t),
+                            ),
                             1 => _FinancialTab(store: s),
                             2 => _SimulatorTab(store: s),
                             _ => const SizedBox(),
@@ -236,10 +236,8 @@ class _MetricCard extends StatelessWidget {
                   onTap: () => showModalBottomSheet<void>(
                     context: context,
                     backgroundColor: AppColors.surface,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(16),
-                      ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppRadius.sheet,
                     ),
                     builder: (_) => Padding(
                       padding: const EdgeInsets.all(AppSpace.gutter),
@@ -317,27 +315,25 @@ class _OverviewTab extends StatelessWidget {
     num emdTotal = 0;
     bool emdInfoFound = false;
     for (final r in active) {
-      final d =
-          Map<String, dynamic>.from(_bid(r)['details'] as Map? ?? {});
+      final d = Map<String, dynamic>.from(_bid(r)['details'] as Map? ?? {});
       final req = (d['emd_required'] ?? '').toString().toLowerCase();
       if (req.isEmpty) continue;
       emdInfoFound = true;
       if (req != 'no' && req != 'nil' && req != 'none' && req != '0') {
-        final raw =
-            (d['emd_amount'] ?? '').toString().replaceAll(',', '');
+        final raw = (d['emd_amount'] ?? '').toString().replaceAll(',', '');
         emdTotal += num.tryParse(raw) ?? 0;
       }
     }
     final emdDisplay = !emdInfoFound && active.isNotEmpty
         ? s.t('Not Available', 'उपलब्ध नहीं')
         : emdTotal == 0
-            ? '₹0'
-            : _money(emdTotal);
+        ? '₹0'
+        : _money(emdTotal);
     final emdColor = !emdInfoFound && active.isNotEmpty
         ? AppColors.textHint
         : emdTotal > 0
-            ? AppColors.warning
-            : AppColors.ink;
+        ? AppColors.warning
+        : AppColors.ink;
 
     // Financial metrics — require user input in Financial tab
     num? execCost;
@@ -348,16 +344,16 @@ class _OverviewTab extends StatelessWidget {
       if (c > 0) execCost = (execCost ?? 0) + c;
       if (sp > 0) revenue = (revenue ?? 0) + sp;
     }
-    final netProfit =
-        (revenue != null && execCost != null) ? revenue - execCost : null;
+    final netProfit = (revenue != null && execCost != null)
+        ? revenue - execCost
+        : null;
 
     final halfWidth =
         (MediaQuery.of(context).size.width -
             AppSpace.gutter * 2 -
             AppSpace.sm) /
         2;
-    final fullWidth =
-        MediaQuery.of(context).size.width - AppSpace.gutter * 2;
+    final fullWidth = MediaQuery.of(context).size.width - AppSpace.gutter * 2;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
@@ -388,8 +384,7 @@ class _OverviewTab extends StatelessWidget {
                   value: '${active.length}',
                   color: AppColors.brand,
                   actionLabel: s.t('View Saved Bids', 'सहेजी बोलियाँ देखें'),
-                  onAction: () =>
-                      Navigator.pushNamed(context, '/saved-bids'),
+                  onAction: () => Navigator.pushNamed(context, '/saved-bids'),
                   tooltip: s.t(
                     'Saved bids whose submission deadline has not yet passed.',
                     'सहेजी बोलियाँ जिनकी समय-सीमा नहीं गुज़री।',
@@ -419,9 +414,7 @@ class _OverviewTab extends StatelessWidget {
                   value: execCost != null
                       ? _money(execCost)
                       : s.t('Not entered', 'दर्ज नहीं'),
-                  color: execCost != null
-                      ? AppColors.ink
-                      : AppColors.textHint,
+                  color: execCost != null ? AppColors.ink : AppColors.textHint,
                   sub: s.t('per unit', 'प्रति इकाई'),
                   actionLabel: s.t('Calculate Costs', 'लागत दर्ज करें'),
                   onAction: () => onTabChange(1),
@@ -438,9 +431,7 @@ class _OverviewTab extends StatelessWidget {
                   value: revenue != null
                       ? _money(revenue)
                       : s.t('Not entered', 'दर्ज नहीं'),
-                  color: revenue != null
-                      ? AppColors.brand
-                      : AppColors.textHint,
+                  color: revenue != null ? AppColors.brand : AppColors.textHint,
                   sub: s.t('per unit', 'प्रति इकाई'),
                   tooltip: s.t(
                     'Sum of expected bid amounts entered in the Financial tab. Not guaranteed revenue.',
@@ -459,9 +450,7 @@ class _OverviewTab extends StatelessWidget {
                           'Financial टैब में लागत और राजस्व दर्ज करें',
                         ),
                   color: netProfit != null
-                      ? (netProfit >= 0
-                          ? AppColors.brand
-                          : AppColors.danger)
+                      ? (netProfit >= 0 ? AppColors.brand : AppColors.danger)
                       : AppColors.textHint,
                   sub: s.t('per unit', 'प्रति इकाई'),
                   tooltip: s.t(
@@ -554,7 +543,8 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
   late bool _expanded;
   bool _saved = false; // true once explicitly saved this session
   bool _saving = false; // true while a save is in flight
-  bool _syncFailed = false; // signed in, but the last save never reached Supabase
+  bool _syncFailed =
+      false; // signed in, but the last save never reached Supabase
   bool _loadedFromStore = false; // guards one-time reload when store arrives
 
   // All cost field controllers owned by this state
@@ -680,9 +670,15 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
     final sourceId = _sourceId(widget.row);
     final data = <String, dynamic>{};
     for (final (key, _, _) in _costFields) {
-      data[key] = (num.tryParse(_costCtrls[key]!.text) ?? 0).clamp(0, double.infinity);
+      data[key] = (num.tryParse(_costCtrls[key]!.text) ?? 0).clamp(
+        0,
+        double.infinity,
+      );
     }
-    data['selling_price'] = (num.tryParse(_sellingCtrl.text) ?? 0).clamp(0, double.infinity);
+    data['selling_price'] = (num.tryParse(_sellingCtrl.text) ?? 0).clamp(
+      0,
+      double.infinity,
+    );
     final extras = <Map<String, dynamic>>[];
     for (var i = 0; i < _extraLabels.length; i++) {
       final label = _extraLabels[i].text.trim();
@@ -738,9 +734,7 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.sheet),
       builder: (_) => Padding(
         padding: const EdgeInsets.fromLTRB(
           AppSpace.gutter,
@@ -794,20 +788,9 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
               ),
             ],
             const SizedBox(height: AppSpace.xl),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brand,
-                  foregroundColor: AppColors.surface,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                ),
-                onPressed: () => Navigator.pop(context),
-                child: Text(s.t('Got it', 'ठीक है')),
-              ),
+            AppButton(
+              label: s.t('Got it', 'ठीक है'),
+              onPressed: () => Navigator.pop(context),
             ),
           ],
         ),
@@ -820,9 +803,7 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.sheet),
       builder: (_) => Padding(
         padding: const EdgeInsets.all(AppSpace.gutter),
         child: Column(
@@ -845,23 +826,21 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
+                  child: AppButton(
+                    label: s.t('Cancel', 'रद्द करें'),
+                    variant: AppButtonVariant.secondary,
                     onPressed: () => Navigator.pop(context),
-                    child: Text(s.t('Cancel', 'रद्द करें')),
                   ),
                 ),
                 const SizedBox(width: AppSpace.sm),
                 Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.danger,
-                      foregroundColor: AppColors.surface,
-                    ),
+                  child: AppButton(
+                    label: s.t('Delete', 'हटाएँ'),
+                    danger: true,
                     onPressed: () {
                       Navigator.pop(context);
                       _deleteAll();
                     },
-                    child: Text(s.t('Delete', 'हटाएँ')),
                   ),
                 ),
               ],
@@ -941,8 +920,7 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
     final cost = _liveCost;
     final sp = _liveRevenue;
     final profit = sp > 0 || cost > 0 ? sp - cost : null;
-    final margin =
-        sp > 0 ? ((profit! / sp) * 100).toStringAsFixed(1) : null;
+    final margin = sp > 0 ? ((profit! / sp) * 100).toStringAsFixed(1) : null;
     final b = _bid(widget.row);
     final ca = DateTime.tryParse(b['closes_at'] as String? ?? '');
 
@@ -992,7 +970,9 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
                 Padding(
                   padding: const EdgeInsets.only(left: AppSpace.sm),
                   child: Icon(
-                    s.signedIn ? Icons.check_circle : Icons.check_circle_outline,
+                    s.signedIn
+                        ? Icons.check_circle
+                        : Icons.check_circle_outline,
                     size: 16,
                     color: s.signedIn ? AppColors.brand : AppColors.textHint,
                   ),
@@ -1044,8 +1024,8 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
                   _expanded
                       ? s.t('Hide details', 'विवरण छुपाएँ')
                       : _saved
-                          ? s.t('Edit Costs', 'लागत संपादित करें')
-                          : s.t('Enter Costs', 'लागत दर्ज करें'),
+                      ? s.t('Edit Costs', 'लागत संपादित करें')
+                      : s.t('Enter Costs', 'लागत दर्ज करें'),
                   style: AppText.label.copyWith(color: AppColors.brand),
                 ),
                 Icon(
@@ -1067,10 +1047,7 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
             ),
             const SizedBox(height: AppSpace.sm),
             for (final (key, en, hi) in _costFields)
-              _CostField(
-                label: s.t(en, hi),
-                controller: _costCtrls[key]!,
-              ),
+              _CostField(label: s.t(en, hi), controller: _costCtrls[key]!),
             for (var i = 0; i < _extraLabels.length; i++)
               _ExtraCostRow(
                 labelCtrl: _extraLabels[i],
@@ -1085,7 +1062,11 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.add_circle_outline, size: 16, color: AppColors.brand),
+                    Icon(
+                      Icons.add_circle_outline,
+                      size: 16,
+                      color: AppColors.brand,
+                    ),
                     const SizedBox(width: AppSpace.xs),
                     Text(
                       s.t('Add Other Cost', 'अन्य लागत जोड़ें'),
@@ -1148,37 +1129,20 @@ class _BidFinancialCardState extends State<_BidFinancialCard>
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.save_outlined, size: 16),
-                    label: Text(s.t('Save', 'सहेजें')),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brand,
-                      foregroundColor: AppColors.surface,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                    ),
+                  child: AppButton(
+                    label: s.t('Save', 'सहेजें'),
+                    icon: Icons.save_outlined,
+                    loading: _saving,
                     onPressed: _saving ? null : _saveAll,
                   ),
                 ),
                 const SizedBox(width: AppSpace.sm),
-                OutlinedButton.icon(
-                  icon: Icon(Icons.delete_outline, size: 16, color: AppColors.danger),
-                  label: Text(
-                    s.t('Delete', 'हटाएँ'),
-                    style: TextStyle(color: AppColors.danger),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppColors.danger),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpace.md,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                  ),
+                AppButton(
+                  label: s.t('Delete', 'हटाएँ'),
+                  icon: Icons.delete_outline,
+                  variant: AppButtonVariant.secondary,
+                  danger: true,
+                  expand: false,
                   onPressed: () => _confirmDelete(context),
                 ),
               ],
@@ -1238,8 +1202,9 @@ class _ExtraCostRow extends StatelessWidget {
             flex: 3,
             child: TextField(
               controller: amountCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
               ],
@@ -1349,8 +1314,7 @@ class _CostField extends StatelessWidget {
         Expanded(
           child: TextField(
             controller: controller,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
             ],
@@ -1489,10 +1453,7 @@ class _SimulatorTabState extends State<_SimulatorTab> {
             ),
           ),
           const SizedBox(height: AppSpace.xl),
-          Text(
-            s.t('Simulation Results', 'अनुकरण परिणाम'),
-            style: AppText.h3,
-          ),
+          Text(s.t('Simulation Results', 'अनुकरण परिणाम'), style: AppText.h3),
           const SizedBox(height: AppSpace.sm),
           Text(
             s.t(
@@ -1507,7 +1468,8 @@ class _SimulatorTabState extends State<_SimulatorTab> {
             runSpacing: AppSpace.sm,
             children: [
               SizedBox(
-                width: (MediaQuery.of(context).size.width -
+                width:
+                    (MediaQuery.of(context).size.width -
                         AppSpace.gutter * 2 -
                         AppSpace.sm) /
                     2,
@@ -1518,7 +1480,8 @@ class _SimulatorTabState extends State<_SimulatorTab> {
                 ),
               ),
               SizedBox(
-                width: (MediaQuery.of(context).size.width -
+                width:
+                    (MediaQuery.of(context).size.width -
                         AppSpace.gutter * 2 -
                         AppSpace.sm) /
                     2,
@@ -1530,7 +1493,8 @@ class _SimulatorTabState extends State<_SimulatorTab> {
                 ),
               ),
               SizedBox(
-                width: (MediaQuery.of(context).size.width -
+                width:
+                    (MediaQuery.of(context).size.width -
                         AppSpace.gutter * 2 -
                         AppSpace.sm) /
                     2,
@@ -1541,7 +1505,8 @@ class _SimulatorTabState extends State<_SimulatorTab> {
                 ),
               ),
               SizedBox(
-                width: (MediaQuery.of(context).size.width -
+                width:
+                    (MediaQuery.of(context).size.width -
                         AppSpace.gutter * 2 -
                         AppSpace.sm) /
                     2,

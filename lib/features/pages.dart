@@ -26,7 +26,7 @@ class HomePage extends StatelessWidget {
         padding: EdgeInsets.all(
           MediaQuery.sizeOf(context).width < 600 ? 24 : 40,
         ),
-        color: AppColors.surfaceAlt,
+        color: AppColors.surfaceMuted,
         child: ResponsiveRow(
           breakpoint: 780,
           children: [
@@ -393,7 +393,7 @@ class ToolsPage extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppColors.surfaceAlt,
+                                  color: AppColors.surfaceMuted,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -590,7 +590,7 @@ class TrackerPage extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 12),
             child: Panel(
               padding: const EdgeInsets.all(12),
-              color: c[i] ? AppColors.surfaceAlt : null,
+              color: c[i] ? AppColors.surfaceMuted : null,
               child: ExpansionTile(
                 key: ValueKey('step_$i'),
                 initiallyExpanded: i == c.indexOf(false),
@@ -1601,7 +1601,7 @@ class _SupportPageState extends State<SupportPage> {
               ),
             ),
             Panel(
-              color: AppColors.surfaceAlt,
+              color: AppColors.surfaceMuted,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

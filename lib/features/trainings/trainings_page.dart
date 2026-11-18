@@ -329,7 +329,7 @@ class _ModuleGrid extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: AppSpace.md,
         mainAxisSpacing: AppSpace.md,
-        childAspectRatio: 0.88,
+        childAspectRatio: 0.82,
       ),
       itemCount: kTrainingModules.length,
       itemBuilder: (context, i) {

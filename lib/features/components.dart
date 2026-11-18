@@ -19,11 +19,6 @@ enum AppButtonVariant {
 
   /// Underlined text — low-emphasis ("Not now", "View all").
   tertiary,
-
-  /// Lime "confetti" pill with ink text — ONE moment per screen max,
-  /// for celebratory actions (save-bid confirmation, mark-training-complete,
-  /// the winning CTA on a win moment). Never pair two on the same screen.
-  cheer,
 }
 
 enum AppButtonSize {
@@ -110,7 +105,7 @@ class _AppButtonState extends State<AppButton> {
     };
     final v = widget.variant;
     final enabled = _enabled;
-    final accent = widget.danger ? AppColors.accentDanger : AppColors.ink;
+    final accent = widget.danger ? AppColors.danger : AppColors.ink;
 
     final Color bg;
     final Color fg;
@@ -125,25 +120,17 @@ class _AppButtonState extends State<AppButton> {
       case AppButtonVariant.secondary:
         bg = AppColors.surface;
         fg = enabled || widget.loading
-            ? (widget.danger ? AppColors.accentDanger : AppColors.ink)
+            ? (widget.danger ? AppColors.danger : AppColors.ink)
             : AppColors.textHint;
         side = BorderSide(
           color: enabled || widget.loading
-              ? (widget.danger ? AppColors.accentDanger : AppColors.borderStrong)
+              ? (widget.danger ? AppColors.danger : AppColors.borderStrong)
               : AppColors.border,
           width: 1.4,
         );
       case AppButtonVariant.tertiary:
         bg = Colors.transparent;
         fg = enabled ? accent : AppColors.textHint;
-        side = BorderSide.none;
-      case AppButtonVariant.cheer:
-        bg = enabled || widget.loading
-            ? AppColors.accentCheer
-            : AppColors.disabled;
-        fg = enabled || widget.loading
-            ? AppColors.ink
-            : AppColors.ink.withValues(alpha: 0.4);
         side = BorderSide.none;
     }
 
@@ -202,7 +189,7 @@ class _AppButtonState extends State<AppButton> {
           onFocusChange: (f) => setState(() => _focused = f),
           overlayColor: WidgetStatePropertyAll(
             (v == AppButtonVariant.primary ? AppColors.surface : AppColors.ink)
-                .withValues(alpha: v == AppButtonVariant.cheer ? 0.14 : 0.10),
+                .withValues(alpha: 0.10),
           ),
           child: Padding(
             padding: EdgeInsets.symmetric(
@@ -238,7 +225,7 @@ class _AppButtonState extends State<AppButton> {
       decoration: ShapeDecoration(
         shape: StadiumBorder(
           side: keyboardFocus
-              ? const BorderSide(color: AppColors.accentInfo, width: 3)
+              ? const BorderSide(color: AppColors.brand, width: 3)
               : BorderSide.none,
         ),
       ),
@@ -352,16 +339,13 @@ enum AppCardTone {
   /// White with a hairline border.
   outlined,
 
-  /// Quiet off-white fill, no border (inset panel).
+  /// Quiet grey fill, no border (inset panel).
   muted,
 
-  /// Soft info-tint fill (featured / highlighted). Rare — most featured
-  /// cards use [outlined] + an accent chip instead.
+  /// Brand-tinted fill (featured / highlighted).
   brand,
 
-  /// Full-bleed ink surface — hero sections with inverted (white) text.
-  /// The signature creso "hard colour-break" moment. Used sparingly:
-  /// home hero, account hero, tools top band, training-complete state.
+  /// Deep forest green surface — hero sections with inverted (white) text.
   hero,
 }
 
@@ -391,9 +375,9 @@ class AppCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: switch (tone) {
           AppCardTone.outlined => AppColors.surface,
-          AppCardTone.muted => AppColors.surfaceAlt,
-          AppCardTone.brand => AppColors.accentInfoTint,
-          AppCardTone.hero => AppColors.heroCard,
+          AppCardTone.muted => AppColors.surfaceMuted,
+          AppCardTone.brand => AppColors.brandTint,
+          AppCardTone.hero => AppColors.brandDeep,
         },
         borderRadius: r,
         border: tone == AppCardTone.outlined
@@ -401,7 +385,7 @@ class AppCard extends StatelessWidget {
             : null,
         boxShadow: switch (tone) {
           AppCardTone.outlined => AppShadow.card,
-          AppCardTone.hero => AppShadow.hero,
+          AppCardTone.hero => AppShadow.floating,
           _ => null,
         },
       ),
@@ -440,13 +424,15 @@ class SectionHeader extends StatelessWidget {
           child: Semantics(header: true, child: Text(title, style: AppText.h3)),
         ),
         if (actionLabel != null)
-          AppButton(
-            label: actionLabel!,
-            onPressed: onAction,
-            variant: AppButtonVariant.tertiary,
-            size: AppButtonSize.sm,
-            expand: false,
-            haptic: false,
+          Flexible(
+            child: AppButton(
+              label: actionLabel!,
+              onPressed: onAction,
+              variant: AppButtonVariant.tertiary,
+              size: AppButtonSize.sm,
+              expand: false,
+              haptic: false,
+            ),
           ),
       ],
     ),
@@ -459,11 +445,11 @@ enum StatusTone { success, danger, warning, info, neutral }
 
 extension on StatusTone {
   (Color fg, Color bg) get colors => switch (this) {
-    StatusTone.success => (AppColors.accentSuccess, AppColors.accentSuccessTint),
-    StatusTone.danger => (AppColors.accentDanger, AppColors.accentDangerTint),
-    StatusTone.warning => (AppColors.accentWarning, AppColors.accentWarningTint),
-    StatusTone.info => (AppColors.accentInfo, AppColors.accentInfoTint),
-    StatusTone.neutral => (AppColors.textSecondary, AppColors.surfaceAlt),
+    StatusTone.success => (AppColors.brand, AppColors.brandTint),
+    StatusTone.danger => (AppColors.danger, AppColors.dangerTint),
+    StatusTone.warning => (AppColors.warning, AppColors.warningTint),
+    StatusTone.info => (AppColors.info, AppColors.infoTint),
+    StatusTone.neutral => (AppColors.textSecondary, AppColors.surfaceMuted),
   };
 }
 
@@ -528,8 +514,8 @@ class StatusItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, color) = switch (state) {
-      ItemState.done => (Icons.check_circle, AppColors.accentSuccess),
-      ItemState.attention => (Icons.error, AppColors.accentDanger),
+      ItemState.done => (Icons.check_circle, AppColors.brand),
+      ItemState.attention => (Icons.error, AppColors.danger),
       ItemState.pending => (Icons.circle_outlined, AppColors.textHint),
     };
     return Padding(
@@ -632,7 +618,7 @@ class AppListTile extends StatelessWidget {
             if (icon != null) ...[
               DecoratedBox(
                 decoration: const BoxDecoration(
-                  color: AppColors.accentInfoTint,
+                  color: AppColors.brandTint,
                   shape: BoxShape.circle,
                 ),
                 child: SizedBox(
@@ -641,7 +627,7 @@ class AppListTile extends StatelessWidget {
                   child: DepthIcon(
                     icon,
                     size: AppIconSize.md - 4,
-                    color: AppColors.accentInfo,
+                    color: AppColors.brand,
                   ),
                 ),
               ),
@@ -652,8 +638,7 @@ class AppListTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: AppText.body),
-                  if (subtitle != null)
-                    Text(subtitle!, style: AppText.caption),
+                  if (subtitle != null) Text(subtitle!, style: AppText.caption),
                 ],
               ),
             ),
@@ -698,7 +683,7 @@ class StateView extends StatelessWidget {
       StateKind.error => Icons.error_outline,
     };
     final color = kind == StateKind.error
-        ? AppColors.accentDanger
+        ? AppColors.danger
         : AppColors.textSecondary;
     return Semantics(
       liveRegion: true,
@@ -753,7 +738,7 @@ class StateView extends StatelessWidget {
 // ─────────────────────────── Progress ───────────────────────────
 
 /// Horizontal progress track. Animates to [value] (0–1); jumps under
-/// reduced motion. [color] defaults to [AppColors.accentInfo]; pass
+/// reduced motion. [color] defaults to [AppColors.brand]; pass
 /// [AppColors.ink] where a neutral bar is preferred.
 class AppProgressBar extends StatefulWidget {
   final double value;
@@ -769,7 +754,7 @@ class AppProgressBar extends StatefulWidget {
     super.key,
     required this.value,
     this.height = 5,
-    this.color = AppColors.accentInfo,
+    this.color = AppColors.brand,
     this.semanticLabel,
     this.duration,
     this.animated = true,
@@ -792,12 +777,22 @@ class _AppProgressBarState extends State<AppProgressBar>
     );
   }
 
+  /// One light sweep when the bar appears and each time progress moves —
+  /// never a constant loop, and none under reduced motion.
+  void _sweep() {
+    if (!Motion.reduced(context)) _shimmer.forward(from: 0);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!Motion.reduced(context) && !_shimmer.isAnimating) {
-      _shimmer.repeat();
-    }
+    if (_shimmer.status == AnimationStatus.dismissed) _sweep();
+  }
+
+  @override
+  void didUpdateWidget(covariant AppProgressBar old) {
+    super.didUpdateWidget(old);
+    if (old.value != widget.value) _sweep();
   }
 
   @override
@@ -811,15 +806,14 @@ class _AppProgressBarState extends State<AppProgressBar>
     width: double.infinity,
     child: AnimatedBuilder(
       animation: _shimmer,
-      builder:
-          (context, _) => CustomPaint(
-            painter: _ProgressTrackPainter(
-              value: v.clamp(0.0, 1.0),
-              color: widget.color,
-              trackHeight: widget.height,
-              shimmerPosition: _shimmer.value,
-            ),
-          ),
+      builder: (context, _) => CustomPaint(
+        painter: _ProgressTrackPainter(
+          value: v.clamp(0.0, 1.0),
+          color: widget.color,
+          trackHeight: widget.height,
+          shimmerPosition: _shimmer.value,
+        ),
+      ),
     ),
   );
 
@@ -878,18 +872,16 @@ class _ProgressTrackPainter extends CustomPainter {
         Radius.circular(br),
       ),
       Paint()
-        ..shader = LinearGradient(
-          colors: [
-            Color.lerp(color, Colors.white, 0.5)!,
-            color,
-          ],
-        ).createShader(
-          Rect.fromLTWH(0, cy - br, fillW.clamp(1.0, double.infinity), th),
-        ),
+        ..shader =
+            LinearGradient(
+              colors: [Color.lerp(color, AppColors.surface, 0.5)!, color],
+            ).createShader(
+              Rect.fromLTWH(0, cy - br, fillW.clamp(1.0, double.infinity), th),
+            ),
     );
 
     // Shimmer sweep — a bright beam sliding left to right across the fill
-    if (fillW > 1) {
+    if (fillW > 1 && shimmerPosition > 0 && shimmerPosition < 1) {
       const halfW = 56.0; // beam half-width in logical pixels
       final cx = fillW * shimmerPosition;
       canvas.save();
@@ -905,12 +897,10 @@ class _ProgressTrackPainter extends CustomPainter {
           ..shader = LinearGradient(
             colors: [
               Colors.transparent,
-              Colors.white.withValues(alpha: 0.55),
+              AppColors.surface.withValues(alpha: 0.55),
               Colors.transparent,
             ],
-          ).createShader(
-            Rect.fromLTWH(cx - halfW, cy - br, halfW * 2, th),
-          ),
+          ).createShader(Rect.fromLTWH(cx - halfW, cy - br, halfW * 2, th)),
       );
       canvas.restore();
     }
@@ -1210,8 +1200,7 @@ class AppDropdownChip<T> extends StatelessWidget {
               child: Row(
                 children: [
                   Expanded(child: Text(label, style: AppText.body)),
-                  if (v == value)
-                    const Icon(Icons.check, size: AppIconSize.sm),
+                  if (v == value) const Icon(Icons.check, size: AppIconSize.sm),
                 ],
               ),
             ),
@@ -1772,8 +1761,6 @@ class DepthIcon extends StatelessWidget {
 
 /// A sourced "Did you know?" fact box. On first build it pops up into
 /// place, then the figure counts up and lands with a small pop.
-/// Carries the single [AppColors.accentPurple] accent in the app —
-/// nowhere else uses purple.
 class GemFact extends StatefulWidget {
   final String text;
   final String figure;
@@ -1873,7 +1860,7 @@ class _GemFactState extends State<GemFact> with SingleTickerProviderStateMixin {
         final text = widget.text;
         final i = text.indexOf(widget.figure);
         final figureStyle = AppText.title.copyWith(
-          color: AppColors.accentPurple,
+          color: AppColors.brand,
           fontWeight: FontWeight.w800,
         );
         final spans = i < 0
@@ -1912,20 +1899,20 @@ class _GemFactState extends State<GemFact> with SingleTickerProviderStateMixin {
                         width: double.infinity,
                         padding: const EdgeInsets.all(AppSpace.lg),
                         decoration: BoxDecoration(
-                          color: AppColors.accentPurpleTint,
+                          color: AppColors.brandTint,
                           border: Border(
                             left: const BorderSide(
-                              color: AppColors.accentPurple,
+                              color: AppColors.brand,
                               width: 4,
                             ),
                             top: BorderSide(
-                              color: AppColors.accentPurple.withValues(alpha: 0.18),
+                              color: AppColors.brand.withValues(alpha: 0.18),
                             ),
                             right: BorderSide(
-                              color: AppColors.accentPurple.withValues(alpha: 0.18),
+                              color: AppColors.brand.withValues(alpha: 0.18),
                             ),
                             bottom: BorderSide(
-                              color: AppColors.accentPurple.withValues(alpha: 0.18),
+                              color: AppColors.brand.withValues(alpha: 0.18),
                             ),
                           ),
                         ),
@@ -1936,7 +1923,7 @@ class _GemFactState extends State<GemFact> with SingleTickerProviderStateMixin {
                               width: 40,
                               height: 40,
                               decoration: const BoxDecoration(
-                                color: AppColors.accentPurple,
+                                color: AppColors.brand,
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -1953,7 +1940,7 @@ class _GemFactState extends State<GemFact> with SingleTickerProviderStateMixin {
                                   Text(
                                     widget.label,
                                     style: AppText.overline.copyWith(
-                                      color: AppColors.accentPurple,
+                                      color: AppColors.brand,
                                     ),
                                   ),
                                   const SizedBox(height: AppSpace.xs),
@@ -1997,7 +1984,7 @@ class ReassuranceNote extends StatelessWidget {
     container: true,
     child: DecoratedBox(
       decoration: const BoxDecoration(
-        color: AppColors.surfaceAlt,
+        color: AppColors.surfaceMuted,
         border: Border(left: BorderSide(color: AppColors.ink, width: 3)),
       ),
       child: Padding(
@@ -2171,7 +2158,7 @@ class _PulsingMicButtonState extends State<_PulsingMicButton>
     final icon = Icon(
       widget.isListening ? Icons.mic : Icons.mic_none,
       size: AppIconSize.md - 4,
-      color: widget.isListening ? AppColors.accentDanger : AppColors.textHint,
+      color: widget.isListening ? AppColors.danger : AppColors.textHint,
     );
     final btn = IconButton(
       icon: icon,
@@ -2180,78 +2167,5 @@ class _PulsingMicButtonState extends State<_PulsingMicButton>
     );
     if (reduced || !widget.isListening) return btn;
     return ScaleTransition(scale: _scale, child: btn);
-  }
-}
-
-// ─────────────────────────── Oversized stat ───────────────────────────
-
-/// Tone of an [OversizedStat]: [outlined] (white card, ink numeral) or
-/// [ink] (full-bleed hero card, white numeral) — the ink variant counts
-/// as a screen's single "full-bleed colour-break" moment.
-enum OversizedStatTone { outlined, ink }
-
-/// The creso "big numeral" move — a stat where the value, not the label,
-/// is the ornament. Used for hero metrics (home grid, trainings progress,
-/// tender_analytics headline, account tier).
-///
-/// [value] is the numeral itself (e.g. "3,240", "73%"). [label] is a short
-/// caption below it. Optional [delta] appears as a small pill above the
-/// label ("+12 this week"), tinted by [deltaTone]. Pair up to three of
-/// these in a row on wide layouts; stack to one column at phone width.
-class OversizedStat extends StatelessWidget {
-  final String value;
-  final String label;
-  final String? delta;
-  final StatusTone? deltaTone;
-  final OversizedStatTone tone;
-  const OversizedStat({
-    super.key,
-    required this.value,
-    required this.label,
-    this.delta,
-    this.deltaTone,
-    this.tone = OversizedStatTone.outlined,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final dark = tone == OversizedStatTone.ink;
-    final numeralColor = dark ? AppColors.surface : AppColors.ink;
-    final labelColor = dark
-        ? AppColors.surface.withValues(alpha: 0.7)
-        : AppColors.textSecondary;
-    return AppCard(
-      tone: dark ? AppCardTone.hero : AppCardTone.outlined,
-      padding: const EdgeInsets.fromLTRB(
-        AppSpace.xl,
-        AppSpace.xl,
-        AppSpace.xl,
-        AppSpace.lg,
-      ),
-      radius: AppRadius.lg,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (delta != null) ...[
-            StatusChip(delta!, tone: deltaTone ?? StatusTone.success),
-            const SizedBox(height: AppSpace.sm),
-          ],
-          Text(
-            value,
-            style: AppText.numeral.copyWith(color: numeralColor),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: AppSpace.xs),
-          Text(
-            label,
-            style: AppText.caption.copyWith(color: labelColor),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
   }
 }

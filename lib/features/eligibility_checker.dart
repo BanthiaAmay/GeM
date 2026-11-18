@@ -63,7 +63,9 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
     final inv = (p['investment'] as num?)?.toDouble() ?? 0;
     final turn = (p['turnover'] as num?)?.toDouble() ?? 0;
     final c = classify(inv, turn);
-    return c == Enterprise.micro || c == Enterprise.small || c == Enterprise.medium;
+    return c == Enterprise.micro ||
+        c == Enterprise.small ||
+        c == Enterprise.medium;
   }
 
   bool get _isStartup {
@@ -86,7 +88,10 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
   Future<void> _fetchBid() async {
     final bidId = _bidIdController.text.trim();
     if (bidId.isEmpty) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final result = await s.client!
           .from('gem_bids')
@@ -94,17 +99,32 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
           .eq('source_id', bidId)
           .maybeSingle();
       if (result == null) {
-        setState(() { _loading = false; _error = s.t('Bid not found. Check the bid number and try again.', 'बोली नहीं मिली। बोली नंबर जाँचें और पुनः प्रयास करें।'); });
+        setState(() {
+          _loading = false;
+          _error = s.t(
+            'Bid not found. Check the bid number and try again.',
+            'बोली नहीं मिली। बोली नंबर जाँचें और पुनः प्रयास करें।',
+          );
+        });
         return;
       }
       _bid = Map<String, dynamic>.from(result);
       _details = Map<String, dynamic>.from(_bid['details'] as Map? ?? {});
       _conditions = extractConditions(_details);
       _prefill();
-      setState(() { _loading = false; _step = 1; });
+      setState(() {
+        _loading = false;
+        _step = 1;
+      });
       _scrollController.jumpTo(0);
     } catch (e) {
-      setState(() { _loading = false; _error = s.t('Something went wrong. Try again.', 'कुछ गड़बड़ हुई। पुनः प्रयास करें।'); });
+      setState(() {
+        _loading = false;
+        _error = s.t(
+          'Something went wrong. Try again.',
+          'कुछ गड़बड़ हुई। पुनः प्रयास करें।',
+        );
+      });
     }
   }
 
@@ -129,7 +149,9 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
       mseRelaxation: _details['mse_relaxation'] as String?,
       startupRelaxation: _details['startup_relaxation'] as String?,
     );
-    setState(() { _step = 2; });
+    setState(() {
+      _step = 2;
+    });
     _scrollController.jumpTo(0);
   }
 
@@ -224,12 +246,12 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
         tone: AppCardTone.muted,
         child: Row(
           children: [
-            const Icon(Icons.info_outline, size: 20, color: AppColors.accentDanger),
+            const Icon(Icons.info_outline, size: 20, color: AppColors.danger),
             const SizedBox(width: AppSpace.md),
             Expanded(
               child: Text(
                 _error!,
-                style: AppText.bodySmall.copyWith(color: AppColors.accentDanger),
+                style: AppText.bodySmall.copyWith(color: AppColors.danger),
               ),
             ),
           ],
@@ -257,32 +279,40 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
     widgets.add(const SizedBox(height: AppSpace.xxl));
 
     if (_conditions.isEmpty) {
-      widgets.add(AppCard(
-        tone: AppCardTone.muted,
-        child: Text(
-          s.t(
-            'No specific eligibility conditions were found in this bid\'s extracted data. Review the bid PDF on the GeM portal for requirements.',
-            'इस बोली के निकाले गए डेटा में कोई विशेष पात्रता शर्तें नहीं मिलीं। आवश्यकताओं के लिए GeM पोर्टल पर बोली PDF देखें।',
+      widgets.add(
+        AppCard(
+          tone: AppCardTone.muted,
+          child: Text(
+            s.t(
+              'No specific eligibility conditions were found in this bid\'s extracted data. Review the bid PDF on the GeM portal for requirements.',
+              'इस बोली के निकाले गए डेटा में कोई विशेष पात्रता शर्तें नहीं मिलीं। आवश्यकताओं के लिए GeM पोर्टल पर बोली PDF देखें।',
+            ),
+            style: AppText.body,
           ),
-          style: AppText.body,
         ),
-      ));
+      );
       return widgets;
     }
 
     // Group by type
-    final financial = _conditions.where((c) =>
-        c.type == ConditionType.turnover ||
-        c.type == ConditionType.oem ||
-        c.type == ConditionType.emd).toList();
-    final experience = _conditions.where((c) =>
-        c.type == ConditionType.experience).toList();
-    final documents = _conditions.where((c) =>
-        c.type == ConditionType.documents).toList();
-    final certs = _conditions.where((c) =>
-        c.type == ConditionType.certification).toList();
-    final atc = _conditions.where((c) =>
-        c.type == ConditionType.atc).toList();
+    final financial = _conditions
+        .where(
+          (c) =>
+              c.type == ConditionType.turnover ||
+              c.type == ConditionType.oem ||
+              c.type == ConditionType.emd,
+        )
+        .toList();
+    final experience = _conditions
+        .where((c) => c.type == ConditionType.experience)
+        .toList();
+    final documents = _conditions
+        .where((c) => c.type == ConditionType.documents)
+        .toList();
+    final certs = _conditions
+        .where((c) => c.type == ConditionType.certification)
+        .toList();
+    final atc = _conditions.where((c) => c.type == ConditionType.atc).toList();
 
     if (financial.isNotEmpty) {
       widgets.add(SectionHeader(s.t('Financial', 'वित्तीय')));
@@ -320,9 +350,11 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
     }
 
     if (atc.isNotEmpty) {
-      widgets.add(SectionHeader(
-        s.t('Additional Terms & Conditions', 'अतिरिक्त नियम एवं शर्तें'),
-      ));
+      widgets.add(
+        SectionHeader(
+          s.t('Additional Terms & Conditions', 'अतिरिक्त नियम एवं शर्तें'),
+        ),
+      );
       for (final c in atc) {
         widgets.add(_buildAtcField(c));
       }
@@ -357,7 +389,7 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
             onTap: () => Navigator.pushNamed(context, '/account'),
             child: Text(
               s.t('Update', 'अपडेट करें'),
-              style: AppText.label.copyWith(color: AppColors.accentInfo),
+              style: AppText.label.copyWith(color: AppColors.brand),
             ),
           ),
         ],
@@ -375,10 +407,7 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            _bid['source_id'] as String? ?? '',
-            style: AppText.overline,
-          ),
+          Text(_bid['source_id'] as String? ?? '', style: AppText.overline),
           const SizedBox(height: AppSpace.xs),
           Text(
             _bid['title'] as String? ?? '',
@@ -388,10 +417,7 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
           ),
           const SizedBox(height: AppSpace.sm),
           if (_bid['organisation'] != null)
-            Text(
-              _bid['organisation'] as String,
-              style: AppText.caption,
-            ),
+            Text(_bid['organisation'] as String, style: AppText.caption),
           const SizedBox(height: AppSpace.xs),
           Text(
             '${s.t("Closes", "अंतिम समय")}: $closesDisplay',
@@ -448,16 +474,22 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
             style: AppText.caption.copyWith(color: AppColors.textHint),
           ),
           const SizedBox(height: AppSpace.sm),
-          ...bands.map((b) => RadioListTile<String>(
-            title: Text(b.$2, style: AppText.bodySmall),
-            value: b.$1,
+          RadioGroup<String>(
             groupValue: _turnoverBand,
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
-            activeColor: AppColors.accentInfo,
             onChanged: (v) => setState(() => _turnoverBand = v),
-          )),
+            child: Column(
+              children: [
+                for (final b in bands)
+                  RadioListTile<String>(
+                    title: Text(b.$2, style: AppText.bodySmall),
+                    value: b.$1,
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -469,10 +501,7 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            s.t(c.label, 'OEM वार्षिक टर्नओवर'),
-            style: AppText.bodyStrong,
-          ),
+          Text(s.t(c.label, 'OEM वार्षिक टर्नओवर'), style: AppText.bodyStrong),
           const SizedBox(height: AppSpace.xs),
           StatusChip(
             s.t('Requirement: ${c.requirement}', 'आवश्यकता: ${c.requirement}'),
@@ -505,13 +534,13 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              s.t(c.label, 'बयाना राशि'),
-              style: AppText.bodyStrong,
-            ),
+            Text(s.t(c.label, 'बयाना राशि'), style: AppText.bodyStrong),
             const SizedBox(height: AppSpace.xs),
             StatusChip(
-              s.t('Requirement: ${c.requirement}', 'आवश्यकता: ${c.requirement}'),
+              s.t(
+                'Requirement: ${c.requirement}',
+                'आवश्यकता: ${c.requirement}',
+              ),
               tone: StatusTone.info,
             ),
             const SizedBox(height: AppSpace.sm),
@@ -532,10 +561,7 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            s.t(c.label, 'बयाना राशि'),
-            style: AppText.bodyStrong,
-          ),
+          Text(s.t(c.label, 'बयाना राशि'), style: AppText.bodyStrong),
           const SizedBox(height: AppSpace.xs),
           StatusChip(
             s.t('Requirement: ${c.requirement}', 'आवश्यकता: ${c.requirement}'),
@@ -576,10 +602,7 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            s.t(c.label, 'पिछला अनुभव'),
-            style: AppText.bodyStrong,
-          ),
+          Text(s.t(c.label, 'पिछला अनुभव'), style: AppText.bodyStrong),
           const SizedBox(height: AppSpace.xs),
           StatusChip(
             s.t('Requirement: ${c.requirement}', 'आवश्यकता: ${c.requirement}'),
@@ -623,7 +646,10 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            s.t('Do you have these documents?', 'क्या आपके पास ये दस्तावेज़ हैं?'),
+            s.t(
+              'Do you have these documents?',
+              'क्या आपके पास ये दस्तावेज़ हैं?',
+            ),
             style: AppText.bodyStrong,
           ),
           const SizedBox(height: AppSpace.md),
@@ -644,28 +670,26 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(doc, style: AppText.bodySmall),
-          ),
+          Expanded(child: Text(doc, style: AppText.bodySmall)),
           const SizedBox(width: AppSpace.sm),
           _miniChip(
             label: s.t('Yes', 'हाँ'),
             selected: status == 'yes',
-            color: AppColors.accentSuccess,
+            color: AppColors.brand,
             onTap: () => setState(() => _docStatus[doc] = 'yes'),
           ),
           const SizedBox(width: AppSpace.xs),
           _miniChip(
             label: s.t('No', 'नहीं'),
             selected: status == 'no',
-            color: AppColors.accentDanger,
+            color: AppColors.danger,
             onTap: () => setState(() => _docStatus[doc] = 'no'),
           ),
           const SizedBox(width: AppSpace.xs),
           _miniChip(
             label: '?',
             selected: status == 'unsure',
-            color: AppColors.accentWarning,
+            color: AppColors.warning,
             onTap: () => setState(() => _docStatus[doc] = 'unsure'),
           ),
         ],
@@ -687,7 +711,10 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
                 Text(c.label, style: AppText.bodyStrong),
                 const SizedBox(height: AppSpace.xs),
                 Text(
-                  s.t('Do you have this certificate?', 'क्या आपके पास यह प्रमाणपत्र है?'),
+                  s.t(
+                    'Do you have this certificate?',
+                    'क्या आपके पास यह प्रमाणपत्र है?',
+                  ),
                   style: AppText.caption,
                 ),
               ],
@@ -697,21 +724,21 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
           _miniChip(
             label: s.t('Yes', 'हाँ'),
             selected: status == 'yes',
-            color: AppColors.accentSuccess,
+            color: AppColors.brand,
             onTap: () => setState(() => _certStatus[c.label] = 'yes'),
           ),
           const SizedBox(width: AppSpace.xs),
           _miniChip(
             label: s.t('No', 'नहीं'),
             selected: status == 'no',
-            color: AppColors.accentDanger,
+            color: AppColors.danger,
             onTap: () => setState(() => _certStatus[c.label] = 'no'),
           ),
           const SizedBox(width: AppSpace.xs),
           _miniChip(
             label: s.t('Applied', 'आवेदित'),
             selected: status == 'applied',
-            color: AppColors.accentWarning,
+            color: AppColors.warning,
             onTap: () => setState(() => _certStatus[c.label] = 'applied'),
           ),
         ],
@@ -755,7 +782,6 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
               style: AppText.bodySmall,
             ),
             value: _atcAccepted,
-            activeColor: AppColors.accentSuccess,
             contentPadding: EdgeInsets.zero,
             dense: true,
             onChanged: (v) => setState(() => _atcAccepted = v),
@@ -774,16 +800,18 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
     widgets.add(const SizedBox(height: AppSpace.lg));
 
     if (_results.isEmpty) {
-      widgets.add(AppCard(
-        tone: AppCardTone.muted,
-        child: Text(
-          s.t(
-            'No eligibility conditions to evaluate for this bid.',
-            'इस बोली के लिए मूल्यांकन हेतु कोई पात्रता शर्तें नहीं हैं।',
+      widgets.add(
+        AppCard(
+          tone: AppCardTone.muted,
+          child: Text(
+            s.t(
+              'No eligibility conditions to evaluate for this bid.',
+              'इस बोली के लिए मूल्यांकन हेतु कोई पात्रता शर्तें नहीं हैं।',
+            ),
+            style: AppText.body,
           ),
-          style: AppText.body,
         ),
-      ));
+      );
     } else {
       final overall = overallVerdict(_results);
       widgets.add(_overallBadge(overall));
@@ -800,9 +828,9 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
       );
       widgets.add(const SizedBox(height: AppSpace.xxl));
 
-      widgets.add(SectionHeader(
-        s.t('Condition-wise Results', 'शर्त-वार परिणाम'),
-      ));
+      widgets.add(
+        SectionHeader(s.t('Condition-wise Results', 'शर्त-वार परिणाम')),
+      );
 
       for (final r in _results) {
         widgets.add(_resultCard(r));
@@ -811,38 +839,42 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
     }
 
     widgets.add(const SizedBox(height: AppSpace.lg));
-    widgets.add(ReassuranceNote(
-      s.t(
-        'This is a preliminary check based on the information you provided and the data extracted from the bid PDF. It is not an official GeM eligibility decision. Verify all requirements on the GeM portal before bidding.',
-        'यह आपके द्वारा दी गई जानकारी और बोली PDF से निकाले गए डेटा पर आधारित प्रारंभिक जाँच है। यह आधिकारिक GeM पात्रता निर्णय नहीं है। बोली लगाने से पहले GeM पोर्टल पर सभी आवश्यकताओं की पुष्टि करें।',
+    widgets.add(
+      ReassuranceNote(
+        s.t(
+          'This is a preliminary check based on the information you provided and the data extracted from the bid PDF. It is not an official GeM eligibility decision. Verify all requirements on the GeM portal before bidding.',
+          'यह आपके द्वारा दी गई जानकारी और बोली PDF से निकाले गए डेटा पर आधारित प्रारंभिक जाँच है। यह आधिकारिक GeM पात्रता निर्णय नहीं है। बोली लगाने से पहले GeM पोर्टल पर सभी आवश्यकताओं की पुष्टि करें।',
+        ),
       ),
-    ));
+    );
     widgets.add(const SizedBox(height: AppSpace.xxl));
 
-    widgets.add(Row(
-      children: [
-        Expanded(
-          child: AppButton(
-            label: s.t('Check another bid', 'अन्य बोली जाँचें'),
-            variant: AppButtonVariant.secondary,
-            icon: Icons.refresh,
-            onPressed: _reset,
+    widgets.add(
+      Row(
+        children: [
+          Expanded(
+            child: AppButton(
+              label: s.t('Check another bid', 'अन्य बोली जाँचें'),
+              variant: AppButtonVariant.secondary,
+              icon: Icons.refresh,
+              onPressed: _reset,
+            ),
           ),
-        ),
-        const SizedBox(width: AppSpace.md),
-        Expanded(
-          child: AppButton(
-            label: s.t('View on GeM', 'GeM पर देखें'),
-            variant: AppButtonVariant.primary,
-            trailingIcon: Icons.open_in_new,
-            onPressed: () {
-              final url = _bid['source_url'] as String?;
-              if (url != null) openLink(context, s, url);
-            },
+          const SizedBox(width: AppSpace.md),
+          Expanded(
+            child: AppButton(
+              label: s.t('View on GeM', 'GeM पर देखें'),
+              variant: AppButtonVariant.primary,
+              trailingIcon: Icons.open_in_new,
+              onPressed: () {
+                final url = _bid['source_url'] as String?;
+                if (url != null) openLink(context, s, url);
+              },
+            ),
           ),
-        ),
-      ],
-    ));
+        ],
+      ),
+    );
 
     return widgets;
   }
@@ -871,10 +903,10 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
       ),
     };
     final (fg, bg) = switch (tone) {
-      StatusTone.success => (AppColors.accentSuccess, AppColors.accentSuccessTint),
-      StatusTone.danger => (AppColors.accentDanger, AppColors.accentDangerTint),
-      StatusTone.warning => (AppColors.accentWarning, AppColors.accentWarningTint),
-      _ => (AppColors.textSecondary, AppColors.surfaceAlt),
+      StatusTone.success => (AppColors.brand, AppColors.brandTint),
+      StatusTone.danger => (AppColors.danger, AppColors.dangerTint),
+      StatusTone.warning => (AppColors.warning, AppColors.warningTint),
+      _ => (AppColors.textSecondary, AppColors.surfaceMuted),
     };
     return Container(
       width: double.infinity,
@@ -889,10 +921,7 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
           Icon(icon, color: fg, size: 28),
           const SizedBox(width: AppSpace.md),
           Flexible(
-            child: Text(
-              label,
-              style: AppText.h3.copyWith(color: fg),
-            ),
+            child: Text(label, style: AppText.h3.copyWith(color: fg)),
           ),
         ],
       ),
@@ -906,7 +935,10 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
         ItemState.attention,
         s.t('Potentially ineligible', 'संभवतः अपात्र'),
       ),
-      Verdict.needsVerification => (ItemState.pending, s.t('Verify', 'सत्यापित करें')),
+      Verdict.needsVerification => (
+        ItemState.pending,
+        s.t('Verify', 'सत्यापित करें'),
+      ),
       Verdict.insufficientInformation => (
         ItemState.pending,
         s.t('Insufficient information', 'अपर्याप्त जानकारी'),
@@ -927,10 +959,7 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
             r.condition.requirement,
           ),
           if (r.userValue != null)
-            KeyValueRow(
-              s.t('Your detail', 'आपका विवरण'),
-              r.userValue!,
-            ),
+            KeyValueRow(s.t('Your detail', 'आपका विवरण'), r.userValue!),
           const SizedBox(height: AppSpace.xs),
           Text(
             r.explanation,
@@ -996,15 +1025,12 @@ class _EligibilityCheckerState extends State<EligibilityChecker> {
         decoration: BoxDecoration(
           color: selected ? color.withValues(alpha: 0.15) : AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadius.sm),
-          border: Border.all(
-            color: selected ? color : AppColors.border,
-          ),
+          border: Border.all(color: selected ? color : AppColors.border),
         ),
         child: Text(
           label,
           style: AppText.label.copyWith(
             color: selected ? color : AppColors.textHint,
-            fontSize: 11,
           ),
         ),
       ),

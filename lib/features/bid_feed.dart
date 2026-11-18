@@ -84,12 +84,13 @@ class _BidFeedState extends State<BidFeed> {
     });
     try {
       List<dynamic> result;
-      if (view == _FeedView.matching && s.signedIn && s.bidKeywords.isNotEmpty) {
+      if (view == _FeedView.matching &&
+          s.signedIn &&
+          s.bidKeywords.isNotEmpty) {
         try {
-          result = await s.client!.rpc(
-            'my_matching_bids',
-            params: {'p_limit': 50},
-          ) as List<dynamic>;
+          result =
+              await s.client!.rpc('my_matching_bids', params: {'p_limit': 50})
+                  as List<dynamic>;
         } catch (_) {
           // RPC failed — fall back to latest bids silently.
           if (mounted) setState(() => view = _FeedView.latest);
@@ -287,14 +288,15 @@ class _BidFeedState extends State<BidFeed> {
           },
         ),
         const SizedBox(height: AppSpace.sm),
-        Row(
+        Wrap(
+          spacing: AppSpace.sm,
+          runSpacing: AppSpace.sm,
           children: [
             _ActionChip(
               icon: Icons.refresh,
               label: s.t('Refresh', 'ताज़ा करें'),
               onTap: loading ? null : refresh,
             ),
-            const SizedBox(width: AppSpace.sm),
             _ActionChip(
               icon: Icons.filter_list,
               label: _currentFilter.activeCount > 0
@@ -303,7 +305,6 @@ class _BidFeedState extends State<BidFeed> {
               onTap: bids.isEmpty ? null : _openFilter,
               active: _currentFilter.activeCount > 0,
             ),
-            const SizedBox(width: AppSpace.sm),
             _ActionChip(
               icon: Icons.tune_outlined,
               label: s.t('Set alerts', 'अलर्ट चुनें'),
@@ -373,13 +374,13 @@ class _ActionChip extends StatelessWidget {
     final bg = disabled
         ? AppColors.surfaceMuted
         : active
-            ? AppColors.brand
-            : AppColors.brandTint;
+        ? AppColors.brand
+        : AppColors.brandTint;
     final fg = disabled
         ? AppColors.textHint
         : active
-            ? AppColors.surface
-            : AppColors.brand;
+        ? AppColors.surface
+        : AppColors.brand;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -486,15 +487,11 @@ class _BidCard extends StatelessWidget {
       bid['ministry'],
     ].map(_text).firstWhere((v) => v.isNotEmpty, orElse: () => '');
     final state = _text(bid['state']);
-    final whereStr =
-        [buyer, state].where((v) => v.isNotEmpty).join(' · ');
+    final whereStr = [buyer, state].where((v) => v.isNotEmpty).join(' · ');
 
     // Close date + urgency
     final closesAt = DateTime.tryParse(bid['closes_at'] as String? ?? '');
-    final daysLeft = closesAt
-        ?.toLocal()
-        .difference(DateTime.now())
-        .inDays;
+    final daysLeft = closesAt?.toLocal().difference(DateTime.now()).inDays;
     final closesDisplay = closesAt != null
         ? DateFormat('d MMM yyyy, h:mm a').format(closesAt.toLocal())
         : '—';
@@ -528,7 +525,8 @@ class _BidCard extends StatelessWidget {
     if (fetchedRaw != null) {
       final dt = DateTime.tryParse(fetchedRaw);
       if (dt != null) {
-        updatedStr = '${s.t('Updated', 'अपडेट')} '
+        updatedStr =
+            '${s.t('Updated', 'अपडेट')} '
             '${DateFormat('d MMM, h:mm a').format(dt.toLocal())}';
       }
     }
@@ -680,7 +678,9 @@ class _BidCard extends StatelessWidget {
                     if (quantity != null && emd != null)
                       const SizedBox(width: AppSpace.sm),
                     if (emd != null)
-                      Expanded(child: _MetricCell(label: 'EMD', value: emd)),
+                      Expanded(
+                        child: _MetricCell(label: 'EMD', value: emd),
+                      ),
                   ],
                 ),
 
@@ -828,13 +828,14 @@ class _DocChips extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppRadius.sheet,
-      ),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.sheet),
       builder: (_) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-            AppSpace.gutter, AppSpace.lg, AppSpace.gutter, AppSpace.gutter,
+            AppSpace.gutter,
+            AppSpace.lg,
+            AppSpace.gutter,
+            AppSpace.gutter,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -860,12 +861,7 @@ class _DocChips extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: AppSpace.sm),
-                      Expanded(
-                        child: Text(
-                          _clean(doc),
-                          style: AppText.body,
-                        ),
-                      ),
+                      Expanded(child: Text(_clean(doc), style: AppText.body)),
                     ],
                   ),
                 ),
@@ -884,10 +880,7 @@ class _DocChips extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          store.t('Documents', 'दस्तावेज़'),
-          style: AppText.overline,
-        ),
+        Text(store.t('Documents', 'दस्तावेज़'), style: AppText.overline),
         const SizedBox(height: AppSpace.xs),
         Wrap(
           spacing: AppSpace.xs,

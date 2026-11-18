@@ -88,13 +88,7 @@ _StepInfo _stepInfoFor(String? route, {bool hasWhatsappNumber = false}) {
       .take(index + 1)
       .where((e) => e.sectionEn == entry.sectionEn)
       .length;
-  return _StepInfo(
-    entry.sectionEn,
-    entry.sectionHi,
-    step,
-    total,
-    step / total,
-  );
+  return _StepInfo(entry.sectionEn, entry.sectionHi, step, total, step / total);
 }
 
 /// A single flight shuttle used by every onboarding screen's header
@@ -424,7 +418,10 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                       const SizedBox(height: 28),
                       for (var i = 0; i < widget.children.length; i++)
                         StaggeredEntrance(
-                          index: (i + (widget.fact != null ? 3 : 2)).clamp(0, 7),
+                          index: (i + (widget.fact != null ? 3 : 2)).clamp(
+                            0,
+                            7,
+                          ),
                           child: widget.children[i],
                         ),
                     ],
@@ -1027,9 +1024,9 @@ class _OnboardingRadioOptionState extends State<OnboardingRadioOption>
   );
 }
 
-/// Cheerful-but-subtle tutorial link pill shown inside [OnboardingCheckOption].
-/// Video links use a soft info-blue tint; portal links use a soft purple tint —
-/// both restrained enough to feel like a helpful aside, not a CTA.
+/// Subtle tutorial link pill shown inside [OnboardingCheckOption]: the brand
+/// link colour on its tint, with a play or open-in-new icon telling video and
+/// portal links apart — a helpful aside, not a CTA.
 class _TutorialLink extends StatelessWidget {
   final bool isVideo;
   final AppStore store;
@@ -1043,12 +1040,11 @@ class _TutorialLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color bg = isVideo
-        ? AppColors.accentInfo.withValues(alpha: 0.08)
-        : AppColors.accentPurple.withValues(alpha: 0.08);
-    final Color fg = isVideo ? AppColors.accentInfo : AppColors.accentPurple;
-    final IconData icon =
-        isVideo ? Icons.play_circle_outline : Icons.open_in_new;
+    const Color bg = AppColors.brandTint;
+    const Color fg = AppColors.brand;
+    final IconData icon = isVideo
+        ? Icons.play_circle_outline
+        : Icons.open_in_new;
     final String label = isVideo
         ? store.t('Watch how to get it →', 'देखें कैसे मिलेगा →')
         : store.t('Visit official portal →', 'आधिकारिक पोर्टल देखें →');
@@ -1067,11 +1063,13 @@ class _TutorialLink extends StatelessWidget {
           children: [
             Icon(icon, size: 13, color: fg),
             const SizedBox(width: 4),
-            Text(
-              label,
-              style: AppText.caption.copyWith(
-                color: fg,
-                fontWeight: FontWeight.w600,
+            Flexible(
+              child: Text(
+                label,
+                style: AppText.caption.copyWith(
+                  color: fg,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -1456,9 +1454,10 @@ class _SectionCompleteOverlayState extends State<_SectionCompleteOverlay>
 
   @override
   Widget build(BuildContext context) {
-    final cardScale = Tween<double>(begin: 0.82, end: 1.0).animate(
-      CurvedAnimation(parent: _scrim, curve: Curves.easeOutBack),
-    );
+    final cardScale = Tween<double>(
+      begin: 0.82,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _scrim, curve: Curves.easeOutBack));
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _finish,
@@ -1512,10 +1511,7 @@ class _SectionCompleteOverlayState extends State<_SectionCompleteOverlay>
                           ),
                           const SizedBox(height: AppSpace.xs),
                           Text(
-                            widget.store.t(
-                              'Section complete',
-                              'अनुभाग पूर्ण',
-                            ),
+                            widget.store.t('Section complete', 'अनुभाग पूर्ण'),
                             style: AppText.secondary(AppText.caption),
                             textAlign: TextAlign.center,
                           ),

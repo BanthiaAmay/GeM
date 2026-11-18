@@ -5,13 +5,10 @@ import 'tokens.dart';
 export 'tokens.dart';
 
 // Compatibility aliases for the calculator/report pages while they migrate
-// onto the named design tokens. They resolve to the current accent palette:
-// `green` is the success accent, `lime` is the cheer confetti accent.
-@Deprecated('Use AppColors.accentSuccess')
-const green = AppColors.accentSuccess;
+// onto the named design tokens. They resolve to the same audited palette.
+const green = AppColors.brand;
 const ink = AppColors.ink;
-@Deprecated('Use AppColors.accentCheer')
-const lime = AppColors.accentCheer;
+const lime = AppColors.brandTint;
 const line = AppColors.border;
 
 /// The one app theme. Every Material widget the app uses inherits its
@@ -21,9 +18,9 @@ ThemeData saathiTheme() {
   const scheme = ColorScheme.light(
     primary: AppColors.ink,
     onPrimary: AppColors.surface,
-    secondary: AppColors.accentInfo,
+    secondary: AppColors.brand,
     onSecondary: AppColors.surface,
-    error: AppColors.accentDanger,
+    error: AppColors.danger,
     onError: AppColors.surface,
     surface: AppColors.surface,
     onSurface: AppColors.ink,
@@ -40,10 +37,10 @@ ThemeData saathiTheme() {
   final pill = WidgetStatePropertyAll<OutlinedBorder>(const StadiumBorder());
   final label = WidgetStatePropertyAll<TextStyle>(AppText.button);
 
-  // Keyboard/switch focus: a 3px info-blue ring on every button kind.
+  // Keyboard/switch focus: a 3px brand ring on every button kind.
   BorderSide? focusSide(Set<WidgetState> s, BorderSide? rest) =>
       s.contains(WidgetState.focused)
-      ? const BorderSide(color: AppColors.accentInfo, width: 3)
+      ? const BorderSide(color: AppColors.brand, width: 3)
       : rest;
 
   return ThemeData(
@@ -109,7 +106,7 @@ ThemeData saathiTheme() {
       labelStyle: AppText.body.copyWith(color: AppColors.textSecondary),
       helperStyle: AppText.caption,
       helperMaxLines: 3,
-      errorStyle: AppText.caption.copyWith(color: AppColors.accentDanger),
+      errorStyle: AppText.caption.copyWith(color: AppColors.danger),
       errorMaxLines: 3,
       border: OutlineInputBorder(
         borderRadius: AppRadius.input,
@@ -125,11 +122,11 @@ ThemeData saathiTheme() {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: AppRadius.input,
-        borderSide: const BorderSide(color: AppColors.accentDanger),
+        borderSide: const BorderSide(color: AppColors.danger),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: AppRadius.input,
-        borderSide: const BorderSide(color: AppColors.accentDanger, width: 1.6),
+        borderSide: const BorderSide(color: AppColors.danger, width: 1.6),
       ),
       disabledBorder: OutlineInputBorder(
         borderRadius: AppRadius.input,
@@ -275,7 +272,7 @@ ThemeData saathiTheme() {
       space: 1,
     ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(
-      color: AppColors.accentInfo,
+      color: AppColors.brand,
       linearTrackColor: AppColors.chartTrack,
       circularTrackColor: AppColors.chartTrack,
     ),
@@ -312,7 +309,7 @@ ThemeData saathiTheme() {
     navigationRailTheme: const NavigationRailThemeData(
       backgroundColor: AppColors.surface,
       indicatorColor: Colors.transparent,
-      selectedIconTheme: IconThemeData(color: AppColors.ink),
+      selectedIconTheme: IconThemeData(color: AppColors.brand),
       unselectedIconTheme: IconThemeData(color: AppColors.textSecondary),
     ),
   );

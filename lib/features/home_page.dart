@@ -4,7 +4,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/models.dart';
 import '../core/motion.dart';
 import '../core/theme.dart';
-import '../core/translations.dart';
 import '../core/transitions.dart';
 import '../data/app_store.dart';
 import 'brand_logo.dart';
@@ -33,7 +32,14 @@ enum _Tab { home, tools, calculators, financialHub, profile }
 /// so the two stay in lockstep instead of drifting apart.
 List<(_Tab, IconData, IconData, String)> _navItems(AppStore s) => [
   (_Tab.home, Icons.home_outlined, Icons.home, s.t('Home', 'होम')),
-  (_Tab.tools, Icons.build_outlined, Icons.build, s.t('Documentation Assist', 'दस्तावेज़ सहायक')),
+  (
+    // Short form in the nav bar; the tab's page keeps the full
+    // "Documentation Assist" title.
+    _Tab.tools,
+    Icons.build_outlined,
+    Icons.build,
+    s.t('Documents', 'दस्तावेज़'),
+  ),
   (
     _Tab.calculators,
     Icons.calculate_outlined,
@@ -272,7 +278,10 @@ class _HomePageState extends State<HomePage>
                       ),
                       _Tab.tools => _ToolsTab(store: s),
                       _Tab.calculators => _CalculatorsTab(store: s),
-                      _Tab.financialHub => _FinancialHubTab(store: s, onNavigate: _go),
+                      _Tab.financialHub => _FinancialHubTab(
+                        store: s,
+                        onNavigate: _go,
+                      ),
                       _Tab.profile => _ProfileTab(store: s),
                     },
                   );
@@ -419,10 +428,7 @@ class _HomeDrawer extends StatelessWidget {
                 AppSpace.lg,
               ),
               child: Center(
-                child: BrandLogo(
-                  variant: BrandLogoVariant.lockup,
-                  width: 150,
-                ),
+                child: BrandLogo(variant: BrandLogoVariant.lockup, width: 150),
               ),
             ),
             const Divider(),
@@ -557,7 +563,10 @@ class _HomeTab extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StaggeredEntrance(index: 0, child: _GreetingSection(store: s, name: name)),
+        StaggeredEntrance(
+          index: 0,
+          child: _GreetingSection(store: s, name: name),
+        ),
         const SizedBox(height: AppSpace.xxxl),
         StaggeredEntrance(index: 1, child: _BidAlertsSection(store: s)),
         const SizedBox(height: AppSpace.xxxl),
@@ -571,7 +580,6 @@ class _HomeTab extends StatelessWidget {
     );
   }
 }
-
 
 class _ToolsTab extends StatelessWidget {
   final AppStore store;
@@ -786,21 +794,17 @@ class _FinancialHubTab extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.accentInfoTint,
+                  color: AppColors.brandTint,
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: const Icon(
                   Icons.lightbulb_outline,
-                  color: AppColors.accentInfo,
+                  color: AppColors.brand,
                   size: AppIconSize.md,
                 ),
               ),
               const SizedBox(width: AppSpace.md),
-              Container(
-                width: 1,
-                height: 44,
-                color: AppColors.border,
-              ),
+              Container(width: 1, height: 44, color: AppColors.border),
               const SizedBox(width: AppSpace.md),
               Expanded(
                 child: Column(
@@ -1234,7 +1238,6 @@ class _NotificationBell extends StatelessWidget {
   );
 }
 
-
 // ── Helper ───────────────────────────────────────────────────────────────────
 
 String _timeAgo(DateTime dt) {
@@ -1269,7 +1272,11 @@ class _GreetingSection extends StatelessWidget {
             child: Text(
               name.isEmpty
                   ? s.t('Hello.', 'नमस्ते.')
-                  : s.t('Hello, {name}', 'नमस्ते, {name}', vars: {'name': name}),
+                  : s.t(
+                      'Hello, {name}',
+                      'नमस्ते, {name}',
+                      vars: {'name': name},
+                    ),
               style: AppText.h1.copyWith(color: AppColors.surface),
             ),
           ),
@@ -1331,14 +1338,15 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
             onAction: () => Navigator.of(context).pushNamed('/bids'),
           ),
           const SizedBox(height: AppSpace.sm),
-          Row(
+          Wrap(
+            spacing: AppSpace.sm,
+            runSpacing: AppSpace.sm,
             children: [
               _FilterPill(
                 label: s.t('All', 'सभी'),
                 selected: !_unreadOnly,
                 onTap: () => setState(() => _unreadOnly = false),
               ),
-              const SizedBox(width: AppSpace.sm),
               _FilterPill(
                 label: s.t('Unread', 'अपठित'),
                 selected: _unreadOnly,
@@ -1366,11 +1374,16 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
                           size: AppIconSize.md,
                         ),
                         const SizedBox(width: AppSpace.md),
-                        Text(
-                          _unreadOnly
-                              ? s.t('No unread alerts', 'कोई अपठित अलर्ट नहीं')
-                              : s.t('No alerts yet', 'अभी कोई अलर्ट नहीं'),
-                          style: AppText.secondary(AppText.bodySmall),
+                        Expanded(
+                          child: Text(
+                            _unreadOnly
+                                ? s.t(
+                                    'No unread alerts',
+                                    'कोई अपठित अलर्ट नहीं',
+                                  )
+                                : s.t('No alerts yet', 'अभी कोई अलर्ट नहीं'),
+                            style: AppText.secondary(AppText.bodySmall),
+                          ),
                         ),
                       ],
                     ),
@@ -1443,8 +1456,18 @@ class _BidAlertRow extends StatelessWidget {
     final dt = DateTime.tryParse(raw);
     if (dt == null) return raw;
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
@@ -1481,7 +1504,8 @@ class _BidAlertRow extends StatelessWidget {
 
     final startDisplay = _fmtDate(alert['bid_start_date'] as String?);
     final endDisplay = _fmtDate(alert['bid_end_date'] as String?);
-    final datesAvailable = alert['bid_start_date'] != null || alert['bid_end_date'] != null;
+    final datesAvailable =
+        alert['bid_start_date'] != null || alert['bid_end_date'] != null;
 
     // Build the GeM search URL for the "View on GeM" fallback link
     final gemBidNum = (() {
@@ -1495,8 +1519,8 @@ class _BidAlertRow extends StatelessWidget {
     final gemUrl = sourceUrl.isNotEmpty
         ? sourceUrl
         : gemBidNum != null
-            ? 'https://bidplus.gem.gov.in/bidlists?search_bid_number=${Uri.encodeComponent(gemBidNum)}'
-            : '';
+        ? 'https://bidplus.gem.gov.in/bidlists?search_bid_number=${Uri.encodeComponent(gemBidNum)}'
+        : '';
 
     final createdRaw = alert['created_at'];
     DateTime? created;
@@ -1505,7 +1529,6 @@ class _BidAlertRow extends StatelessWidget {
     } else if (createdRaw is DateTime) {
       created = createdRaw;
     }
-
 
     // Pill chip: icon + label, single line, truncates inside Flexible.
     Widget chip(IconData icon, String text, Color bg, Color iconColor) =>
@@ -1528,7 +1551,9 @@ class _BidAlertRow extends StatelessWidget {
                   text,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppText.caption.copyWith(color: AppColors.textSecondary),
+                  style: AppText.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
             ],
@@ -1597,7 +1622,7 @@ class _BidAlertRow extends StatelessWidget {
       child: Text(
         isService ? 'Service' : 'Goods',
         style: AppText.label.copyWith(
-          color: isService ? AppColors.accentPurple : AppColors.accentWarning,
+          color: isService ? AppColors.violet : AppColors.warning,
           letterSpacing: 0.3,
         ),
       ),
@@ -1676,7 +1701,11 @@ class _BidAlertRow extends StatelessWidget {
           if (datesAvailable)
             Row(
               children: [
-                dateBlock(Icons.calendar_today_outlined, 'STARTS', startDisplay),
+                dateBlock(
+                  Icons.calendar_today_outlined,
+                  'STARTS',
+                  startDisplay,
+                ),
                 const SizedBox(width: AppSpace.xs),
                 dateBlock(Icons.event_available_outlined, 'ENDS', endDisplay),
               ],
@@ -1707,7 +1736,7 @@ class _BidAlertRow extends StatelessWidget {
                     Text(
                       'View Bid Details',
                       style: AppText.bodyStrong.copyWith(
-                        color: AppColors.accentInfo,
+                        color: AppColors.brand,
                       ),
                     ),
                   ],
@@ -1749,16 +1778,12 @@ class _BidAlertRow extends StatelessWidget {
   }
 }
 
-
 // ── Quick Actions ────────────────────────────────────────────────────────────
 
 class _QuickActionsSection extends StatelessWidget {
   final AppStore store;
   final ValueChanged<_Tab> onNavigate;
-  const _QuickActionsSection({
-    required this.store,
-    required this.onNavigate,
-  });
+  const _QuickActionsSection({required this.store, required this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -1769,35 +1794,43 @@ class _QuickActionsSection extends StatelessWidget {
         SectionHeader(s.t('Quick actions', 'त्वरित कार्य')),
         const SizedBox(height: AppSpace.sm),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _QuickActionTile(
-              icon: Icons.checklist_outlined,
-              label: s.t('Eligibility', 'पात्रता'),
-              tileColor: AppColors.infoTint,
-              iconColor: AppColors.info,
-              onTap: () => Navigator.of(context).pushNamed('/eligibility'),
+            Expanded(
+              child: _QuickActionTile(
+                icon: Icons.checklist_outlined,
+                label: s.t('Eligibility', 'पात्रता'),
+                tileColor: AppColors.infoTint,
+                iconColor: AppColors.info,
+                onTap: () => Navigator.of(context).pushNamed('/eligibility'),
+              ),
             ),
-            _QuickActionTile(
-              icon: Icons.chat_bubble_outline,
-              label: s.t('Ask Saathi', 'साथी से पूछें'),
-              tileColor: AppColors.brandTint,
-              iconColor: AppColors.brand,
-              onTap: () => Navigator.of(context).pushNamed('/saathi'),
+            Expanded(
+              child: _QuickActionTile(
+                icon: Icons.chat_bubble_outline,
+                label: s.t('Ask Saathi', 'साथी से पूछें'),
+                tileColor: AppColors.brandTint,
+                iconColor: AppColors.brand,
+                onTap: () => Navigator.of(context).pushNamed('/saathi'),
+              ),
             ),
-            _QuickActionTile(
-              icon: Icons.trending_up_outlined,
-              label: s.t('Tender Analytics', 'टेंडर एनालिटिक्स'),
-              tileColor: AppColors.warningTint,
-              iconColor: AppColors.warning,
-              onTap: () => Navigator.of(context).pushNamed('/insights'),
+            Expanded(
+              child: _QuickActionTile(
+                icon: Icons.trending_up_outlined,
+                label: s.t('Tender Analytics', 'टेंडर एनालिटिक्स'),
+                tileColor: AppColors.warningTint,
+                iconColor: AppColors.warning,
+                onTap: () => Navigator.of(context).pushNamed('/insights'),
+              ),
             ),
-            _QuickActionTile(
-              icon: Icons.gavel_outlined,
-              label: s.t('Find Bids', 'बोलियाँ खोजें'),
-              tileColor: AppColors.violetTint,
-              iconColor: AppColors.violet,
-              onTap: () => Navigator.of(context).pushNamed('/bids'),
+            Expanded(
+              child: _QuickActionTile(
+                icon: Icons.gavel_outlined,
+                label: s.t('Find Bids', 'बोलियाँ खोजें'),
+                tileColor: AppColors.violetTint,
+                iconColor: AppColors.violet,
+                onTap: () => Navigator.of(context).pushNamed('/bids'),
+              ),
             ),
           ],
         ),
@@ -1843,6 +1876,7 @@ class _QuickActionTile extends StatelessWidget {
             style: AppText.caption,
             textAlign: TextAlign.center,
             maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -2115,34 +2149,34 @@ class _ActiveBidsCard extends StatelessWidget {
   const _ActiveBidsCard({required this.store});
   final AppStore store;
 
+  /// Same translucent tile as the rest of the hero card's content.
   @override
   Widget build(BuildContext context) {
-    final lang = Localizations.localeOf(context).languageCode;
-    String tr(String key) =>
-        (kTranslations[key]?[lang] ?? kTranslations[key]?['en'] ?? key);
-
     final count = store.gemActiveBids;
-
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: AppColors.surface.withValues(alpha: 0.14),
+        borderRadius: AppRadius.card,
+        border: Border.all(color: AppColors.surface.withValues(alpha: 0.2)),
       ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpace.md,
-        vertical: AppSpace.sm,
+        vertical: AppSpace.lg,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             count != null ? count.toString() : '—',
-            style: AppText.h2.copyWith(color: AppColors.ink),
+            style: AppText.h2.copyWith(color: AppColors.surface),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSpace.xs),
           Text(
-            tr('Active bids on GeM'),
-            style: AppText.caption.copyWith(color: AppColors.textSecondary),
+            store.t('Active bids on GeM', 'GeM पर सक्रिय बोलियाँ'),
+            style: AppText.overline.copyWith(
+              color: AppColors.surface.withValues(alpha: 0.72),
+            ),
           ),
         ],
       ),

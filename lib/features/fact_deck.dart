@@ -151,6 +151,19 @@ class FactTicket extends StatelessWidget {
     this.compact = false,
   });
 
+  /// In a fixed-height deck, shrinks the figure and caption to fit (large
+  /// text, long languages) instead of overflowing; unbounded, lays out as is.
+  static Widget _fitTop(BoxConstraints box, Widget child) {
+    if (!box.hasBoundedHeight) return child;
+    return Flexible(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.topLeft,
+        child: SizedBox(width: box.maxWidth, child: child),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final footer = compact ? 40.0 : 46.0;
@@ -176,82 +189,91 @@ class FactTicket extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(pad, pad, pad, AppSpace.sm),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: compact ? 28 : 36,
-                          height: compact ? 28 : 36,
-                          decoration: BoxDecoration(
-                            color: fact.tint,
-                            shape: BoxShape.circle,
+              _fitTop(
+                box,
+                Padding(
+                  padding: EdgeInsets.fromLTRB(pad, pad, pad, AppSpace.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: compact ? 28 : 36,
+                            height: compact ? 28 : 36,
+                            decoration: BoxDecoration(
+                              color: fact.tint,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              fact.icon,
+                              size: compact ? 16 : 20,
+                              color: fact.accent,
+                            ),
                           ),
-                          child: Icon(
-                            fact.icon,
-                            size: compact ? 16 : 20,
-                            color: fact.accent,
+                          const SizedBox(width: AppSpace.sm),
+                          Flexible(
+                            child: Text(
+                              store.t('GeM FACT', 'GeM तथ्य'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppText.overline.copyWith(
+                                color: AppColors.ink,
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: AppSpace.sm),
-                        Text(
-                          store.t('GeM FACT', 'GeM तथ्य'),
-                          style: AppText.overline.copyWith(
-                            color: AppColors.ink,
-                          ),
-                        ),
-                        const Spacer(),
-                        Flexible(
-                          child: Transform.rotate(
-                            angle: -0.12,
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpace.sm,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                                  border: Border.all(
-                                    color: fact.accent,
-                                    width: 1.5,
+                          const Spacer(),
+                          Flexible(
+                            child: Transform.rotate(
+                              angle: -0.12,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpace.sm,
+                                    vertical: 2,
                                   ),
-                                ),
-                                child: Text(
-                                  store.t('OFFICIAL DATA', 'आधिकारिक आँकड़े'),
-                                  style: AppText.tick.copyWith(
-                                    color: fact.accent,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.6,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.sm,
+                                    ),
+                                    border: Border.all(
+                                      color: fact.accent,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    store.t('OFFICIAL DATA', 'आधिकारिक आँकड़े'),
+                                    style: AppText.tick.copyWith(
+                                      color: fact.accent,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.6,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: compact ? AppSpace.sm : AppSpace.md),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        countedFigure(fact.figure, count),
-                        style: figureStyle,
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: AppSpace.xs),
-                    Text(
-                      fact.caption,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: compact ? AppText.bodySmall : AppText.body,
-                    ),
-                  ],
+                      SizedBox(height: compact ? AppSpace.sm : AppSpace.md),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          countedFigure(fact.figure, count),
+                          style: figureStyle,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpace.xs),
+                      Text(
+                        fact.caption,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: compact ? AppText.bodySmall : AppText.body,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               SizedBox(
@@ -439,17 +461,26 @@ class _FactDeckState extends State<FactDeck> with TickerProviderStateMixin {
               children: [
                 Row(
                   children: [
-                    Text(
-                      s.t('WHY GeM?', 'GeM क्यों?'),
-                      style: AppText.overline.copyWith(
-                        color: AppColors.surface,
+                    Expanded(
+                      child: Text(
+                        s.t('WHY GeM?', 'GeM क्यों?'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.overline.copyWith(
+                          color: AppColors.surface,
+                        ),
                       ),
                     ),
-                    const Spacer(),
-                    Text(
-                      s.t('Swipe', 'स्वाइप करें'),
-                      style: AppText.tick.copyWith(
-                        color: AppColors.surface.withValues(alpha: 0.75),
+                    const SizedBox(width: AppSpace.sm),
+                    Flexible(
+                      child: Text(
+                        s.t('Swipe', 'स्वाइप करें'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                        style: AppText.tick.copyWith(
+                          color: AppColors.surface.withValues(alpha: 0.75),
+                        ),
                       ),
                     ),
                     const SizedBox(width: AppSpace.xs),
