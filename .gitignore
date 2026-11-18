@@ -64,3 +64,6 @@ research/exports/
 
 # Pages saved by `scripts/bid_valuer/run.py probe` while checking a source.
 scripts/bid_valuer/tests/fixtures/probe/
+
+# Kotlin compiler session files
+/android/.kotlin/
