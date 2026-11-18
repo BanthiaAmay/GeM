@@ -482,7 +482,7 @@ class SaathiApp extends StatelessWidget {
                         ? settings.arguments as String
                         : null,
                   )
-                : page == 'eligibility'
+                : page == 'eligibility-checker'
                 ? EligibilityChecker(
                     store: store,
                     bidId: settings.arguments is String

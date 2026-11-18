@@ -351,6 +351,7 @@ class _HomePageState extends State<HomePage>
                   child: ValueListenableBuilder<double>(
                     valueListenable: _headerShift,
                     builder: (context, shift, _) => _SaathiButton(
+                      key: const ValueKey('ask-saathi-button'),
                       store: s,
                       expanded: shift < _headerHeight / 2,
                     ),
@@ -1802,7 +1803,8 @@ class _QuickActionsSection extends StatelessWidget {
                 label: s.t('Eligibility', 'पात्रता'),
                 tileColor: AppColors.infoTint,
                 iconColor: AppColors.info,
-                onTap: () => Navigator.of(context).pushNamed('/eligibility'),
+                onTap: () =>
+                    Navigator.of(context).pushNamed('/eligibility-checker'),
               ),
             ),
             Expanded(
@@ -2083,7 +2085,7 @@ class _HomeNav extends StatelessWidget {
 class _SaathiButton extends StatelessWidget {
   final AppStore store;
   final bool expanded;
-  const _SaathiButton({required this.store, required this.expanded});
+  const _SaathiButton({super.key, required this.store, required this.expanded});
 
   @override
   Widget build(BuildContext context) {

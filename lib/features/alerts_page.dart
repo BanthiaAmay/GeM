@@ -32,6 +32,7 @@ class AlertsBody extends StatefulWidget {
 
 class _AlertsBodyState extends State<AlertsBody> {
   bool inApp = true, busy = false;
+  String? feedback;
   AppStore get s => widget.store;
 
   @override
@@ -41,11 +42,42 @@ class _AlertsBodyState extends State<AlertsBody> {
     inApp = p['in_app_enabled'] != false;
   }
 
+  /// Saves the switch (the server stops or resumes pushes), and turning it
+  /// on is the moment to ask the phone for notification permission.
   Future<void> setInApp(bool value) async {
-    setState(() => inApp = value);
+    final previous = inApp;
+    setState(() {
+      inApp = value;
+      busy = true;
+      feedback = null;
+    });
+    try {
+      await s.setInAppAlerts(value);
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          inApp = previous;
+          busy = false;
+          feedback = s.t(
+            'Could not save. Check your connection and retry.',
+            'सहेजा नहीं जा सका। कनेक्शन जाँचें और फिर कोशिश करें।',
+          );
+        });
+      }
+      return;
+    }
+    if (!mounted) return;
+    setState(() => busy = false);
     if (!value || !s.pushSupported) return;
     final allowed = await s.push!.enable();
-    if (!allowed && mounted) setState(() {});
+    if (!allowed && mounted) {
+      setState(
+        () => feedback = s.t(
+          'Notifications are off for Bid2Scale. Allow them in your phone settings to get alerts on this phone.',
+          'Bid2Scale के लिए सूचनाएँ बंद हैं। इस फ़ोन पर अलर्ट पाने के लिए फ़ोन सेटिंग में इन्हें चालू करें।',
+        ),
+      );
+    }
   }
 
   @override
@@ -93,6 +125,13 @@ class _AlertsBodyState extends State<AlertsBody> {
                   value: inApp,
                   onChanged: busy ? null : setInApp,
                 ),
+                if (feedback != null) ...[
+                  const SizedBox(height: AppSpace.sm),
+                  Text(
+                    feedback!,
+                    style: AppText.bodySmall.copyWith(color: AppColors.danger),
+                  ),
+                ],
                 Divider(
                   color: AppColors.border,
                   height: AppSpace.xl * 2,

@@ -1480,6 +1480,20 @@ class AppStore extends ChangeNotifier {
   /// Daily-ish email digest of matching bids, sent to the sign-in address.
   bool get emailAlerts => alertPreferences['email_enabled'] != false;
 
+  /// The Alerts page "App Notifications" switch. Saved on its own (no
+  /// WhatsApp number needed); off also cancels pushes still waiting to go.
+  Future<void> setInAppAlerts(bool enabled) async {
+    if (!signedIn || client == null) return;
+    final userId = currentUser!.id;
+    final result = await client!.rpc(
+      'set_in_app_alerts',
+      params: {'p_enabled': enabled},
+    );
+    if (currentUser?.id != userId) return;
+    alertPreferences = Map<String, dynamic>.from(result as Map);
+    notifyListeners();
+  }
+
   Future<void> setEmailAlerts(bool enabled) async {
     if (!signedIn || client == null) return;
     final userId = currentUser!.id;

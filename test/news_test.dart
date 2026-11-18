@@ -93,20 +93,24 @@ void main() {
     expect(store.loads, 2);
   });
 
-  testWidgets('Home hides the bulletin card until one exists', (tester) async {
+  testWidgets('Home says the bulletin is coming until one exists', (
+    tester,
+  ) async {
     await show(tester, HomePage(store: store));
     expect(store.loads, 1);
-    expect(find.text('GeM Weekly Bulletin'), findsNothing);
+    expect(find.text('GEM WEEKLY'), findsOneWidget);
+    expect(find.text('Coming soon'), findsOneWidget);
   });
 
   testWidgets('Home shows the latest bulletin and opens News', (tester) async {
     store.bulletins = [Map.of(_week4), Map.of(_week3)];
     await show(tester, HomePage(store: store));
-    expect(find.text('GeM Weekly Bulletin'), findsOneWidget);
+    expect(find.text('GEM WEEKLY'), findsOneWidget);
     expect(find.text('GeM Bulletin October Week #4'), findsOneWidget);
     expect(find.text('GeM Bulletin October Week #3'), findsNothing);
-    await tester.ensureVisible(find.text('See all'));
-    await tester.tap(find.text('See all'));
+    // "See all" of Learn & Stay Current (Bid Alerts has its own, above it).
+    await tester.ensureVisible(find.text('See all').last);
+    await tester.tap(find.text('See all').last);
     await tester.pumpAndSettle();
     expect(find.byType(NewsPage), findsOneWidget);
     expect(find.text('GeM Bulletin October Week #3'), findsOneWidget);

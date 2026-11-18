@@ -33,8 +33,14 @@ class FakePush implements PushBridge {
 
 class AlertsStore extends AuthenticatedJourneyStore {
   AlertsStore(super.prefs);
+  final inAppSaves = <bool>[];
   @override
   Future<void> loadAlerts() async {}
+  @override
+  Future<void> setInAppAlerts(bool enabled) async {
+    inAppSaves.add(enabled);
+    alertPreferences = {...alertPreferences, 'in_app_enabled': enabled};
+  }
 }
 
 void main() {
@@ -196,10 +202,13 @@ void main() {
     store.push = push;
     store.alertPreferences = {'in_app_enabled': false, 'keywords': []};
     await show(tester, AlertsPage(store: store));
-    final toggle = find.text('App notifications for matching bids');
+    // The first switch on the page is "App Notifications".
+    expect(find.text('App Notifications'), findsOneWidget);
+    final toggle = find.byType(Switch).first;
     await tester.ensureVisible(toggle);
     await tester.tap(toggle);
     await tester.pumpAndSettle();
+    expect(store.inAppSaves, [true]);
     expect(push.enables, 1);
     expect(
       find.textContaining('Allow them in your phone settings'),

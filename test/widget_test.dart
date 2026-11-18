@@ -217,6 +217,24 @@ void main() {
     tester.view.resetPhysicalSize();
     tester.view.resetDevicePixelRatio();
   });
+  testWidgets('bid eligibility checker and eligibility calculator both open', (
+    tester,
+  ) async {
+    await setup(tester, const Size(390, 844));
+    final nav = tester.state<NavigatorState>(find.byType(Navigator));
+    nav.pushNamed('/eligibility-checker');
+    await tester.pumpAndSettle();
+    expect(find.text('Eligibility Checker'), findsOneWidget);
+    nav.pop();
+    await tester.pumpAndSettle();
+    nav.pushNamed('/eligibility');
+    await tester.pumpAndSettle();
+    expect(find.text('Can your business sell on GeM?'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
   testWidgets('desktop tool navigation and validation work', (tester) async {
     await setup(tester, const Size(1440, 1000));
     // Navigate directly — the home page no longer has a tool-card shortcut

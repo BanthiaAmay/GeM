@@ -89,8 +89,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel('Ask Saathi'), findsOneWidget);
-    await tester.tap(find.bySemanticsLabel('Ask Saathi'));
+    // Home also has an "Ask Saathi" quick action; this checks the floating one.
+    final button = find.byKey(const ValueKey('ask-saathi-button'));
+    expect(button, findsOneWidget);
+    await tester.tap(button);
     await tester.pumpAndSettle();
     expect(find.text('Ask Saathi anything'), findsOneWidget);
   });

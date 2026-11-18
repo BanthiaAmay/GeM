@@ -749,7 +749,7 @@ class _BidCard extends StatelessWidget {
                 icon: Icons.checklist_outlined,
                 onPressed: () => Navigator.pushNamed(
                   context,
-                  '/eligibility',
+                  '/eligibility-checker',
                   arguments: bid['source_id'] as String,
                 ),
               ),

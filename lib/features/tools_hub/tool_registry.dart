@@ -76,7 +76,7 @@ class ToolEntry {
 const List<ToolEntry> kTools = [
   ToolEntry(
     id: 'eligibility-checker',
-    route: '/eligibility',
+    route: '/eligibility-checker',
     icon: Icons.checklist_outlined,
     group: ToolGroup.analysis,
     docCategory: DocCategory.templates,
