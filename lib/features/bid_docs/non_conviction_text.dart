@@ -1,28 +1,28 @@
 /// Non-Conviction Certificate — letter model and builder.
 ///
-/// Certifies that the company and its associates have no criminal convictions.
-/// No tender number — this letter is company-level, not bid-specific.
-///
-/// Pure Dart — no Flutter imports.
+/// Reference: GeM GTC Clause 3(A)(xiv).
+/// Format: Title + Ref | To: | Opening | 4 numbered clauses | Signature.
 library;
 
 import 'letter_model.dart';
 import 'mii_certificate_text.dart' show formatLetterDate;
 
-export 'mii_certificate_text.dart' show formatLetterDate;
-
 // ── Input model ───────────────────────────────────────────────────────────────
 
 class NonConvictionInput {
+  final String tenderNo;
+  final String buyerDesignation;
+  final String buyerOrg;
   final String company;
-  final String companyAddress;
   final String signatory;
   final String designation;
   final DateTime date;
 
   const NonConvictionInput({
+    required this.tenderNo,
+    required this.buyerDesignation,
+    required this.buyerOrg,
     required this.company,
-    required this.companyAddress,
     required this.signatory,
     required this.designation,
     required this.date,
@@ -31,77 +31,99 @@ class NonConvictionInput {
 
 // ── Letter builder ────────────────────────────────────────────────────────────
 
-List<LetterBlock> buildNonConvictionCertificate(NonConvictionInput i) => [
-  // Date
-  LetterBlock.plain(LetterBlockKind.date, 'Date: ${formatLetterDate(i.date)}'),
-  const LetterBlock.spacer(),
+List<LetterBlock> buildNonConvictionCertificate(NonConvictionInput i) {
+  return [
+    // ── Title ───────────────────────────────────────────────────────────────
+    LetterBlock.plain(LetterBlockKind.title, 'NON-CONVICTION CERTIFICATE'),
+    LetterBlock(LetterBlockKind.subtitle, [
+      const LetterSpan('GeM GTC Clause 3(A)(xiv)   |   GeM Bid No.: '),
+      LetterSpan(i.tenderNo, bold: true),
+      const LetterSpan('   |   Date: '),
+      LetterSpan(formatLetterDate(i.date), bold: true),
+    ]),
 
-  // Centred title
-  LetterBlock(LetterBlockKind.title, [
-    const LetterSpan('To Whom It May Concern'),
-  ]),
-  const LetterBlock.spacer(),
+    const LetterBlock.spacer(),
 
-  // Subject line: "Subject:" bold, rest normal
-  LetterBlock(LetterBlockKind.body, [
-    const LetterSpan('Subject: ', bold: true),
-    const LetterSpan('Non-Conviction Certificate'),
-  ]),
-  const LetterBlock.spacer(),
+    // ── To ───────────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('To: The '),
+      LetterSpan(i.buyerDesignation, bold: true),
+      const LetterSpan(', '),
+      LetterSpan(i.buyerOrg, bold: true),
+    ]),
 
-  // Paragraph 1 — main certification
-  LetterBlock(LetterBlockKind.body, [
-    const LetterSpan('This is to certify that '),
-    LetterSpan(i.company, bold: true),
-    const LetterSpan(' represented by '),
-    LetterSpan(i.signatory, bold: true),
-    const LetterSpan(' ('),
-    LetterSpan(i.designation, bold: true),
-    const LetterSpan(
-      '), has not been convicted of any criminal offense under the laws '
-      'of India or any other jurisdiction. Neither our company nor any of '
-      'our directors, partners, or employees have been found guilty of any '
-      'criminal offense punishable by imprisonment, fine, or any other '
-      'penal action.',
+    const LetterBlock.spacer(),
+
+    // ── Opening ──────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('We, '),
+      LetterSpan(i.company, bold: true),
+      const LetterSpan(', represented by '),
+      LetterSpan(i.signatory, bold: true),
+      const LetterSpan(' ('),
+      LetterSpan(i.designation, bold: true),
+      const LetterSpan('), certify:'),
+    ]),
+
+    const LetterBlock.spacer(),
+
+    // ── Clause 1 ─────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('1.   '),
+      LetterSpan(i.company, bold: true),
+      const LetterSpan(
+        ' has not been convicted by any court of law of any offence involving'
+        ' corruption, fraud, bribery, or moral turpitude under the Prevention of'
+        ' Corruption Act, 1988, the Indian Penal Code, 1860, or any other applicable statute.',
+      ),
+    ]),
+
+    const LetterBlock.spacer(),
+
+    // ── Clause 2 ─────────────────────────────────────────────────────────────
+    LetterBlock.plain(
+      LetterBlockKind.body,
+      '2.   None of the present Directors, Promoters, or Key Management Personnel'
+      ' have been individually convicted of any such offence.',
     ),
-  ]),
-  const LetterBlock.spacer(),
 
-  // Paragraph 2 — affirmation
-  LetterBlock.plain(
-    LetterBlockKind.body,
-    'We affirm that all individuals associated with our company have '
-    'maintained a clean legal record and have not been involved in any '
-    'criminal activities that would affect our eligibility to participate '
-    'in tenders or projects in India.',
-  ),
-  const LetterBlock.spacer(),
+    const LetterBlock.spacer(),
 
-  // Paragraph 3 — declaration
-  LetterBlock.plain(
-    LetterBlockKind.body,
-    'We hereby declare that all information provided in this certificate '
-    'is true and accurate to the best of our knowledge and belief.',
-  ),
-  const LetterBlock.spacer(),
+    // ── Clause 3 ─────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('3.   '),
+      LetterSpan(i.company, bold: true),
+      const LetterSpan(' is not '),
+      const LetterSpan('"Debarred from Bidding"', bold: true),
+      const LetterSpan(
+        ' on the grounds mentioned in Rule 151 of the GFR, 2017, and does not'
+        ' appear on the GeM Debarred/Suspended Sellers List as of this date.',
+      ),
+    ]),
 
-  // Paragraph 4 — closing
-  LetterBlock.plain(
-    LetterBlockKind.body,
-    'Thank you for considering our bid. Should you require any further '
-    'clarification or documentation, please feel free to contact us.',
-  ),
-  const LetterBlock.spacer(),
+    const LetterBlock.spacer(),
 
-  // Sign-off
-  LetterBlock.plain(LetterBlockKind.body, 'Sincerely,'),
+    // ── Clause 4 ─────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('4.   We will notify '),
+      LetterSpan(i.buyerOrg, bold: true),
+      const LetterSpan(
+        ' in writing within 7 days if any such conviction or prosecution is'
+        ' initiated during the currency of a Supply Order.',
+      ),
+    ]),
 
-  // Extra space before signature (blank × 3)
-  const LetterBlock.spacer(),
-  const LetterBlock.spacer(),
+    const LetterBlock.spacer(),
+    const LetterBlock.spacer(),
 
-  // Signature block
-  LetterBlock(LetterBlockKind.signature, [LetterSpan(i.signatory, bold: true)]),
-  LetterBlock.plain(LetterBlockKind.signature, i.designation),
-  LetterBlock.plain(LetterBlockKind.signature, i.company),
-];
+    // ── Signature block ───────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.signature, [
+      LetterSpan(i.signatory, bold: true),
+      const LetterSpan('   |   '),
+      LetterSpan(i.designation, bold: true),
+      const LetterSpan('   |   '),
+      LetterSpan(i.company, bold: true),
+    ]),
+    LetterBlock.plain(LetterBlockKind.signature, 'Date:                              | Place:'),
+  ];
+}

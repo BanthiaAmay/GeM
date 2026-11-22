@@ -1,83 +1,131 @@
-/// Content + rules for the "Undertaking for Non-blacklisting" declaration
-/// required in most government / GeM tenders.
+/// Non-Blacklisting and Non-Debarment Certificate — letter model and builder.
 ///
-/// All wording lives here (not in the widget) so it can be reviewed and
-/// tested independently.
+/// Reference: GeM GTC Clause 3(A)(xiv) — Rule 151, GFR 2017.
+/// Format: Title + Ref | To: | Opening | 3 numbered clauses | Signature + Seal.
 library;
 
 import 'letter_model.dart';
 import 'mii_certificate_text.dart' show formatLetterDate;
 
-export 'mii_certificate_text.dart' show formatLetterDate;
+// ── Input model ───────────────────────────────────────────────────────────────
 
-/// Everything the certificate needs. Immutable; the page builds one on Generate.
-class NbcInput {
-  /// Recipient designation, e.g. "The Commandant".
-  final String recipient;
-
-  /// Organisation the tender belongs to, e.g. "Indian Army".
-  final String organization;
-
-  /// Recipient's address, e.g. "New Delhi".
-  final String address;
-
-  /// GeM bid number, e.g. "GEM/2026/B/7845020".
+class NonBlacklistCertificateInput {
   final String tenderNo;
-
+  final String buyerDesignation;
+  final String buyerOrg;
   final String company;
-
-  /// Stored in the model (and profile) for future use; not placed in the
-  /// document body by the current layout.
-  final String companyAddress;
-
   final String signatory;
   final String designation;
   final DateTime date;
 
-  const NbcInput({
-    required this.recipient,
-    required this.organization,
-    required this.address,
+  const NonBlacklistCertificateInput({
     required this.tenderNo,
+    required this.buyerDesignation,
+    required this.buyerOrg,
     required this.company,
-    required this.companyAddress,
     required this.signatory,
     required this.designation,
     required this.date,
   });
 }
 
-/// Builds the certificate as styled blocks ready for [LetterPaper] and PDF.
-List<LetterBlock> buildNbcCertificate(NbcInput i) => [
-  LetterBlock.plain(LetterBlockKind.date, 'Date: ${formatLetterDate(i.date)}'),
-  LetterBlock.plain(LetterBlockKind.body, ''),
-  LetterBlock.plain(LetterBlockKind.body, 'To'),
-  LetterBlock.plain(LetterBlockKind.body, ''),
-  LetterBlock(LetterBlockKind.body, [LetterSpan(i.recipient, bold: true)]),
-  LetterBlock(LetterBlockKind.body, [LetterSpan(i.organization, bold: true)]),
-  LetterBlock(LetterBlockKind.body, [LetterSpan(i.address, bold: true)]),
-  LetterBlock.plain(LetterBlockKind.body, ''),
-  LetterBlock(LetterBlockKind.body, [
-    const LetterSpan('Subject: '),
-    const LetterSpan('Undertaking for Non-blacklisting', bold: true),
-  ]),
-  LetterBlock(LetterBlockKind.body, [
-    const LetterSpan('GeM Bid No: '),
-    LetterSpan(i.tenderNo, bold: true),
-  ]),
-  LetterBlock.plain(LetterBlockKind.body, ''),
-  LetterBlock.plain(LetterBlockKind.body, 'Dear Sir/Ma\'am,'),
-  LetterBlock.plain(
-    LetterBlockKind.body,
-    'We hereby certify that, we have not been ever blacklisted / debarred by '
-    'any Central / State Government / Public Undertaking / Institute on any account.',
-  ),
-  LetterBlock(LetterBlockKind.body, [
-    const LetterSpan('Duly authorized to sign the bid for and on behalf of '),
-    LetterSpan(i.company, bold: true),
-    const LetterSpan('.'),
-  ]),
-  const LetterBlock.spacer(),
-  LetterBlock.plain(LetterBlockKind.signature, i.signatory),
-  LetterBlock.plain(LetterBlockKind.signature, i.designation),
-];
+// ── Letter builder ────────────────────────────────────────────────────────────
+
+List<LetterBlock> buildNonBlacklistCertificate(
+  NonBlacklistCertificateInput i,
+) {
+  return [
+    // ── Title ───────────────────────────────────────────────────────────────
+    LetterBlock.plain(
+      LetterBlockKind.title,
+      'NON-BLACKLISTING AND NON-DEBARMENT CERTIFICATE',
+    ),
+    LetterBlock(LetterBlockKind.subtitle, [
+      const LetterSpan(
+        'GeM GTC Clause 3(A)(xiv) — Rule 151, GFR 2017   |   GeM Bid No.: ',
+      ),
+      LetterSpan(i.tenderNo, bold: true),
+      const LetterSpan('   |   Date: '),
+      LetterSpan(formatLetterDate(i.date), bold: true),
+    ]),
+
+    const LetterBlock.spacer(),
+
+    // ── To ───────────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('To: The '),
+      LetterSpan(i.buyerDesignation, bold: true),
+      const LetterSpan(', '),
+      LetterSpan(i.buyerOrg, bold: true),
+    ]),
+
+    const LetterBlock.spacer(),
+
+    // ── Opening ──────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('We, '),
+      LetterSpan(i.company, bold: true),
+      const LetterSpan(', represented by '),
+      LetterSpan(i.signatory, bold: true),
+      const LetterSpan(' ('),
+      LetterSpan(i.designation, bold: true),
+      const LetterSpan('), certify:'),
+    ]),
+
+    const LetterBlock.spacer(),
+
+    // ── Clause 1 ─────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('1.   '),
+      LetterSpan(i.company, bold: true),
+      const LetterSpan(' is not '),
+      const LetterSpan('"Debarred from Bidding"', bold: true),
+      const LetterSpan(' on the grounds mentioned in '),
+      const LetterSpan('Rule 151 of the GFR, 2017', bold: true),
+      const LetterSpan(
+        ', and does not appear on the GeM Debarred/Suspended Sellers List as of this date.',
+      ),
+    ]),
+
+    const LetterBlock.spacer(),
+
+    // ── Clause 2 ─────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('2.   '),
+      LetterSpan(i.company, bold: true),
+      const LetterSpan(
+        ' has not been blacklisted or suspended by any Central/State Government'
+        ' entity, PSU, or statutory authority on any ground.',
+      ),
+    ]),
+
+    const LetterBlock.spacer(),
+
+    // ── Clause 3 ─────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan(
+        '3.   No debarment proceeding is pending against ',
+      ),
+      LetterSpan(i.company, bold: true),
+      const LetterSpan(
+        ' or any of its Directors or Key Management Personnel that remains unresolved.',
+      ),
+    ]),
+
+    const LetterBlock.spacer(),
+    const LetterBlock.spacer(),
+
+    // ── Signature block ───────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.signature, [
+      LetterSpan(i.signatory, bold: true),
+      const LetterSpan('   |   '),
+      LetterSpan(i.designation, bold: true),
+      const LetterSpan('   |   '),
+      LetterSpan(i.company, bold: true),
+    ]),
+    LetterBlock.plain(
+      LetterBlockKind.signature,
+      'Date:                    | Place:                    | Seal:',
+    ),
+  ];
+}

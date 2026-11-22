@@ -1,16 +1,18 @@
-/// Content + rules for the "Self Certification under Preference to MAKE IN
-/// INDIA Policy" declaration that GeM / CPPP tenders ask for.
+/// Content + rules for the "Self-Certification of Local Content" declaration
+/// (Make in India) for GeM bids.
+///
+/// Reference: DPIIT Order No. P-45021/2/2017-PP (BE-II)-Part (4) Vol. II
+/// dated 19th July, 2024 | GeM GTC Clause 3(A)(xix).
 ///
 /// All wording lives here (not in the widget) so it can be reviewed and
-/// tested in one place. The wording mirrors the reference letter produced by
-/// tools.bidz365.com/mii-certificate.
+/// tested in one place.
 library;
 
 import 'letter_model.dart';
 
 /// PPP-MII classification of a bidder by percentage of local content.
-/// Class-I  : local content >= 50%
-/// Class-II : local content >= 20% and < 50%
+/// Class I  : local content >= 50%
+/// Class II : local content >= 20% and < 50%
 /// Not local: below 20% — the certificate must NOT be generated.
 enum LocalSupplierClass { classI, classII, notLocal }
 
@@ -30,10 +32,9 @@ class MiiCertificateInput {
   final double localContentPercent;
   final String company;
 
-  /// "Details of location at which local value addition will be made".
-  /// Prefilled from the company address, but editable — a company can have
-  /// its factory somewhere other than its registered office.
-  final String valueAdditionLocation;
+  /// Place of business / manufacturing premises where local value addition
+  /// is carried out. Prefilled from the company-address profile key.
+  final String placeOfBusiness;
   final String signatory;
   final String designation;
   final DateTime date;
@@ -42,7 +43,7 @@ class MiiCertificateInput {
     required this.tenderNo,
     required this.localContentPercent,
     required this.company,
-    required this.valueAdditionLocation,
+    required this.placeOfBusiness,
     required this.signatory,
     required this.designation,
     required this.date,
@@ -75,10 +76,6 @@ String formatPercent(double v) {
 }
 
 // ---------------------------------------------------------------- validation
-// Validators return an *English key* (or null when valid) so the page can run
-// it through `store.t()`. Tender-number format is a soft warning only: GeM
-// also has custom-bid / RA / PBP numbers, and a wrong guess here must never
-// block a real user.
 
 final RegExp _tenderNoPattern = RegExp(
   r'^GEM/\d{4}/[A-Z]/\d{5,10}$',
@@ -100,75 +97,97 @@ String? validateLocalContent(String? raw) {
 
 // ----------------------------------------------------------------- the letter
 
-/// Builds the letter as styled blocks. Bold spans = user-supplied values.
+/// Builds the letter as styled blocks matching the DPIIT 2024 format.
+/// Bold spans = user-supplied values.
 List<LetterBlock> buildMiiCertificate(MiiCertificateInput i) {
   final cls = classifyLocalContent(i.localContentPercent);
   assert(
     cls != LocalSupplierClass.notLocal,
     'Caller must block generation below 20% local content',
   );
-  final minPct = minimumLocalContentFor(cls);
+  final classLabel = cls == LocalSupplierClass.classI ? 'Class I' : 'Class II';
 
   return [
-    LetterBlock.plain(
-      LetterBlockKind.date,
-      'Date: ${formatLetterDate(i.date)}',
-    ),
+    // ── Header ──────────────────────────────────────────────────────────────
     LetterBlock.plain(
       LetterBlockKind.title,
-      'Self Certification under Preference to “MAKE IN INDIA” Policy',
+      'SELF-CERTIFICATION OF LOCAL CONTENT',
     ),
     LetterBlock.plain(
       LetterBlockKind.subtitle,
-      '(Refer Clause No. 2.8 & 3.4.4 of ITT)',
+      'DPIIT Order No. P-45021/2/2017-PP (BE-II)-Part (4) Vol. II'
+      ' dated 19th July, 2024 | GeM GTC Clause 3(A)(xix)',
     ),
-    LetterBlock.plain(LetterBlockKind.heading, 'CERTIFICATE'),
+
+    // ── Bid reference line ───────────────────────────────────────────────────
     LetterBlock(LetterBlockKind.body, [
-      const LetterSpan(
-        'In line with Government Public Procurement Order No. '
-        'P-45021/2/2017-BE-II dt. 15.06.2017, as amended from time to time '
-        'and as applicable on the date of submission of tender, we hereby '
-        'certify that we ',
-      ),
-      LetterSpan(i.company, bold: true),
-      LetterSpan(
-        ' are local supplier meeting the requirement of minimum Local '
-        'content ($minPct%) as defined in above orders for the material '
-        'against tender no ',
-      ),
+      const LetterSpan('GeM Bid No.: '),
       LetterSpan(i.tenderNo, bold: true),
+      const LetterSpan('   |   Date: '),
+      LetterSpan(formatLetterDate(i.date), bold: true),
     ]),
+
+    const LetterBlock.spacer(),
+
+    // ── Opening declaration ──────────────────────────────────────────────────
     LetterBlock(LetterBlockKind.body, [
-      LetterSpan(
-        'Local Content : ${formatPercent(i.localContentPercent)}%',
-        bold: true,
-      ),
-    ]),
-    LetterBlock.plain(
-      LetterBlockKind.body,
-      'Details of location at which local value addition will be made is as '
-      'follows:',
-    ),
-    LetterBlock(LetterBlockKind.body, [
-      LetterSpan(i.valueAdditionLocation, bold: true),
-    ]),
-    // The reference letter says "up two years" (typo). Corrected to
-    // "up to two years" — see CLAUDE_CODE_PROMPT.md, "Wording to confirm".
-    LetterBlock.plain(
-      LetterBlockKind.body,
-      'We also understand, false declarations will be in breach of the Code '
-      'of Integrity under Rule 175(1)(i)(h) of the General Financial Rule '
-      'for which a bidder or its successors can be debarred for up to two '
-      'years as per Rule 151 (iii) of the General Financial Rules along with '
-      'such other actions as may be permissible under law.',
-    ),
-    LetterBlock(LetterBlockKind.body, [
-      const LetterSpan('Duly authorized to sign the bid for and on behalf of '),
+      const LetterSpan('We, '),
       LetterSpan(i.company, bold: true),
+      const LetterSpan(', represented by '),
+      LetterSpan(i.signatory, bold: true),
+      const LetterSpan(' ('),
+      LetterSpan(i.designation, bold: true),
+      const LetterSpan('), hereby declare:'),
+    ]),
+
+    const LetterBlock.spacer(),
+
+    // ── Clause 1 ─────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('1.   We are a '),
+      LetterSpan(classLabel, bold: true),
+      const LetterSpan(' Local Supplier with Local Content (LC) of '),
+      LetterSpan('${formatPercent(i.localContentPercent)}%', bold: true),
+      const LetterSpan(
+        ', calculated as: {(Value of item − Value of imported content)'
+        ' ÷ Value of item} × 100, at our manufacturing premises in ',
+      ),
+      LetterSpan(i.placeOfBusiness, bold: true),
       const LetterSpan('.'),
     ]),
+
     const LetterBlock.spacer(),
-    LetterBlock.plain(LetterBlockKind.signature, i.signatory),
-    LetterBlock.plain(LetterBlockKind.signature, i.designation),
+
+    // ── Clause 2 ─────────────────────────────────────────────────────────────
+    LetterBlock.plain(
+      LetterBlockKind.body,
+      '2.   All supporting records are maintained and available within'
+      ' 5 working days of a request. For Supply Orders exceeding'
+      ' ₹10 crore, we will furnish a CA/Statutory Auditor certificate'
+      ' confirming the LC percentage.',
+    ),
+
+    const LetterBlock.spacer(),
+
+    // ── Clause 3 ─────────────────────────────────────────────────────────────
+    LetterBlock.plain(
+      LetterBlockKind.body,
+      '3.   We understand that a false declaration constitutes a breach of'
+      ' the Code of Integrity under GFR Rule 175(1)(i)(h) and may result'
+      ' in debarment under Rule 151(iii).',
+    ),
+
+    const LetterBlock.spacer(),
+    const LetterBlock.spacer(),
+
+    // ── Signature block ───────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.signature, [
+      LetterSpan(i.signatory, bold: true),
+      const LetterSpan('   |   '),
+      LetterSpan(i.designation, bold: true),
+      const LetterSpan('   |   '),
+      LetterSpan(i.company, bold: true),
+    ]),
+    LetterBlock.plain(LetterBlockKind.signature, 'Date:                              | Place:'),
   ];
 }

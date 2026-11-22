@@ -153,11 +153,11 @@ const List<ToolEntry> kTools = [
     route: '/tool-non-relation',
     icon: Icons.handshake_outlined,
     group: ToolGroup.bidDocuments,
-    docCategory: DocCategory.undertakings,
-    titleEn: 'Non-Relation Undertaking',
-    titleHi: 'असंबद्धता उपक्रम',
-    descriptionEn: 'Certify no conflict of interest with the tender committee',
-    descriptionHi: 'निविदा समिति से हितों के टकराव की अनुपस्थिति का प्रमाण',
+    docCategory: DocCategory.declarations,
+    titleEn: 'Conflict of Interest Declaration',
+    titleHi: 'हितों के टकराव की घोषणा',
+    descriptionEn: 'Declare absence of conflict of interest with the buyer organisation',
+    descriptionHi: 'खरीदार संगठन के साथ हितों के टकराव की अनुपस्थिति घोषित करें',
     badge: ('PDF', 'PDF'),
   ),
   ToolEntry(
@@ -295,6 +295,76 @@ const List<ToolEntry> kTools = [
         'Generate a request letter or reference format for your Bank Solvency Certificate',
     descriptionHi:
         'बैंक सॉल्वेंसी प्रमाणपत्र के लिए अनुरोध पत्र या संदर्भ प्रारूप बनाएँ',
+    badge: ('PDF', 'PDF'),
+  ),
+  ToolEntry(
+    id: 'pbg-undertaking',
+    route: '/tool-pbg-undertaking',
+    icon: Icons.account_balance_outlined,
+    group: ToolGroup.bidDocuments,
+    docCategory: DocCategory.undertakings,
+    titleEn: 'Performance Bank Guarantee Undertaking',
+    titleHi: 'परफॉर्मेंस बैंक गारंटी उपक्रम',
+    descriptionEn:
+        'Undertake to furnish a PBG within the stipulated time on award of a Supply Order',
+    descriptionHi:
+        'आपूर्ति आदेश मिलने पर निर्धारित समय में PBG देने का उपक्रम करें',
+    badge: ('PDF', 'PDF'),
+  ),
+  ToolEntry(
+    id: 'delivery-ld',
+    route: '/tool-delivery-ld',
+    icon: Icons.local_shipping_outlined,
+    group: ToolGroup.bidDocuments,
+    docCategory: DocCategory.undertakings,
+    titleEn: 'Delivery Timeline & LD Acknowledgment',
+    titleHi: 'डिलीवरी समयसीमा और LD स्वीकृति',
+    descriptionEn:
+        'Acknowledge delivery schedule and liquidated damages terms for a GeM bid',
+    descriptionHi:
+        'GeM बिड के लिए डिलीवरी अनुसूची और विलंब शुल्क शर्तें स्वीकार करें',
+    badge: ('PDF', 'PDF'),
+  ),
+  ToolEntry(
+    id: 'tech-specs',
+    route: '/tool-tech-specs',
+    icon: Icons.science_outlined,
+    group: ToolGroup.bidDocuments,
+    docCategory: DocCategory.certificates,
+    titleEn: 'Technical Specifications Compliance Certificate',
+    titleHi: 'तकनीकी विशिष्टताओं का अनुपालन प्रमाणपत्र',
+    descriptionEn:
+        'Certify compliance with all technical specifications for a GeM bid',
+    descriptionHi:
+        'GeM बिड की सभी तकनीकी विशिष्टताओं के अनुपालन का प्रमाणीकरण करें',
+    badge: ('PDF', 'PDF'),
+  ),
+  ToolEntry(
+    id: 'power-of-attorney',
+    route: '/tool-power-of-attorney',
+    icon: Icons.assignment_ind_outlined,
+    group: ToolGroup.bidDocuments,
+    docCategory: DocCategory.templates,
+    titleEn: 'Power of Attorney',
+    titleHi: 'मुख्तारनामा',
+    descriptionEn:
+        'Authorise a signatory to sign and submit GeM bid documents on behalf of your company',
+    descriptionHi:
+        'GeM बिड दस्तावेज़ पर हस्ताक्षर के लिए अधिकृत व्यक्ति नियुक्त करें',
+    badge: ('PDF', 'PDF'),
+  ),
+  ToolEntry(
+    id: 'gst-declaration',
+    route: '/tool-gst-declaration',
+    icon: Icons.receipt_long_outlined,
+    group: ToolGroup.bidDocuments,
+    docCategory: DocCategory.declarations,
+    titleEn: 'GST Registration & Compliance Declaration',
+    titleHi: 'GST पंजीकरण और अनुपालन घोषणा',
+    descriptionEn:
+        'Declare valid GST registration and compliance with invoicing obligations',
+    descriptionHi:
+        'वैध GST पंजीकरण और चालान दायित्वों का अनुपालन घोषित करें',
     badge: ('PDF', 'PDF'),
   ),
 ];

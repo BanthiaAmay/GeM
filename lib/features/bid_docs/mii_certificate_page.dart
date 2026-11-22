@@ -55,7 +55,7 @@ class _MiiCertificatePageState extends State<MiiCertificatePage> {
   late final TextEditingController _tender;
   late final TextEditingController _localContent;
   late final TextEditingController _company;
-  late final TextEditingController _location;
+  late final TextEditingController _placeOfBusiness;
   late final TextEditingController _signatory;
   late final TextEditingController _designation;
 
@@ -78,7 +78,7 @@ class _MiiCertificatePageState extends State<MiiCertificatePage> {
     _tender = TextEditingController(text: widget.tenderNo ?? '');
     _localContent = TextEditingController();
     _company = TextEditingController(text: pv(BidDocProfileKeys.companyName));
-    _location = TextEditingController(
+    _placeOfBusiness = TextEditingController(
       text: pv(BidDocProfileKeys.companyAddress),
     );
     final signatory = pv(BidDocProfileKeys.signatoryName);
@@ -99,7 +99,7 @@ class _MiiCertificatePageState extends State<MiiCertificatePage> {
       _tender,
       _localContent,
       _company,
-      _location,
+      _placeOfBusiness,
       _signatory,
       _designation,
     ]) {
@@ -145,14 +145,14 @@ class _MiiCertificatePageState extends State<MiiCertificatePage> {
       tenderNo: _tender.text.trim().toUpperCase(),
       localContentPercent: double.parse(_localContent.text.trim()),
       company: _company.text.trim(),
-      valueAdditionLocation: _location.text.trim(),
+      placeOfBusiness: _placeOfBusiness.text.trim(),
       signatory: _signatory.text.trim(),
       designation: _designation.text.trim(),
       date: DateTime.now(),
     );
     // Remember reusable company details (not tender-specific ones).
     s.setProfile(BidDocProfileKeys.companyName, input.company);
-    s.setProfile(BidDocProfileKeys.companyAddress, input.valueAdditionLocation);
+    s.setProfile(BidDocProfileKeys.companyAddress, input.placeOfBusiness);
     s.setProfile(BidDocProfileKeys.signatoryName, input.signatory);
     s.setProfile(BidDocProfileKeys.signatoryDesignation, input.designation);
 
@@ -179,7 +179,7 @@ class _MiiCertificatePageState extends State<MiiCertificatePage> {
   }
 
   void _resetAll() {
-    for (final c in [_tender, _localContent, _location, _designation]) {
+    for (final c in [_tender, _localContent, _placeOfBusiness, _designation]) {
       c.clear();
     }
     _disposeEditors();
@@ -319,8 +319,8 @@ class _MiiCertificatePageState extends State<MiiCertificatePage> {
       children: [
         Text(
           t(
-            'Many GeM bids ask for a self-declaration that you are a local supplier. Fill the details once and print a letter that is ready to sign.',
-            'कई GeM बोलियों में स्थानीय आपूर्तिकर्ता होने की स्व-घोषणा माँगी जाती है। जानकारी एक बार भरें और हस्ताक्षर के लिए तैयार पत्र प्रिंट करें।',
+            'Self-certify your local content under DPIIT Order dated 19 July 2024. Fill the details once and print a letter that is ready to sign.',
+            'DPIIT आदेश दिनांक 19 जुलाई 2024 के तहत अपनी स्थानीय सामग्री की स्व-प्रमाणन करें। जानकारी एक बार भरें और हस्ताक्षर के लिए तैयार पत्र प्रिंट करें।',
           ),
           style: AppText.secondary(AppText.body),
         ),
@@ -399,8 +399,8 @@ class _MiiCertificatePageState extends State<MiiCertificatePage> {
             keyboard: const TextInputType.numberWithOptions(decimal: true),
             validator: _localContentError,
             helper: t(
-              '50% or more = Class-I local supplier. 20% to under 50% = Class-II.',
-              '50% या अधिक = क्लास-I स्थानीय आपूर्तिकर्ता। 20% से 50% से कम = क्लास-II।',
+              '50% or more = Class I local supplier. 20% to under 50% = Class II.',
+              '50% या अधिक = क्लास I स्थानीय आपूर्तिकर्ता। 20% से 50% से कम = क्लास II।',
             ),
           ),
           if (cls == LocalSupplierClass.classI ||
@@ -414,12 +414,12 @@ class _MiiCertificatePageState extends State<MiiCertificatePage> {
             ),
           _field(_company, 'Company name', 'कंपनी का नाम'),
           _field(
-            _location,
-            'Where the local value addition is done',
-            'जहाँ स्थानीय मूल्य संवर्धन होता है',
+            _placeOfBusiness,
+            'Place of business / manufacturing premises',
+            'व्यवसाय का स्थान / विनिर्माण परिसर',
             helper: t(
-              'Usually your factory or office address.',
-              'आमतौर पर आपकी फैक्ट्री या कार्यालय का पता।',
+              'City and address where local value addition is carried out.',
+              'वह शहर और पता जहाँ स्थानीय मूल्य संवर्धन होता है।',
             ),
           ),
           _field(_signatory, 'Signatory name', 'हस्ताक्षरकर्ता का नाम'),
@@ -445,8 +445,8 @@ class _MiiCertificatePageState extends State<MiiCertificatePage> {
 
   Widget _classChip(LocalSupplierClass c) => StatusChip(
     c == LocalSupplierClass.classI
-        ? t('Class-I local supplier', 'क्लास-I स्थानीय आपूर्तिकर्ता')
-        : t('Class-II local supplier', 'क्लास-II स्थानीय आपूर्तिकर्ता'),
+        ? t('Class I local supplier', 'क्लास I स्थानीय आपूर्तिकर्ता')
+        : t('Class II local supplier', 'क्लास II स्थानीय आपूर्तिकर्ता'),
     tone: StatusTone.success,
     icon: Icons.check_circle_outline,
   );
@@ -471,8 +471,8 @@ class _MiiCertificatePageState extends State<MiiCertificatePage> {
           ),
           KeyValueRow(t('Company', 'कंपनी'), i.company),
           KeyValueRow(
-            t('Value addition at', 'मूल्य संवर्धन स्थान'),
-            i.valueAdditionLocation,
+            t('Place of business', 'व्यवसाय का स्थान'),
+            i.placeOfBusiness,
           ),
         ],
       ),

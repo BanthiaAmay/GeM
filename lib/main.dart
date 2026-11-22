@@ -41,6 +41,11 @@ import 'features/bid_docs/msme_emd_page.dart';
 import 'features/bid_docs/msme_turnover_page.dart';
 import 'features/bid_docs/warranty_declaration_page.dart';
 import 'features/bid_docs/bank_solvency_page.dart';
+import 'features/bid_docs/pbg_undertaking_page.dart';
+import 'features/bid_docs/delivery_ld_page.dart';
+import 'features/bid_docs/tech_specs_page.dart';
+import 'features/bid_docs/power_of_attorney_page.dart';
+import 'features/bid_docs/gst_declaration_page.dart';
 import 'features/bid_compare.dart' show BidComparePage;
 import 'features/eligibility_checker.dart';
 import 'features/saved_bids_page.dart' show SavedBidsPage;
@@ -467,6 +472,41 @@ class SaathiApp extends StatelessWidget {
                 ? MrpDeclarationPage(store: store)
                 : page == 'tool-bank-solvency'
                 ? BankSolvencyPage(store: store)
+                : page == 'tool-pbg-undertaking'
+                ? PbgUndertakingPage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-delivery-ld'
+                ? DeliveryLdPage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-tech-specs'
+                ? TechSpecsPage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-power-of-attorney'
+                ? PowerOfAttorneyPage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
+                : page == 'tool-gst-declaration'
+                ? GstDeclarationPage(
+                    store: store,
+                    tenderNo: settings.arguments is String
+                        ? settings.arguments as String
+                        : null,
+                  )
                 : page == 'search'
                 ? SearchPage(
                     store: store,

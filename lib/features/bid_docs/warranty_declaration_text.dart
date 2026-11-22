@@ -1,9 +1,7 @@
 /// Warranty Declaration — letter model and builder.
 ///
-/// Certifies warranty terms for products/services being tendered.
-/// No recipient block, no tender number.
-///
-/// Pure Dart — no Flutter imports.
+/// Reference: GeM GTC Clause 10(i).
+/// Format: Title + Ref | Opening | 2 numbered clauses | Warranty Claims Contact | Truth declaration | Signature + Seal.
 library;
 
 import 'letter_model.dart';
@@ -12,21 +10,32 @@ import 'mii_certificate_text.dart' show formatLetterDate;
 // ── Input model ───────────────────────────────────────────────────────────────
 
 class WarrantyDeclarationInput {
-  final String signatoryName;
+  final String tenderNo;
+  final String company;
+  final String signatory;
   final String designation;
+
+  /// e.g. "24 months" or "2 years"
   final String warrantyPeriod;
+
+  /// Working days for defect response/resolution.
+  final String warrantyResponseDays;
+
   final String contactName;
-  final String contactPosition;
+  final String contactDesignation;
   final String contactEmail;
   final String contactPhone;
   final DateTime date;
 
   const WarrantyDeclarationInput({
-    required this.signatoryName,
+    required this.tenderNo,
+    required this.company,
+    required this.signatory,
     required this.designation,
     required this.warrantyPeriod,
+    required this.warrantyResponseDays,
     required this.contactName,
-    required this.contactPosition,
+    required this.contactDesignation,
     required this.contactEmail,
     required this.contactPhone,
     required this.date,
@@ -35,86 +44,93 @@ class WarrantyDeclarationInput {
 
 // ── Letter builder ────────────────────────────────────────────────────────────
 
-List<LetterBlock> buildWarrantyDeclaration(WarrantyDeclarationInput i) => [
-  // 1. Date
-  LetterBlock.plain(LetterBlockKind.date, 'Date: ${formatLetterDate(i.date)}'),
-  // 2. Spacer
-  const LetterBlock.spacer(),
+List<LetterBlock> buildWarrantyDeclaration(WarrantyDeclarationInput i) {
+  return [
+    // ── Title ───────────────────────────────────────────────────────────────
+    LetterBlock.plain(LetterBlockKind.title, 'WARRANTY DECLARATION'),
+    LetterBlock(LetterBlockKind.subtitle, [
+      const LetterSpan('GeM GTC Clause 10(i)   |   GeM Bid No.: '),
+      LetterSpan(i.tenderNo, bold: true),
+      const LetterSpan('   |   Date: '),
+      LetterSpan(formatLetterDate(i.date), bold: true),
+    ]),
 
-  // 3. Title — "To Whom It May Concern" (centered bold)
-  LetterBlock.plain(LetterBlockKind.title, 'To Whom It May Concern'),
-  // 4. Spacer
-  const LetterBlock.spacer(),
+    const LetterBlock.spacer(),
 
-  // 5. Subject
-  LetterBlock.plain(LetterBlockKind.body, 'Subject: Warranty Declaration'),
-  // 6. Spacer
-  const LetterBlock.spacer(),
+    // ── Opening ──────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('We, '),
+      LetterSpan(i.company, bold: true),
+      const LetterSpan(', represented by '),
+      LetterSpan(i.signatory, bold: true),
+      const LetterSpan(' ('),
+      LetterSpan(i.designation, bold: true),
+      const LetterSpan('), declare:'),
+    ]),
 
-  // 7. Intro paragraph with bold signatory + designation
-  LetterBlock(LetterBlockKind.body, [
-    const LetterSpan('This is to certify that represented by '),
-    LetterSpan('${i.signatoryName} (${i.designation})', bold: true),
-    const LetterSpan(
-      ', hereby declares the following warranty terms for the '
-      'products/services being tendered:',
+    const LetterBlock.spacer(),
+
+    // ── Clause 1 ─────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('1.   We commit to a warranty period of '),
+      LetterSpan(i.warrantyPeriod, bold: true),
+      const LetterSpan(
+        ' from the date of delivery/acceptance, as prescribed in the ATC for this'
+        ' Bid. Where the ATC expressly overrides the GTC Clause 10(i) standard of'
+        ' one (1) year, the ATC period applies. Should the ATC not prescribe a'
+        ' different period, we will provide the GTC-standard 1-year warranty.',
+      ),
+    ]),
+
+    const LetterBlock.spacer(),
+
+    // ── Clause 2 ─────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan(
+        '2.   The warranty covers defects in materials, workmanship, and performance'
+        ' under normal use. We will repair or replace defective goods within ',
+      ),
+      LetterSpan(i.warrantyResponseDays, bold: true),
+      const LetterSpan(' working days of notification, at no cost to the Buyer.'),
+    ]),
+
+    const LetterBlock.spacer(),
+
+    // ── Warranty Claims Contact ───────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('Warranty Claims Contact: ', bold: true),
+      LetterSpan(i.contactName, bold: true),
+      const LetterSpan(' | '),
+      LetterSpan(i.contactDesignation, bold: true),
+      const LetterSpan(' | '),
+      LetterSpan(i.contactEmail, bold: true),
+      const LetterSpan(' | '),
+      LetterSpan(i.contactPhone, bold: true),
+    ]),
+
+    const LetterBlock.spacer(),
+
+    // ── Truth declaration ─────────────────────────────────────────────────────
+    LetterBlock.plain(
+      LetterBlockKind.body,
+      'We hereby declare that all information provided in this warranty declaration'
+      ' is true and accurate to the best of our knowledge and belief.',
     ),
-  ]),
 
-  // 8. Warranty period paragraph with bold period
-  LetterBlock(LetterBlockKind.body, [
-    const LetterSpan(
-      'Warranty Period: We hereby commit to providing a warranty period of ',
+    const LetterBlock.spacer(),
+    const LetterBlock.spacer(),
+
+    // ── Signature block ───────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.signature, [
+      LetterSpan(i.signatory, bold: true),
+      const LetterSpan('   |   '),
+      LetterSpan(i.designation, bold: true),
+      const LetterSpan('   |   '),
+      LetterSpan(i.company, bold: true),
+    ]),
+    LetterBlock.plain(
+      LetterBlockKind.signature,
+      'Date:                    | Place:                    | Seal:',
     ),
-    LetterSpan(i.warrantyPeriod, bold: true),
-    const LetterSpan(
-      ' from the date of delivery/installation/commissioning, '
-      'whichever is applicable.',
-    ),
-  ]),
-  // 9. Spacer
-  const LetterBlock.spacer(),
-
-  // 10. Contact header
-  LetterBlock.plain(
-    LetterBlockKind.body,
-    'Contact Information: In case of any warranty claims or service '
-    'requests, please contact:',
-  ),
-  // 11. Spacer
-  const LetterBlock.spacer(),
-
-  // 12-15. Contact details
-  LetterBlock.plain(LetterBlockKind.body, 'Name: ${i.contactName}'),
-  LetterBlock.plain(LetterBlockKind.body, 'Position: ${i.contactPosition}'),
-  LetterBlock.plain(LetterBlockKind.body, 'Email: ${i.contactEmail}'),
-  LetterBlock.plain(LetterBlockKind.body, 'Phone No: ${i.contactPhone}'),
-  // 16. Spacer
-  const LetterBlock.spacer(),
-
-  // 17-18. Closing declarations
-  LetterBlock.plain(
-    LetterBlockKind.body,
-    'We hereby declare that all information provided in this warranty '
-    'declaration is true and accurate to the best of our knowledge and belief.',
-  ),
-  LetterBlock.plain(
-    LetterBlockKind.body,
-    'Thank you for considering our bid. Should you require any further '
-    'clarification or documentation regarding the warranty terms, please '
-    'feel free to contact us.',
-  ),
-  // 19. Spacer
-  const LetterBlock.spacer(),
-
-  // 20. Sincerely
-  LetterBlock.plain(LetterBlockKind.body, 'Sincerely'),
-  // 21-23. Three spacers before signature
-  const LetterBlock.spacer(),
-  const LetterBlock.spacer(),
-  const LetterBlock.spacer(),
-
-  // 24-25. Signature block
-  LetterBlock.plain(LetterBlockKind.signature, i.signatoryName),
-  LetterBlock.plain(LetterBlockKind.body, i.designation),
-];
+  ];
+}

@@ -1,9 +1,7 @@
-/// Acceptance of Terms and Conditions (ATC) Certificate — letter model and builder.
+/// ATC Acknowledgment and Acceptance Certificate — letter model and builder.
 ///
-/// Accepts all additional terms and conditions associated with a GeM bid.
-/// Company name appears bold in two places; no "Sincerely" line.
-///
-/// Pure Dart — no Flutter imports.
+/// Reference: GeM GTC Clause 1 (Document Hierarchy).
+/// Format: Title + Ref | To: | Opening | 2 numbered clauses | Disclaimer | Signature + Seal.
 library;
 
 import 'letter_model.dart';
@@ -12,23 +10,19 @@ import 'mii_certificate_text.dart' show formatLetterDate;
 // ── Input model ───────────────────────────────────────────────────────────────
 
 class AtcCertificateInput {
-  final String recipientTitle;
-  final String organization;
-  final String organizationAddress;
   final String tenderNo;
+  final String buyerDesignation;
+  final String buyerOrg;
   final String company;
-  final String companyAddress;
   final String signatory;
   final String designation;
   final DateTime date;
 
   const AtcCertificateInput({
-    required this.recipientTitle,
-    required this.organization,
-    required this.organizationAddress,
     required this.tenderNo,
+    required this.buyerDesignation,
+    required this.buyerOrg,
     required this.company,
-    required this.companyAddress,
     required this.signatory,
     required this.designation,
     required this.date,
@@ -37,81 +31,88 @@ class AtcCertificateInput {
 
 // ── Letter builder ────────────────────────────────────────────────────────────
 
-List<LetterBlock> buildAtcCertificate(AtcCertificateInput i) => [
-  // 1. Date
-  LetterBlock.plain(LetterBlockKind.date, 'Date: ${formatLetterDate(i.date)}'),
-  // 2. Spacer
-  const LetterBlock.spacer(),
-
-  // 3-6. Recipient block
-  LetterBlock.plain(LetterBlockKind.body, 'To'),
-  LetterBlock(LetterBlockKind.body, [LetterSpan(i.recipientTitle, bold: true)]),
-  LetterBlock.plain(LetterBlockKind.body, i.organization),
-  LetterBlock.plain(LetterBlockKind.body, i.organizationAddress),
-  // 7. Spacer
-  const LetterBlock.spacer(),
-
-  // 8. Subject line
-  LetterBlock(LetterBlockKind.body, [
-    const LetterSpan('Subject: ', bold: true),
-    const LetterSpan('Acceptance of Terms and Conditions'),
-  ]),
-  // 9. GeM Bid No line
-  LetterBlock(LetterBlockKind.body, [
-    const LetterSpan('GeM Bid No: ', bold: true),
-    LetterSpan(i.tenderNo),
-  ]),
-  // 10. Spacer
-  const LetterBlock.spacer(),
-
-  // 11. Salutation
-  LetterBlock.plain(LetterBlockKind.body, 'Dear Sir/Ma\'am,'),
-  // 12. Spacer
-  const LetterBlock.spacer(),
-
-  // 13. Para 1 — acceptance with bold company name
-  LetterBlock(LetterBlockKind.body, [
-    const LetterSpan('We, '),
-    LetterSpan(i.company, bold: true),
-    const LetterSpan(
-      ', hereby acknowledge and accept all the additional terms and conditions '
-      'associated with the above mentioned GeM Bid, as specified by the buyer '
-      'in the bid documentation.',
+List<LetterBlock> buildAtcCertificate(AtcCertificateInput i) {
+  return [
+    // ── Title ───────────────────────────────────────────────────────────────
+    LetterBlock.plain(
+      LetterBlockKind.title,
+      'ACKNOWLEDGMENT AND ACCEPTANCE OF ADDITIONAL TERMS AND CONDITIONS (ATC)',
     ),
-  ]),
-  // 14-16. Body paragraphs (no bold)
-  LetterBlock.plain(
-    LetterBlockKind.body,
-    'We understand that these additional terms and conditions are an integral '
-    'part of the bidding process and are essential for the successful execution '
-    'of the contract.',
-  ),
-  LetterBlock.plain(
-    LetterBlockKind.body,
-    'By submitting our bid for the aforementioned GeM Bid, we affirm our '
-    'commitment to comply with and abide by all the additional terms and '
-    'conditions outlined by the buyer.',
-  ),
-  LetterBlock.plain(
-    LetterBlockKind.body,
-    'We fully understand that failure to adhere to these terms and conditions '
-    'may result in disqualification or termination of the contract.',
-  ),
-  // 17. Spacer
-  const LetterBlock.spacer(),
+    LetterBlock(LetterBlockKind.subtitle, [
+      const LetterSpan('GeM GTC Clause 1 (Document Hierarchy)   |   GeM Bid No.: '),
+      LetterSpan(i.tenderNo, bold: true),
+      const LetterSpan('   |   Date: '),
+      LetterSpan(formatLetterDate(i.date), bold: true),
+    ]),
 
-  // 18. Closing authorisation — bold company name (second occurrence)
-  LetterBlock(LetterBlockKind.body, [
-    const LetterSpan('Duly authorized to sign the bid for and on behalf of '),
-    LetterSpan(i.company, bold: true),
-    const LetterSpan('.'),
-  ]),
-  // 19-21. Three spacers before signature
-  const LetterBlock.spacer(),
-  const LetterBlock.spacer(),
-  const LetterBlock.spacer(),
+    const LetterBlock.spacer(),
 
-  // 22-23. Signature block
-  LetterBlock.plain(LetterBlockKind.signature, i.signatory),
-  LetterBlock.plain(LetterBlockKind.body, i.designation),
-];
+    // ── To ───────────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('To: The '),
+      LetterSpan(i.buyerDesignation, bold: true),
+      const LetterSpan(', '),
+      LetterSpan(i.buyerOrg, bold: true),
+    ]),
+
+    const LetterBlock.spacer(),
+
+    // ── Opening ──────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('We, '),
+      LetterSpan(i.company, bold: true),
+      const LetterSpan(', represented by '),
+      LetterSpan(i.signatory, bold: true),
+      const LetterSpan(' ('),
+      LetterSpan(i.designation, bold: true),
+      const LetterSpan('), confirm:'),
+    ]),
+
+    const LetterBlock.spacer(),
+
+    // ── Clause 1 ─────────────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.body, [
+      const LetterSpan('1.   We have reviewed the ATC uploaded by '),
+      LetterSpan(i.buyerOrg, bold: true),
+      const LetterSpan(
+        ' for this Bid. Per Clause 1 of the GeM GTC (Version 1.29, 25th March 2026),'
+        ' the ATC takes precedence over the GTC and STC to the extent permitted by law.',
+      ),
+    ]),
+
+    const LetterBlock.spacer(),
+
+    // ── Clause 2 ─────────────────────────────────────────────────────────────
+    LetterBlock.plain(
+      LetterBlockKind.body,
+      '2.   Our Bid price fully accounts for all obligations, specifications, timelines,'
+      ' and conditions in the ATC. We accept all ATC provisions unconditionally and will'
+      ' not raise any objection to them after Bid submission.',
+    ),
+
+    const LetterBlock.spacer(),
+
+    // ── Disclaimer ───────────────────────────────────────────────────────────
+    LetterBlock.plain(
+      LetterBlockKind.body,
+      'We fully understand that failure to adhere to these terms and conditions may'
+      ' result in disqualification or termination of the contract.',
+    ),
+
+    const LetterBlock.spacer(),
+    const LetterBlock.spacer(),
+
+    // ── Signature block ───────────────────────────────────────────────────────
+    LetterBlock(LetterBlockKind.signature, [
+      LetterSpan(i.signatory, bold: true),
+      const LetterSpan('   |   '),
+      LetterSpan(i.designation, bold: true),
+      const LetterSpan('   |   '),
+      LetterSpan(i.company, bold: true),
+    ]),
+    LetterBlock.plain(
+      LetterBlockKind.signature,
+      'Date:                    | Place:                    | Seal:',
+    ),
+  ];
+}
