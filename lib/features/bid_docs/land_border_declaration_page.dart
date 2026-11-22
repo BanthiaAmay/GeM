@@ -17,6 +17,7 @@ import 'letter_model.dart';
 import 'letter_pdf.dart';
 import 'letter_preview.dart';
 import 'mii_certificate_page.dart' show BidDocProfileKeys;
+import 'mii_certificate_text.dart' show looksLikeGemTenderNo;
 
 enum _Step { details, preview }
 
@@ -34,9 +35,8 @@ class _LandBorderDeclarationPageState extends State<LandBorderDeclarationPage> {
   final _form = GlobalKey<FormState>();
   final _scroll = ScrollController();
 
-  LandBorderTemplate _template = LandBorderTemplate.template1;
+  late final TextEditingController _tenderNo;
   late final TextEditingController _company;
-  late final TextEditingController _companyAddress;
   late final TextEditingController _signatory;
   late final TextEditingController _designation;
 
@@ -57,10 +57,8 @@ class _LandBorderDeclarationPageState extends State<LandBorderDeclarationPage> {
     final p = s.profile;
     String pv(String k) => (p[k] as String?)?.trim() ?? '';
     final signatoryName = pv(BidDocProfileKeys.signatoryName);
+    _tenderNo = TextEditingController();
     _company = TextEditingController(text: pv(BidDocProfileKeys.companyName));
-    _companyAddress = TextEditingController(
-      text: pv(BidDocProfileKeys.companyAddress),
-    );
     _signatory = TextEditingController(
       text: signatoryName.isNotEmpty
           ? signatoryName
@@ -74,7 +72,7 @@ class _LandBorderDeclarationPageState extends State<LandBorderDeclarationPage> {
   @override
   void dispose() {
     _scroll.dispose();
-    for (final c in [_company, _companyAddress, _signatory, _designation]) {
+    for (final c in [_tenderNo, _company, _signatory, _designation]) {
       c.dispose();
     }
     _disposeEditors();
@@ -100,15 +98,13 @@ class _LandBorderDeclarationPageState extends State<LandBorderDeclarationPage> {
     if (!_form.currentState!.validate()) return;
     _disposeEditors();
     final input = LandBorderDeclarationInput(
-      template: _template,
+      tenderNo: _tenderNo.text.trim().toUpperCase(),
       company: _company.text.trim(),
-      companyAddress: _companyAddress.text.trim(),
       signatory: _signatory.text.trim(),
       designation: _designation.text.trim(),
       date: DateTime.now(),
     );
     s.setProfile(BidDocProfileKeys.companyName, input.company);
-    s.setProfile(BidDocProfileKeys.companyAddress, input.companyAddress);
     s.setProfile(BidDocProfileKeys.signatoryName, input.signatory);
     s.setProfile(BidDocProfileKeys.signatoryDesignation, input.designation);
 
@@ -135,12 +131,11 @@ class _LandBorderDeclarationPageState extends State<LandBorderDeclarationPage> {
   }
 
   void _resetAll() {
-    for (final c in [_company, _companyAddress, _signatory, _designation]) {
+    for (final c in [_tenderNo, _company, _signatory, _designation]) {
       c.clear();
     }
     _disposeEditors();
     setState(() {
-      _template = LandBorderTemplate.template1;
       _blocks = null;
       _input = null;
       _confirmed = false;
@@ -330,28 +325,26 @@ class _LandBorderDeclarationPageState extends State<LandBorderDeclarationPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Template dropdown
-          Padding(
-            key: const ValueKey('template-dropdown'),
-            padding: const EdgeInsets.only(bottom: AppSpace.lg),
-            child: DropdownButtonFormField<LandBorderTemplate>(
-              initialValue: _template,
-              decoration: InputDecoration(labelText: t('Template', 'टेम्पलेट')),
-              items: [
-                DropdownMenuItem(
-                  value: LandBorderTemplate.template1,
-                  child: Text(t('Template 1', 'टेम्पलेट 1')),
-                ),
-              ],
-              onChanged: (v) {
-                if (v == null || v == _template) return;
-                setState(() => _template = v);
-                _invalidateLetter();
-              },
-            ),
+          _field(
+            _tenderNo,
+            'Tender / bid number',
+            'निविदा / बोली संख्या',
+            caps: TextCapitalization.characters,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) {
+                return t('This is required', 'यह आवश्यक है');
+              }
+              if (!looksLikeGemTenderNo(v.trim())) {
+                return t(
+                  'Check the tender number format',
+                  'निविदा नंबर का प्रारूप जाँचें',
+                );
+              }
+              return null;
+            },
+            helper: t('e.g. GEM/2026/B/7845020', 'जैसे GEM/2026/B/7845020'),
           ),
           _field(_company, 'Company name', 'कंपनी का नाम'),
-          _field(_companyAddress, 'Company address', 'कंपनी का पता'),
           _field(_signatory, 'Signatory name', 'हस्ताक्षरकर्ता का नाम'),
           _field(
             _designation,
@@ -381,12 +374,12 @@ class _LandBorderDeclarationPageState extends State<LandBorderDeclarationPage> {
     return [
       DividedList(
         children: [
+          KeyValueRow(t('Tender no.', 'निविदा नं.'), i.tenderNo),
           KeyValueRow(t('Company', 'कंपनी'), i.company),
           KeyValueRow(
             t('Signatory', 'हस्ताक्षरकर्ता'),
             '${i.signatory} (${i.designation})',
           ),
-          KeyValueRow(t('Template', 'टेम्पलेट'), t('Template 1', 'टेम्पलेट 1')),
         ],
       ),
       const SizedBox(height: AppSpace.xl),
@@ -490,18 +483,18 @@ class _LandBorderDeclarationPageState extends State<LandBorderDeclarationPage> {
   List<(int, String, String)> _helpSteps() => [
     (
       1,
-      t('Select template', 'टेम्पलेट चुनें'),
+      t('Enter the tender number', 'निविदा संख्या दर्ज करें'),
       t(
-        'Choose the template that matches the tender\'s requirement. Currently only Template 1 is available.',
-        'निविदा की आवश्यकता के अनुसार टेम्पलेट चुनें। अभी केवल टेम्पलेट 1 उपलब्ध है।',
+        'Enter the official GeM Bid Number exactly as it appears in the tender documents.',
+        'आधिकारिक GeM बोली संख्या वैसे ही दर्ज करें जैसे निविदा दस्तावेज़ों में है।',
       ),
     ),
     (
       2,
       t('Enter company details', 'कंपनी का विवरण दें'),
       t(
-        'Enter your company name and registered address. These will be pre-filled next time.',
-        'कंपनी का नाम और पंजीकृत पता दर्ज करें। अगली बार ये अपने आप भर जाएंगे।',
+        'Enter your company name as registered. This will be pre-filled next time.',
+        'अपना पंजीकृत कंपनी नाम दर्ज करें। अगली बार यह अपने आप भर जाएगा।',
       ),
     ),
     (

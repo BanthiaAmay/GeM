@@ -7,7 +7,7 @@ MiiCertificateInput _input({double pct = 100}) => MiiCertificateInput(
   tenderNo: 'GEM/2026/B/7845020',
   localContentPercent: pct,
   company: 'Z',
-  valueAdditionLocation: 'India',
+  placeOfBusiness: 'India',
   signatory: 'Z',
   designation: 'Owner',
   date: DateTime(2026, 10, 4),

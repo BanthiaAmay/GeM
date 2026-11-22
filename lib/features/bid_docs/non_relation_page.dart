@@ -38,8 +38,9 @@ class _NonRelationPageState extends State<NonRelationPage> {
   final _scroll = ScrollController();
 
   late final TextEditingController _tenderNo;
+  late final TextEditingController _buyerDesignation;
+  late final TextEditingController _buyerOrg;
   late final TextEditingController _company;
-  late final TextEditingController _companyAddress;
   late final TextEditingController _signatory;
   late final TextEditingController _designation;
 
@@ -60,10 +61,9 @@ class _NonRelationPageState extends State<NonRelationPage> {
     final p = s.profile;
     String pv(String k) => (p[k] as String?)?.trim() ?? '';
     _tenderNo = TextEditingController(text: widget.tenderNo ?? '');
+    _buyerDesignation = TextEditingController();
+    _buyerOrg = TextEditingController();
     _company = TextEditingController(text: pv(BidDocProfileKeys.companyName));
-    _companyAddress = TextEditingController(
-      text: pv(BidDocProfileKeys.companyAddress),
-    );
     final signatory = pv(BidDocProfileKeys.signatoryName);
     _signatory = TextEditingController(
       text: signatory.isNotEmpty
@@ -80,8 +80,9 @@ class _NonRelationPageState extends State<NonRelationPage> {
     _scroll.dispose();
     for (final c in [
       _tenderNo,
+      _buyerDesignation,
+      _buyerOrg,
       _company,
-      _companyAddress,
       _signatory,
       _designation,
     ]) {
@@ -111,14 +112,14 @@ class _NonRelationPageState extends State<NonRelationPage> {
     _disposeEditors();
     final input = NonRelationInput(
       tenderNo: _tenderNo.text.trim().toUpperCase(),
+      buyerDesignation: _buyerDesignation.text.trim(),
+      buyerOrg: _buyerOrg.text.trim(),
       company: _company.text.trim(),
-      companyAddress: _companyAddress.text.trim(),
       signatory: _signatory.text.trim(),
       designation: _designation.text.trim(),
       date: DateTime.now(),
     );
     s.setProfile(BidDocProfileKeys.companyName, input.company);
-    s.setProfile(BidDocProfileKeys.companyAddress, input.companyAddress);
     s.setProfile(BidDocProfileKeys.signatoryName, input.signatory);
     s.setProfile(BidDocProfileKeys.signatoryDesignation, input.designation);
 
@@ -145,7 +146,14 @@ class _NonRelationPageState extends State<NonRelationPage> {
   }
 
   void _resetAll() {
-    for (final c in [_tenderNo, _company, _companyAddress, _designation]) {
+    for (final c in [
+      _tenderNo,
+      _buyerDesignation,
+      _buyerOrg,
+      _company,
+      _signatory,
+      _designation,
+    ]) {
       c.clear();
     }
     _disposeEditors();
@@ -360,13 +368,22 @@ class _NonRelationPageState extends State<NonRelationPage> {
               return null;
             },
           ),
-          _field(_company, 'Company name', 'कंपनी का नाम'),
           _field(
-            _companyAddress,
-            'Company address',
-            'कंपनी का पता',
+            _buyerDesignation,
+            'Buyer\'s designation',
+            'खरीदार का पदनाम',
+            helper: t(
+              'e.g. Deputy General Manager, Procurement Officer',
+              'जैसे उप महाप्रबंधक, खरीद अधिकारी',
+            ),
+          ),
+          _field(
+            _buyerOrg,
+            'Buyer\'s organisation',
+            'खरीदार का संगठन',
             caps: TextCapitalization.words,
           ),
+          _field(_company, 'Company name', 'कंपनी का नाम'),
           _field(_signatory, 'Signatory name', 'हस्ताक्षरकर्ता का नाम'),
           _field(
             _designation,
@@ -397,8 +414,12 @@ class _NonRelationPageState extends State<NonRelationPage> {
       DividedList(
         children: [
           KeyValueRow(t('Tender no.', 'निविदा संख्या'), i.tenderNo),
+          KeyValueRow(
+            t('Buyer', 'खरीदार'),
+            '${i.buyerDesignation}, ${i.buyerOrg}',
+          ),
           KeyValueRow(t('Company', 'कंपनी'), i.company),
-          KeyValueRow(t('Address', 'पता'), i.companyAddress),
+          KeyValueRow(t('Signatory', 'हस्ताक्षरकर्ता'), i.signatory),
         ],
       ),
       const SizedBox(height: AppSpace.xl),

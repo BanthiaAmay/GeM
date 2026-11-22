@@ -35,17 +35,16 @@ class _OemAuthorizationPageState extends State<OemAuthorizationPage> {
   final _form = GlobalKey<FormState>();
   final _scroll = ScrollController();
 
-  OemAuthorizationTemplate _template = OemAuthorizationTemplate.template1;
   late final TextEditingController _tenderNo;
-  late final TextEditingController _recipientTitle;
-  late final TextEditingController _organization;
-  late final TextEditingController _organizationAddress;
-  late final TextEditingController _resellerName;
-  late final TextEditingController _resellerAddress;
-  late final TextEditingController _company;
-  late final TextEditingController _companyAddress;
+  late final TextEditingController _buyerDesignation;
+  late final TextEditingController _buyerOrg;
+  late final TextEditingController _oemCompany;
   late final TextEditingController _signatory;
   late final TextEditingController _designation;
+  late final TextEditingController _resellerName;
+  late final TextEditingController _resellerAddress;
+  late final TextEditingController _productName;
+  String _cmsQuadrant = 'Q3';
 
   _Step _step = _Step.details;
   OemAuthorizationInput? _input;
@@ -65,15 +64,9 @@ class _OemAuthorizationPageState extends State<OemAuthorizationPage> {
     String pv(String k) => (p[k] as String?)?.trim() ?? '';
     final signatoryName = pv(BidDocProfileKeys.signatoryName);
     _tenderNo = TextEditingController(text: widget.tenderNo ?? '');
-    _recipientTitle = TextEditingController();
-    _organization = TextEditingController();
-    _organizationAddress = TextEditingController();
-    _resellerName = TextEditingController();
-    _resellerAddress = TextEditingController();
-    _company = TextEditingController(text: pv(BidDocProfileKeys.companyName));
-    _companyAddress = TextEditingController(
-      text: pv(BidDocProfileKeys.companyAddress),
-    );
+    _buyerDesignation = TextEditingController();
+    _buyerOrg = TextEditingController();
+    _oemCompany = TextEditingController(text: pv(BidDocProfileKeys.companyName));
     _signatory = TextEditingController(
       text: signatoryName.isNotEmpty
           ? signatoryName
@@ -82,6 +75,9 @@ class _OemAuthorizationPageState extends State<OemAuthorizationPage> {
     _designation = TextEditingController(
       text: pv(BidDocProfileKeys.signatoryDesignation),
     );
+    _resellerName = TextEditingController();
+    _resellerAddress = TextEditingController();
+    _productName = TextEditingController();
   }
 
   @override
@@ -89,15 +85,14 @@ class _OemAuthorizationPageState extends State<OemAuthorizationPage> {
     _scroll.dispose();
     for (final c in [
       _tenderNo,
-      _recipientTitle,
-      _organization,
-      _organizationAddress,
-      _resellerName,
-      _resellerAddress,
-      _company,
-      _companyAddress,
+      _buyerDesignation,
+      _buyerOrg,
+      _oemCompany,
       _signatory,
       _designation,
+      _resellerName,
+      _resellerAddress,
+      _productName,
     ]) {
       c.dispose();
     }
@@ -137,27 +132,25 @@ class _OemAuthorizationPageState extends State<OemAuthorizationPage> {
     if (!_form.currentState!.validate()) return;
     _disposeEditors();
     final input = OemAuthorizationInput(
-      template: _template,
-      recipientTitle: _recipientTitle.text.trim(),
-      organization: _organization.text.trim(),
-      organizationAddress: _organizationAddress.text.trim(),
-      tenderNo: _tenderNo.text.trim(),
-      resellerName: _resellerName.text.trim(),
-      resellerAddress: _resellerAddress.text.trim(),
-      company: _company.text.trim(),
-      companyAddress: _companyAddress.text.trim(),
+      tenderNo: _tenderNo.text.trim().toUpperCase(),
+      buyerDesignation: _buyerDesignation.text.trim(),
+      buyerOrg: _buyerOrg.text.trim(),
+      oemCompany: _oemCompany.text.trim(),
       signatory: _signatory.text.trim(),
       designation: _designation.text.trim(),
+      resellerName: _resellerName.text.trim(),
+      resellerAddress: _resellerAddress.text.trim(),
+      productName: _productName.text.trim(),
+      cmsQuadrant: _cmsQuadrant,
       date: DateTime.now(),
     );
-    s.setProfile(BidDocProfileKeys.companyName, input.company);
-    s.setProfile(BidDocProfileKeys.companyAddress, input.companyAddress);
+    s.setProfile(BidDocProfileKeys.companyName, input.oemCompany);
     s.setProfile(BidDocProfileKeys.signatoryName, input.signatory);
     s.setProfile(BidDocProfileKeys.signatoryDesignation, input.designation);
 
     setState(() {
       _input = input;
-      _blocks = buildOemAuthorization(input);
+      _blocks = buildOemAuthorizationCertificate(input);
       _confirmed = false;
       _step = _Step.preview;
     });
@@ -180,21 +173,20 @@ class _OemAuthorizationPageState extends State<OemAuthorizationPage> {
   void _resetAll() {
     for (final c in [
       _tenderNo,
-      _recipientTitle,
-      _organization,
-      _organizationAddress,
-      _resellerName,
-      _resellerAddress,
-      _company,
-      _companyAddress,
+      _buyerDesignation,
+      _buyerOrg,
+      _oemCompany,
       _signatory,
       _designation,
+      _resellerName,
+      _resellerAddress,
+      _productName,
     ]) {
       c.clear();
     }
+    _cmsQuadrant = 'Q3';
     _disposeEditors();
     setState(() {
-      _template = OemAuthorizationTemplate.template1;
       _blocks = null;
       _input = null;
       _confirmed = false;
@@ -385,41 +377,47 @@ class _OemAuthorizationPageState extends State<OemAuthorizationPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Template dropdown
+          _field(
+            _tenderNo,
+            'Tender / bid number',
+            'निविदा / बोली संख्या',
+            caps: TextCapitalization.characters,
+            validator: _tenderValidator,
+            helper: t('e.g. GEM/2026/B/7845020', 'जैसे GEM/2026/B/7845020'),
+          ),
+          _field(
+            _buyerDesignation,
+            'Buyer\'s designation',
+            'खरीदार का पदनाम',
+            helper: t(
+              'e.g. Deputy General Manager, Procurement Officer',
+              'जैसे उप महाप्रबंधक, खरीद अधिकारी',
+            ),
+          ),
+          _field(_buyerOrg, 'Buyer\'s organisation', 'खरीदार का संगठन'),
+          _field(_oemCompany, 'OEM company name', 'OEM कंपनी का नाम'),
+          _field(_resellerName, 'Reseller / distributor name', 'रिसेलर / वितरक का नाम'),
+          _field(_resellerAddress, 'Reseller / distributor address', 'रिसेलर / वितरक का पता'),
+          _field(_productName, 'Product name', 'उत्पाद का नाम'),
           Padding(
-            key: const ValueKey('template-dropdown'),
+            key: const ValueKey('cms-quadrant-dropdown'),
             padding: const EdgeInsets.only(bottom: AppSpace.lg),
-            child: DropdownButtonFormField<OemAuthorizationTemplate>(
-              initialValue: _template,
-              decoration: InputDecoration(labelText: t('Template', 'टेम्पलेट')),
-              items: [
-                DropdownMenuItem(
-                  value: OemAuthorizationTemplate.template1,
-                  child: Text(t('Template 1', 'टेम्पलेट 1')),
-                ),
+            child: DropdownButtonFormField<String>(
+              value: _cmsQuadrant,
+              decoration: InputDecoration(
+                labelText: t('CMS Quadrant', 'CMS क्वाड्रेंट'),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'Q3', child: Text('Q3')),
+                DropdownMenuItem(value: 'Q4', child: Text('Q4')),
               ],
               onChanged: (v) {
-                if (v == null || v == _template) return;
-                setState(() => _template = v);
+                if (v == null || v == _cmsQuadrant) return;
+                setState(() => _cmsQuadrant = v);
                 _invalidateLetter();
               },
             ),
           ),
-          _field(
-            _tenderNo,
-            'Tender No',
-            'निविदा नंबर',
-            caps: TextCapitalization.characters,
-            validator: _tenderValidator,
-            helper: t('e.g. GEM/2026/B/1234567', 'जैसे GEM/2026/B/1234567'),
-          ),
-          _field(_recipientTitle, 'Recipient title', 'प्राप्तकर्ता का शीर्षक'),
-          _field(_organization, 'Organization', 'संगठन'),
-          _field(_organizationAddress, 'Organization address', 'संगठन का पता'),
-          _field(_resellerName, 'Reseller name', 'रिसेलर का नाम'),
-          _field(_resellerAddress, 'Reseller address', 'रिसेलर का पता'),
-          _field(_company, 'Company name', 'कंपनी का नाम'),
-          _field(_companyAddress, 'Company address', 'कंपनी का पता'),
           _field(_signatory, 'Signatory name', 'हस्ताक्षरकर्ता का नाम'),
           _field(
             _designation,
@@ -450,10 +448,14 @@ class _OemAuthorizationPageState extends State<OemAuthorizationPage> {
       DividedList(
         children: [
           KeyValueRow(t('Tender no.', 'निविदा नं.'), i.tenderNo),
-          KeyValueRow(t('Recipient', 'प्राप्तकर्ता'), i.recipientTitle),
-          KeyValueRow(t('Organization', 'संगठन'), i.organization),
+          KeyValueRow(
+            t('Buyer', 'खरीदार'),
+            '${i.buyerDesignation}, ${i.buyerOrg}',
+          ),
+          KeyValueRow(t('OEM company', 'OEM कंपनी'), i.oemCompany),
           KeyValueRow(t('Reseller', 'रिसेलर'), i.resellerName),
-          KeyValueRow(t('Company', 'कंपनी'), i.company),
+          KeyValueRow(t('Product', 'उत्पाद'), i.productName),
+          KeyValueRow(t('CMS Quadrant', 'CMS क्वाड्रेंट'), i.cmsQuadrant),
         ],
       ),
       const SizedBox(height: AppSpace.xl),

@@ -36,14 +36,15 @@ class _MsmeEmdPageState extends State<MsmeEmdPage> {
   final _scroll = ScrollController();
 
   late final TextEditingController _tenderNo;
-  late final TextEditingController _recipientTitle;
-  late final TextEditingController _organization;
-  late final TextEditingController _organizationAddress;
+  late final TextEditingController _buyerDesignation;
+  late final TextEditingController _buyerOrg;
   late final TextEditingController _company;
-  late final TextEditingController _companyAddress;
+  late final TextEditingController _productServiceName;
+  late final TextEditingController _placeOfBusiness;
   late final TextEditingController _signatory;
   late final TextEditingController _designation;
   late final TextEditingController _udyamNo;
+  String _msmeCategory = 'Micro';
 
   _Step _step = _Step.details;
   MsmeEmdInput? _input;
@@ -62,13 +63,11 @@ class _MsmeEmdPageState extends State<MsmeEmdPage> {
     final p = s.profile;
     String pv(String k) => (p[k] as String?)?.trim() ?? '';
     _tenderNo = TextEditingController(text: widget.tenderNo ?? '');
-    _recipientTitle = TextEditingController();
-    _organization = TextEditingController();
-    _organizationAddress = TextEditingController();
+    _buyerDesignation = TextEditingController();
+    _buyerOrg = TextEditingController();
     _company = TextEditingController(text: pv(BidDocProfileKeys.companyName));
-    _companyAddress = TextEditingController(
-      text: pv(BidDocProfileKeys.companyAddress),
-    );
+    _productServiceName = TextEditingController();
+    _placeOfBusiness = TextEditingController();
     final signatory = pv(BidDocProfileKeys.signatoryName);
     _signatory = TextEditingController(
       text: signatory.isNotEmpty
@@ -88,11 +87,11 @@ class _MsmeEmdPageState extends State<MsmeEmdPage> {
     _scroll.dispose();
     for (final c in [
       _tenderNo,
-      _recipientTitle,
-      _organization,
-      _organizationAddress,
+      _buyerDesignation,
+      _buyerOrg,
       _company,
-      _companyAddress,
+      _productServiceName,
+      _placeOfBusiness,
       _signatory,
       _designation,
       _udyamNo,
@@ -123,18 +122,18 @@ class _MsmeEmdPageState extends State<MsmeEmdPage> {
     _disposeEditors();
     final input = MsmeEmdInput(
       tenderNo: _tenderNo.text.trim().toUpperCase(),
-      recipientTitle: _recipientTitle.text.trim(),
-      organization: _organization.text.trim(),
-      organizationAddress: _organizationAddress.text.trim(),
+      buyerDesignation: _buyerDesignation.text.trim(),
+      buyerOrg: _buyerOrg.text.trim(),
       company: _company.text.trim(),
-      companyAddress: _companyAddress.text.trim(),
+      productServiceName: _productServiceName.text.trim(),
+      placeOfBusiness: _placeOfBusiness.text.trim(),
+      udyamRegistrationNo: _udyamNo.text.trim().toUpperCase(),
+      msmeCategory: _msmeCategory,
       signatory: _signatory.text.trim(),
       designation: _designation.text.trim(),
-      udyamRegistrationNo: _udyamNo.text.trim().toUpperCase(),
       date: DateTime.now(),
     );
     s.setProfile(BidDocProfileKeys.companyName, input.company);
-    s.setProfile(BidDocProfileKeys.companyAddress, input.companyAddress);
     s.setProfile(BidDocProfileKeys.signatoryName, input.signatory);
     s.setProfile(BidDocProfileKeys.signatoryDesignation, input.designation);
     s.setProfile(
@@ -167,14 +166,18 @@ class _MsmeEmdPageState extends State<MsmeEmdPage> {
   void _resetAll() {
     for (final c in [
       _tenderNo,
-      _recipientTitle,
-      _organization,
-      _organizationAddress,
-      _companyAddress,
+      _buyerDesignation,
+      _buyerOrg,
+      _company,
+      _productServiceName,
+      _placeOfBusiness,
+      _signatory,
       _designation,
+      _udyamNo,
     ]) {
       c.clear();
     }
+    _msmeCategory = 'Micro';
     _disposeEditors();
     setState(() {
       _blocks = null;
@@ -388,36 +391,31 @@ class _MsmeEmdPageState extends State<MsmeEmdPage> {
             },
           ),
           _field(
-            _recipientTitle,
-            'Recipient title',
-            'प्राप्तकर्ता का शीर्षक',
+            _buyerDesignation,
+            'Buyer\'s designation',
+            'खरीदार का पदनाम',
             helper: t(
-              'e.g. The Commandant, The Director General',
-              'जैसे The Commandant, The Director General',
+              'e.g. Deputy General Manager, Procurement Officer',
+              'जैसे उप महाप्रबंधक, खरीद अधिकारी',
             ),
-            caps: TextCapitalization.words,
           ),
           _field(
-            _organization,
-            'Organization',
-            'संगठन',
-            helper: t(
-              'e.g. Indian Army, Punjab National Bank',
-              'जैसे Indian Army, Punjab National Bank',
-            ),
-            caps: TextCapitalization.words,
-          ),
-          _field(
-            _organizationAddress,
-            'Organization address',
-            'संगठन का पता',
+            _buyerOrg,
+            'Buyer\'s organisation',
+            'खरीदार का संगठन',
             caps: TextCapitalization.words,
           ),
           _field(_company, 'Company name', 'कंपनी का नाम'),
           _field(
-            _companyAddress,
-            'Company address',
-            'कंपनी का पता',
+            _productServiceName,
+            'Product / service name',
+            'उत्पाद / सेवा का नाम',
+            caps: TextCapitalization.words,
+          ),
+          _field(
+            _placeOfBusiness,
+            'Place of business',
+            'व्यवसाय का स्थान',
             caps: TextCapitalization.words,
           ),
           _field(_signatory, 'Signatory name', 'हस्ताक्षरकर्ता का नाम'),
@@ -436,6 +434,23 @@ class _MsmeEmdPageState extends State<MsmeEmdPage> {
             'उद्यम पंजीकरण संख्या',
             caps: TextCapitalization.characters,
             helper: t('e.g. UDYAM-MH-01-0012345', 'जैसे UDYAM-MH-01-0012345'),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpace.lg),
+            child: DropdownButtonFormField<String>(
+              value: _msmeCategory,
+              decoration: InputDecoration(
+                labelText: t('MSME Category', 'MSME श्रेणी'),
+              ),
+              items: ['Micro', 'Small'].map((v) => DropdownMenuItem(
+                value: v,
+                child: Text(v),
+              )).toList(),
+              onChanged: (v) => setState(() {
+                _msmeCategory = v!;
+                _invalidateLetter();
+              }),
+            ),
           ),
           ReassuranceNote(
             t(
@@ -457,9 +472,13 @@ class _MsmeEmdPageState extends State<MsmeEmdPage> {
       DividedList(
         children: [
           KeyValueRow(t('Tender no.', 'निविदा संख्या'), i.tenderNo),
-          KeyValueRow(t('Recipient', 'प्राप्तकर्ता'), i.recipientTitle),
-          KeyValueRow(t('Organization', 'संगठन'), i.organization),
+          KeyValueRow(
+            t('Buyer', 'खरीदार'),
+            '${i.buyerDesignation}, ${i.buyerOrg}',
+          ),
           KeyValueRow(t('Company', 'कंपनी'), i.company),
+          KeyValueRow(t('Product / service', 'उत्पाद / सेवा'), i.productServiceName),
+          KeyValueRow(t('MSME Category', 'MSME श्रेणी'), i.msmeCategory),
           KeyValueRow(t('Udyam No.', 'उद्यम संख्या'), i.udyamRegistrationNo),
         ],
       ),

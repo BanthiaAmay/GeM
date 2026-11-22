@@ -19,15 +19,16 @@ void main() {
   // ── helpers ────────────────────────────────────────────────────────────────
 
   MsmeEmdInput makeInput() => MsmeEmdInput(
-    recipientTitle: 'The Commandant',
-    organization: 'Indian Army',
-    organizationAddress: 'New Delhi, 110001',
     tenderNo: 'GEM/2026/B/7845020',
+    buyerDesignation: 'The Commandant',
+    buyerOrg: 'Indian Army',
     company: 'Example Pvt Ltd',
-    companyAddress: '123 MG Road, Mumbai',
+    productServiceName: 'Office Chair',
+    placeOfBusiness: 'Mumbai',
+    udyamRegistrationNo: 'UDYAM-MH-01-0012345',
+    msmeCategory: 'Micro',
     signatory: 'Ravi Kumar',
     designation: 'Director',
-    udyamRegistrationNo: 'UDYAM-MH-01-0012345',
     date: DateTime(2026, 10, 11),
   );
 

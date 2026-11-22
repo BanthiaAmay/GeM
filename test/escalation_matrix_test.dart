@@ -20,23 +20,20 @@ void main() {
 
   const primary = EscalationContact(
     name: 'Ravi Kumar',
-    position: 'Director',
+    designation: 'Director',
     email: 'ravi@example.com',
-    phone: '9876543210',
   );
 
   const secondary = EscalationContact(
     name: 'Priya Singh',
-    position: 'Manager',
+    designation: 'Manager',
     email: 'priya@example.com',
-    phone: '9876543211',
   );
 
   const tertiary = EscalationContact(
     name: 'Amit Gupta',
-    position: 'Executive',
+    designation: 'Executive',
     email: 'amit@example.com',
-    phone: '9876543212',
   );
 
   EscalationMatrixInput input({

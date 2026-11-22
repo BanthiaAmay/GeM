@@ -44,21 +44,18 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
 
   // ── Primary contact (required) ─────────────────────────────────────────────
   late final TextEditingController _primName;
-  late final TextEditingController _primPosition;
+  late final TextEditingController _primDesignation;
   late final TextEditingController _primEmail;
-  late final TextEditingController _primPhone;
 
   // ── Secondary contact (optional, all-or-nothing) ───────────────────────────
   late final TextEditingController _secName;
-  late final TextEditingController _secPosition;
+  late final TextEditingController _secDesignation;
   late final TextEditingController _secEmail;
-  late final TextEditingController _secPhone;
 
   // ── Additional contact (optional, all-or-nothing) ──────────────────────────
   late final TextEditingController _addName;
-  late final TextEditingController _addPosition;
+  late final TextEditingController _addDesignation;
   late final TextEditingController _addEmail;
-  late final TextEditingController _addPhone;
 
   _Step _step = _Step.details;
   EscalationMatrixInput? _input;
@@ -72,15 +69,13 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
 
   List<TextEditingController> get _secGroup => [
     _secName,
-    _secPosition,
+    _secDesignation,
     _secEmail,
-    _secPhone,
   ];
   List<TextEditingController> get _addGroup => [
     _addName,
-    _addPosition,
+    _addDesignation,
     _addEmail,
-    _addPhone,
   ];
 
   bool _groupAnyFilled(List<TextEditingController> g) =>
@@ -102,17 +97,14 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
     );
     _company = TextEditingController(text: pv(BidDocProfileKeys.companyName));
     _primName = TextEditingController();
-    _primPosition = TextEditingController();
+    _primDesignation = TextEditingController();
     _primEmail = TextEditingController();
-    _primPhone = TextEditingController();
     _secName = TextEditingController();
-    _secPosition = TextEditingController();
+    _secDesignation = TextEditingController();
     _secEmail = TextEditingController();
-    _secPhone = TextEditingController();
     _addName = TextEditingController();
-    _addPosition = TextEditingController();
+    _addDesignation = TextEditingController();
     _addEmail = TextEditingController();
-    _addPhone = TextEditingController();
   }
 
   @override
@@ -124,17 +116,14 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
       _designation,
       _company,
       _primName,
-      _primPosition,
+      _primDesignation,
       _primEmail,
-      _primPhone,
       _secName,
-      _secPosition,
+      _secDesignation,
       _secEmail,
-      _secPhone,
       _addName,
-      _addPosition,
+      _addDesignation,
       _addEmail,
-      _addPhone,
     ]) {
       c.dispose();
     }
@@ -163,14 +152,6 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
         : t('Enter a valid email address', 'मान्य ईमेल पता दर्ज करें');
   }
 
-  String? _phoneError(String? v) {
-    final err = validatePhone(v);
-    if (err == null) return null;
-    return err == 'Required'
-        ? t('This is required', 'यह आवश्यक है')
-        : t('Enter a valid phone number', 'मान्य फ़ोन नंबर दर्ज करें');
-  }
-
   String? _optionalRequired(List<TextEditingController> group, String? v) {
     if (!_groupAnyFilled(group)) return null;
     return _required(v);
@@ -179,11 +160,6 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
   String? _optionalEmail(List<TextEditingController> group, String? v) {
     if (!_groupAnyFilled(group)) return null;
     return _emailError(v);
-  }
-
-  String? _optionalPhone(List<TextEditingController> group, String? v) {
-    if (!_groupAnyFilled(group)) return null;
-    return _phoneError(v);
   }
 
   // ──────────────────────────────────────────────── actions
@@ -196,9 +172,8 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
       if (!_groupAnyFilled(cs)) return null;
       return EscalationContact(
         name: cs[0].text.trim(),
-        position: cs[1].text.trim(),
+        designation: cs[1].text.trim(),
         email: cs[2].text.trim(),
-        phone: cs[3].text.trim(),
       );
     }
 
@@ -209,9 +184,8 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
       company: _company.text.trim(),
       primary: EscalationContact(
         name: _primName.text.trim(),
-        position: _primPosition.text.trim(),
+        designation: _primDesignation.text.trim(),
         email: _primEmail.text.trim(),
-        phone: _primPhone.text.trim(),
       ),
       secondary: buildContact(_secGroup),
       tertiary: buildContact(_addGroup),
@@ -249,17 +223,14 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
       _tenderNo,
       _designation,
       _primName,
-      _primPosition,
+      _primDesignation,
       _primEmail,
-      _primPhone,
       _secName,
-      _secPosition,
+      _secDesignation,
       _secEmail,
-      _secPhone,
       _addName,
-      _addPosition,
+      _addDesignation,
       _addEmail,
-      _addPhone,
     ]) {
       c.clear();
     }
@@ -513,9 +484,9 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
             caps: TextCapitalization.words,
           ),
           _field(
-            _primPosition,
-            'Position',
-            'पद',
+            _primDesignation,
+            'Designation',
+            'पदनाम',
             keyPrefix: 'prim',
             caps: TextCapitalization.words,
           ),
@@ -526,14 +497,6 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
             keyPrefix: 'prim',
             keyboard: TextInputType.emailAddress,
             validator: _emailError,
-          ),
-          _field(
-            _primPhone,
-            'Phone',
-            'फ़ोन',
-            keyPrefix: 'prim',
-            keyboard: TextInputType.phone,
-            validator: _phoneError,
           ),
           const SizedBox(height: AppSpace.md),
 
@@ -552,9 +515,9 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
             validator: (v) => _optionalRequired(_secGroup, v),
           ),
           _field(
-            _secPosition,
-            'Position',
-            'पद',
+            _secDesignation,
+            'Designation',
+            'पदनाम',
             keyPrefix: 'sec',
             caps: TextCapitalization.words,
             validator: (v) => _optionalRequired(_secGroup, v),
@@ -566,14 +529,6 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
             keyPrefix: 'sec',
             keyboard: TextInputType.emailAddress,
             validator: (v) => _optionalEmail(_secGroup, v),
-          ),
-          _field(
-            _secPhone,
-            'Phone',
-            'फ़ोन',
-            keyPrefix: 'sec',
-            keyboard: TextInputType.phone,
-            validator: (v) => _optionalPhone(_secGroup, v),
           ),
           const SizedBox(height: AppSpace.md),
 
@@ -592,9 +547,9 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
             validator: (v) => _optionalRequired(_addGroup, v),
           ),
           _field(
-            _addPosition,
-            'Position',
-            'पद',
+            _addDesignation,
+            'Designation',
+            'पदनाम',
             keyPrefix: 'add',
             caps: TextCapitalization.words,
             validator: (v) => _optionalRequired(_addGroup, v),
@@ -606,14 +561,6 @@ class _EscalationMatrixPageState extends State<EscalationMatrixPage> {
             keyPrefix: 'add',
             keyboard: TextInputType.emailAddress,
             validator: (v) => _optionalEmail(_addGroup, v),
-          ),
-          _field(
-            _addPhone,
-            'Phone',
-            'फ़ोन',
-            keyPrefix: 'add',
-            keyboard: TextInputType.phone,
-            validator: (v) => _optionalPhone(_addGroup, v),
           ),
           const SizedBox(height: AppSpace.sm),
           ReassuranceNote(

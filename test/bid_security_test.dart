@@ -19,12 +19,12 @@ void main() {
   // ── helpers ────────────────────────────────────────────────────────────────
 
   BidSecurityInput makeInput() => BidSecurityInput(
-    recipientTitle: 'The Commandant',
-    organization: 'Indian Army',
-    organizationAddress: 'New Delhi, 110001',
     tenderNo: 'GEM/2026/B/7845020',
+    buyerDesignation: 'The Commandant',
+    buyerOrg: 'Indian Army',
     company: 'Example Pvt Ltd',
-    companyAddress: '123 MG Road, Mumbai',
+    emdAmount: '50,000',
+    modeOfPayment: 'DD/BG',
     signatory: 'Ravi Kumar',
     designation: 'Director',
     date: DateTime(2026, 10, 10),

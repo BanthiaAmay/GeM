@@ -19,17 +19,16 @@ void main() {
   // ── helpers ────────────────────────────────────────────────────────────────
 
   OemAuthorizationInput makeInput() => OemAuthorizationInput(
-    template: OemAuthorizationTemplate.template1,
-    recipientTitle: 'The Commandant',
-    organization: 'Indian Army',
-    organizationAddress: 'New Delhi, 110001',
     tenderNo: 'GEM/2026/B/7845020',
-    resellerName: 'XYZ Pvt. Ltd',
-    resellerAddress: 'Pune, 411001',
-    company: 'Example OEM Pvt Ltd',
-    companyAddress: '123 MG Road, Mumbai',
+    buyerDesignation: 'The Commandant',
+    buyerOrg: 'Indian Army',
+    oemCompany: 'Example OEM Pvt Ltd',
     signatory: 'Ravi Kumar',
     designation: 'Director',
+    resellerName: 'XYZ Pvt. Ltd',
+    resellerAddress: 'Pune, 411001',
+    productName: 'Office Chair',
+    cmsQuadrant: 'Q3',
     date: DateTime(2026, 10, 11),
   );
 
@@ -79,7 +78,7 @@ void main() {
 
   group('buildOemAuthorization', () {
     test('recipientTitle bold in recipient block', () {
-      final blocks = buildOemAuthorization(makeInput());
+      final blocks = buildOemAuthorizationCertificate(makeInput());
       final recipientBlock = blocks.firstWhere(
         (b) =>
             b.kind == LetterBlockKind.body &&
@@ -92,7 +91,7 @@ void main() {
     });
 
     test('"Subject:" bold; value is "Authorization Letter" (no tender no)', () {
-      final blocks = buildOemAuthorization(makeInput());
+      final blocks = buildOemAuthorizationCertificate(makeInput());
       final subjectBlock = blocks.firstWhere(
         (b) =>
             b.kind == LetterBlockKind.body &&
@@ -103,7 +102,7 @@ void main() {
     });
 
     test('"GeM Bid No:" bold on its own line; tenderNo value follows', () {
-      final blocks = buildOemAuthorization(makeInput());
+      final blocks = buildOemAuthorizationCertificate(makeInput());
       final bidNoBlock = blocks.firstWhere(
         (b) =>
             b.kind == LetterBlockKind.body &&
@@ -115,7 +114,7 @@ void main() {
     test(
       'para 1: company, companyAddress, M/s+resellerName, resellerAddress all bold',
       () {
-        final blocks = buildOemAuthorization(makeInput());
+        final blocks = buildOemAuthorizationCertificate(makeInput());
         final para1 = blocks.firstWhere(
           (b) =>
               b.kind == LetterBlockKind.body &&
@@ -145,7 +144,7 @@ void main() {
     );
 
     test('closing line: company bold in "on behalf of Z."', () {
-      final blocks = buildOemAuthorization(makeInput());
+      final blocks = buildOemAuthorizationCertificate(makeInput());
       final closingBlock = blocks.firstWhere(
         (b) =>
             b.kind == LetterBlockKind.body &&
@@ -160,7 +159,7 @@ void main() {
     });
 
     test('no "Sincerely" in output', () {
-      final blocks = buildOemAuthorization(makeInput());
+      final blocks = buildOemAuthorizationCertificate(makeInput());
       final lines = blocks.map((b) => b.plainText.trim()).toList();
       expect(
         lines.any(
@@ -172,7 +171,7 @@ void main() {
     });
 
     test('boilerplate contains "quote rates, collect supply orders"', () {
-      final blocks = buildOemAuthorization(makeInput());
+      final blocks = buildOemAuthorizationCertificate(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
       expect(allText, contains('quote rates, collect supply orders'));
     });
@@ -180,7 +179,7 @@ void main() {
     test(
       'boilerplate contains "valid till the validity of the above mentioned GeM Bid"',
       () {
-        final blocks = buildOemAuthorization(makeInput());
+        final blocks = buildOemAuthorizationCertificate(makeInput());
         final allText = blocks.map((b) => b.plainText).join(' ');
         expect(
           allText,

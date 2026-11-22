@@ -21,31 +21,44 @@ void main() {
   // ── helpers ────────────────────────────────────────────────────────────────
 
   MrpDeclarationInput makeInput({Uint8List? imageBytes}) => MrpDeclarationInput(
+    tenderNo: 'GEM/2026/B/7845020',
+    company: 'Example Pvt Ltd',
+    signatory: 'Ravi Kumar',
+    designation: 'Director',
     products: [
-      MrpProductEntry(
+      const MrpProductRow(
         productName: 'Office Chair',
-        brandName: 'ErgoMax',
+        makeBrand: 'ErgoMax',
         modelNo: 'EC-200',
         mrp: '15000',
-        imageBytes: imageBytes,
+        gemBidPrice: '14000',
+        discountPercent: '7%',
       ),
     ],
     date: DateTime(2026, 10, 11),
   );
 
   MrpDeclarationInput makeTwoProductInput() => MrpDeclarationInput(
+    tenderNo: 'GEM/2026/B/7845020',
+    company: 'Example Pvt Ltd',
+    signatory: 'Ravi Kumar',
+    designation: 'Director',
     products: [
-      const MrpProductEntry(
+      const MrpProductRow(
         productName: 'Office Chair',
-        brandName: 'ErgoMax',
+        makeBrand: 'ErgoMax',
         modelNo: 'EC-200',
         mrp: '15000',
+        gemBidPrice: '14000',
+        discountPercent: '7%',
       ),
-      const MrpProductEntry(
+      const MrpProductRow(
         productName: 'Standing Desk',
-        brandName: 'StandUp',
+        makeBrand: 'StandUp',
         modelNo: 'SD-400',
         mrp: '25000',
+        gemBidPrice: '23000',
+        discountPercent: '8%',
       ),
     ],
     date: DateTime(2026, 10, 11),
@@ -89,9 +102,9 @@ void main() {
 
   // ── Unit tests — letter builder ────────────────────────────────────────────
 
-  group('buildMrpDeclarationLetter', () {
+  group('buildMrpDeclaration', () {
     test('titleUnderlined block present', () {
-      final blocks = buildMrpDeclarationLetter(makeInput());
+      final blocks = buildMrpDeclaration(makeInput());
       expect(
         blocks.any((b) => b.kind == LetterBlockKind.titleUnderlined),
         isTrue,
@@ -99,7 +112,7 @@ void main() {
     });
 
     test('title contains "DECLARATION OF MAXIMUM RETAIL PRICE (MRP)"', () {
-      final blocks = buildMrpDeclarationLetter(makeInput());
+      final blocks = buildMrpDeclaration(makeInput());
       final title = blocks.firstWhere(
         (b) => b.kind == LetterBlockKind.titleUnderlined,
       );
@@ -107,18 +120,18 @@ void main() {
     });
 
     test('productTable block has correct headers', () {
-      final blocks = buildMrpDeclarationLetter(makeInput());
+      final blocks = buildMrpDeclaration(makeInput());
       final table = blocks.firstWhere(
         (b) => b.kind == LetterBlockKind.productTable,
       );
       expect(table.tableHeaders, contains('Product Name'));
-      expect(table.tableHeaders, contains('Brand'));
+      expect(table.tableHeaders, contains('Make/Brand'));
       expect(table.tableHeaders, contains('Model No.'));
       expect(table.tableHeaders!.any((h) => h.contains('MRP')), isTrue);
     });
 
     test('productTable row contains product values', () {
-      final blocks = buildMrpDeclarationLetter(makeInput());
+      final blocks = buildMrpDeclaration(makeInput());
       final table = blocks.firstWhere(
         (b) => b.kind == LetterBlockKind.productTable,
       );
@@ -130,7 +143,7 @@ void main() {
     });
 
     test('no productImage block when imageBytes is null', () {
-      final blocks = buildMrpDeclarationLetter(makeInput());
+      final blocks = buildMrpDeclaration(makeInput());
       expect(
         blocks.any((b) => b.kind == LetterBlockKind.productImage),
         isFalse,
@@ -139,7 +152,7 @@ void main() {
 
     test('productImage block present when imageBytes provided', () {
       final fakeImage = Uint8List.fromList([1, 2, 3]);
-      final blocks = buildMrpDeclarationLetter(
+      final blocks = buildMrpDeclaration(
         makeInput(imageBytes: fakeImage),
       );
       final imgBlock = blocks.firstWhere(
@@ -149,7 +162,7 @@ void main() {
     });
 
     test('declaration item 1: MRP as printed on product', () {
-      final blocks = buildMrpDeclarationLetter(makeInput());
+      final blocks = buildMrpDeclaration(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
       expect(
         allText,
@@ -158,26 +171,26 @@ void main() {
     });
 
     test('declaration item 2: price quoted does not exceed MRP', () {
-      final blocks = buildMrpDeclarationLetter(makeInput());
+      final blocks = buildMrpDeclaration(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
       expect(allText, contains('does not exceed'));
     });
 
     test('declaration item 3: misrepresentation → disqualification', () {
-      final blocks = buildMrpDeclarationLetter(makeInput());
+      final blocks = buildMrpDeclaration(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
       expect(allText, contains('misrepresentation'));
       expect(allText, contains('disqualification'));
     });
 
     test('"We undertake" responsibility block present', () {
-      final blocks = buildMrpDeclarationLetter(makeInput());
+      final blocks = buildMrpDeclaration(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
       expect(allText, contains('We undertake'));
     });
 
     test('"Authorization Signatory" in signature block', () {
-      final blocks = buildMrpDeclarationLetter(makeInput());
+      final blocks = buildMrpDeclaration(makeInput());
       final sigBlock = blocks.firstWhere(
         (b) => b.kind == LetterBlockKind.signature,
       );
@@ -185,7 +198,7 @@ void main() {
     });
 
     test('two products: two productTable blocks', () {
-      final blocks = buildMrpDeclarationLetter(makeTwoProductInput());
+      final blocks = buildMrpDeclaration(makeTwoProductInput());
       final tables = blocks
           .where((b) => b.kind == LetterBlockKind.productTable)
           .toList();
@@ -200,7 +213,7 @@ void main() {
         0xD8,
         0xFF,
       ]); // fake JPEG header
-      final blocks = buildMrpDeclarationLetter(
+      final blocks = buildMrpDeclaration(
         makeInput(imageBytes: fakeImage),
       );
       expect(blocks.length, 21);

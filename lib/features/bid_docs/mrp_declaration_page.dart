@@ -19,6 +19,8 @@ import '../tools_hub/tool_page_scaffold.dart';
 import 'letter_model.dart';
 import 'letter_pdf.dart';
 import 'letter_preview.dart';
+import 'mii_certificate_page.dart' show BidDocProfileKeys;
+import 'mii_certificate_text.dart' show looksLikeGemTenderNo;
 import 'mrp_declaration_text.dart';
 
 enum _Step { details, preview }
@@ -30,30 +32,37 @@ class _ProductCard {
   final int id = _counter++;
 
   final productName = TextEditingController();
-  final brandName = TextEditingController();
+  final makeBrand = TextEditingController();
   final modelNo = TextEditingController();
   final mrp = TextEditingController();
+  final gemBidPrice = TextEditingController();
+  final discountPercent = TextEditingController();
   Uint8List? imageBytes;
 
   void dispose() {
     productName.dispose();
-    brandName.dispose();
+    makeBrand.dispose();
     modelNo.dispose();
     mrp.dispose();
+    gemBidPrice.dispose();
+    discountPercent.dispose();
   }
 
   bool get isFilled =>
       productName.text.trim().isNotEmpty &&
-      brandName.text.trim().isNotEmpty &&
+      makeBrand.text.trim().isNotEmpty &&
       modelNo.text.trim().isNotEmpty &&
-      mrp.text.trim().isNotEmpty;
+      mrp.text.trim().isNotEmpty &&
+      gemBidPrice.text.trim().isNotEmpty &&
+      discountPercent.text.trim().isNotEmpty;
 
-  MrpProductEntry toEntry() => MrpProductEntry(
+  MrpProductRow toRow() => MrpProductRow(
     productName: productName.text.trim(),
-    brandName: brandName.text.trim(),
+    makeBrand: makeBrand.text.trim(),
     modelNo: modelNo.text.trim(),
     mrp: mrp.text.trim(),
-    imageBytes: imageBytes,
+    gemBidPrice: gemBidPrice.text.trim(),
+    discountPercent: discountPercent.text.trim(),
   );
 }
 
@@ -73,6 +82,11 @@ class _MrpDeclarationPageState extends State<MrpDeclarationPage> {
   final _scroll = ScrollController();
   final _cards = <_ProductCard>[];
 
+  late final TextEditingController _tenderNo;
+  late final TextEditingController _company;
+  late final TextEditingController _signatory;
+  late final TextEditingController _designation;
+
   _Step _step = _Step.details;
   MrpDeclarationInput? _input;
   List<LetterBlock>? _blocks;
@@ -87,12 +101,27 @@ class _MrpDeclarationPageState extends State<MrpDeclarationPage> {
   void initState() {
     super.initState();
     s.event('page_view', page: 'tool-mrp-declaration');
+    final p = s.profile;
+    String pv(String k) => (p[k] as String?)?.trim() ?? '';
+    final sig = pv(BidDocProfileKeys.signatoryName);
+    _tenderNo = TextEditingController();
+    _company = TextEditingController(text: pv(BidDocProfileKeys.companyName));
+    _signatory = TextEditingController(
+      text: sig.isNotEmpty ? sig : pv(BidDocProfileKeys.fallbackSignatory),
+    );
+    _designation = TextEditingController(
+      text: pv(BidDocProfileKeys.signatoryDesignation),
+    );
     _cards.add(_ProductCard());
   }
 
   @override
   void dispose() {
     _scroll.dispose();
+    _tenderNo.dispose();
+    _company.dispose();
+    _signatory.dispose();
+    _designation.dispose();
     for (final c in _cards) {
       c.dispose();
     }
@@ -152,12 +181,19 @@ class _MrpDeclarationPageState extends State<MrpDeclarationPage> {
     if (!_form.currentState!.validate()) return;
     _disposeEditors();
     final input = MrpDeclarationInput(
-      products: _cards.map((c) => c.toEntry()).toList(),
+      tenderNo: _tenderNo.text.trim().toUpperCase(),
+      company: _company.text.trim(),
+      signatory: _signatory.text.trim(),
+      designation: _designation.text.trim(),
+      products: _cards.map((c) => c.toRow()).toList(),
       date: DateTime.now(),
     );
+    s.setProfile(BidDocProfileKeys.companyName, input.company);
+    s.setProfile(BidDocProfileKeys.signatoryName, input.signatory);
+    s.setProfile(BidDocProfileKeys.signatoryDesignation, input.designation);
     setState(() {
       _input = input;
-      _blocks = buildMrpDeclarationLetter(input);
+      _blocks = buildMrpDeclaration(input);
       _confirmed = false;
       _step = _Step.preview;
     });
@@ -178,6 +214,10 @@ class _MrpDeclarationPageState extends State<MrpDeclarationPage> {
   }
 
   void _resetAll() {
+    _tenderNo.clear();
+    _company.clear();
+    _signatory.clear();
+    _designation.clear();
     for (final c in _cards) {
       c.dispose();
     }
@@ -349,12 +389,69 @@ class _MrpDeclarationPageState extends State<MrpDeclarationPage> {
 
   // ─── form ─────────────────────────────────────────────────────────────────────
 
+  Widget _field(
+    TextEditingController c,
+    String en,
+    String hi, {
+    String? Function(String?)? validator,
+    String? helper,
+    TextCapitalization caps = TextCapitalization.words,
+  }) => Padding(
+    key: ValueKey(en),
+    padding: const EdgeInsets.only(bottom: AppSpace.lg),
+    child: TextFormField(
+      controller: c,
+      textCapitalization: caps,
+      decoration: InputDecoration(
+        labelText: t(en, hi),
+        helperText: helper,
+        helperMaxLines: 3,
+      ),
+      validator: validator ?? _required,
+      onChanged: (_) {
+        setState(() {});
+        _invalidateLetter();
+      },
+    ),
+  );
+
   Widget _detailsForm() {
     return Form(
       key: _form,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _field(
+            _tenderNo,
+            'Tender / bid number',
+            'निविदा / बोली संख्या',
+            caps: TextCapitalization.characters,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) {
+                return t('This is required', 'यह आवश्यक है');
+              }
+              if (!looksLikeGemTenderNo(v.trim())) {
+                return t(
+                  'Check the tender number format',
+                  'निविदा नंबर का प्रारूप जाँचें',
+                );
+              }
+              return null;
+            },
+            helper: t('e.g. GEM/2026/B/7845020', 'जैसे GEM/2026/B/7845020'),
+          ),
+          _field(_company, 'Company name', 'कंपनी का नाम'),
+          _field(_signatory, 'Signatory name', 'हस्ताक्षरकर्ता का नाम'),
+          _field(
+            _designation,
+            'Designation',
+            'पदनाम',
+            helper: t(
+              'e.g. Director, Proprietor, Authorised Signatory',
+              'जैसे Director, Proprietor, Authorised Signatory',
+            ),
+          ),
+          const SizedBox(height: AppSpace.md),
           for (int i = 0; i < _cards.length; i++) _buildProductCard(i),
           const SizedBox(height: AppSpace.sm),
           AppButton(
@@ -409,7 +506,7 @@ class _MrpDeclarationPageState extends State<MrpDeclarationPage> {
               'उत्पाद का नाम',
               index,
             ),
-            _cardField(card.brandName, 'Brand name', 'ब्रांड का नाम', index),
+            _cardField(card.makeBrand, 'Make / Brand', 'मेक / ब्रांड', index),
             _cardField(
               card.modelNo,
               'Model / Item No.',
@@ -426,6 +523,22 @@ class _MrpDeclarationPageState extends State<MrpDeclarationPage> {
                 'As printed on label, e.g. 1500.00',
                 'लेबल पर जैसा छपा हो, जैसे 1500.00',
               ),
+            ),
+            _cardField(
+              card.gemBidPrice,
+              'GeM Bid Price (₹)',
+              'GeM बोली मूल्य (₹)',
+              index,
+              caps: TextCapitalization.none,
+              helper: t('e.g. 1350.00', 'जैसे 1350.00'),
+            ),
+            _cardField(
+              card.discountPercent,
+              'Discount %',
+              'छूट %',
+              index,
+              caps: TextCapitalization.none,
+              helper: t('e.g. 10%', 'जैसे 10%'),
             ),
           ],
         ),
@@ -530,13 +643,11 @@ class _MrpDeclarationPageState extends State<MrpDeclarationPage> {
     return [
       DividedList(
         children: [
+          KeyValueRow(t('Tender no.', 'निविदा नं.'), i.tenderNo),
+          KeyValueRow(t('Company', 'कंपनी'), i.company),
           KeyValueRow(
             t('Products', 'उत्पाद'),
             '${i.products.length} ${i.products.length == 1 ? t('product', 'उत्पाद') : t('products', 'उत्पाद')}',
-          ),
-          KeyValueRow(
-            t('First product', 'पहला उत्पाद'),
-            i.products.first.productName,
           ),
         ],
       ),

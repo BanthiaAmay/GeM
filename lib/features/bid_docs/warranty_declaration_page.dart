@@ -17,6 +17,7 @@ import 'letter_model.dart';
 import 'letter_pdf.dart';
 import 'letter_preview.dart';
 import 'mii_certificate_page.dart' show BidDocProfileKeys;
+import 'mii_certificate_text.dart' show looksLikeGemTenderNo;
 import 'warranty_declaration_text.dart';
 
 enum _Step { details, preview }
@@ -35,11 +36,14 @@ class _WarrantyDeclarationPageState extends State<WarrantyDeclarationPage> {
   final _form = GlobalKey<FormState>();
   final _scroll = ScrollController();
 
+  late final TextEditingController _tenderNo;
+  late final TextEditingController _company;
   late final TextEditingController _signatory;
   late final TextEditingController _designation;
   late final TextEditingController _warrantyPeriod;
+  late final TextEditingController _warrantyResponseDays;
   late final TextEditingController _contactName;
-  late final TextEditingController _contactPosition;
+  late final TextEditingController _contactDesignation;
   late final TextEditingController _contactEmail;
   late final TextEditingController _contactPhone;
 
@@ -59,6 +63,8 @@ class _WarrantyDeclarationPageState extends State<WarrantyDeclarationPage> {
     s.event('page_view', page: 'tool-warranty-declaration');
     final p = s.profile;
     String pv(String k) => (p[k] as String?)?.trim() ?? '';
+    _tenderNo = TextEditingController();
+    _company = TextEditingController(text: pv(BidDocProfileKeys.companyName));
     final signatoryName = pv(BidDocProfileKeys.signatoryName);
     _signatory = TextEditingController(
       text: signatoryName.isNotEmpty
@@ -69,8 +75,9 @@ class _WarrantyDeclarationPageState extends State<WarrantyDeclarationPage> {
       text: pv(BidDocProfileKeys.signatoryDesignation),
     );
     _warrantyPeriod = TextEditingController();
+    _warrantyResponseDays = TextEditingController();
     _contactName = TextEditingController();
-    _contactPosition = TextEditingController();
+    _contactDesignation = TextEditingController();
     _contactEmail = TextEditingController();
     _contactPhone = TextEditingController();
   }
@@ -79,11 +86,14 @@ class _WarrantyDeclarationPageState extends State<WarrantyDeclarationPage> {
   void dispose() {
     _scroll.dispose();
     for (final c in [
+      _tenderNo,
+      _company,
       _signatory,
       _designation,
       _warrantyPeriod,
+      _warrantyResponseDays,
       _contactName,
-      _contactPosition,
+      _contactDesignation,
       _contactEmail,
       _contactPhone,
     ]) {
@@ -128,16 +138,20 @@ class _WarrantyDeclarationPageState extends State<WarrantyDeclarationPage> {
     if (!_form.currentState!.validate()) return;
     _disposeEditors();
     final input = WarrantyDeclarationInput(
-      signatoryName: _signatory.text.trim(),
+      tenderNo: _tenderNo.text.trim().toUpperCase(),
+      company: _company.text.trim(),
+      signatory: _signatory.text.trim(),
       designation: _designation.text.trim(),
       warrantyPeriod: _warrantyPeriod.text.trim(),
+      warrantyResponseDays: _warrantyResponseDays.text.trim(),
       contactName: _contactName.text.trim(),
-      contactPosition: _contactPosition.text.trim(),
+      contactDesignation: _contactDesignation.text.trim(),
       contactEmail: _contactEmail.text.trim(),
       contactPhone: _contactPhone.text.trim(),
       date: DateTime.now(),
     );
-    s.setProfile(BidDocProfileKeys.signatoryName, input.signatoryName);
+    s.setProfile(BidDocProfileKeys.companyName, input.company);
+    s.setProfile(BidDocProfileKeys.signatoryName, input.signatory);
     s.setProfile(BidDocProfileKeys.signatoryDesignation, input.designation);
 
     setState(() {
@@ -164,11 +178,14 @@ class _WarrantyDeclarationPageState extends State<WarrantyDeclarationPage> {
 
   void _resetAll() {
     for (final c in [
+      _tenderNo,
+      _company,
       _signatory,
       _designation,
       _warrantyPeriod,
+      _warrantyResponseDays,
       _contactName,
-      _contactPosition,
+      _contactDesignation,
       _contactEmail,
       _contactPhone,
     ]) {
@@ -214,7 +231,7 @@ class _WarrantyDeclarationPageState extends State<WarrantyDeclarationPage> {
   }
 
   String get _fileStem =>
-      'Warranty Declaration - ${(_input?.signatoryName ?? '').replaceAll(' ', '_')}';
+      'Warranty Declaration - ${(_input?.tenderNo ?? '').replaceAll('/', '-')}';
 
   Future<void> _print() async {
     setState(() => _busy = true);
@@ -368,6 +385,25 @@ class _WarrantyDeclarationPageState extends State<WarrantyDeclarationPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _field(
+            _tenderNo,
+            'Tender / bid number',
+            'निविदा / बोली संख्या',
+            caps: TextCapitalization.characters,
+            helper: t('e.g. GEM/2026/B/7845020', 'जैसे GEM/2026/B/7845020'),
+            validator: (v) {
+              final base = _required(v);
+              if (base != null) return base;
+              if (!looksLikeGemTenderNo(v!)) {
+                return t(
+                  'This doesn\'t look like a GeM bid number (e.g. GEM/2026/B/7845020). Double-check before generating.',
+                  'यह GeM बोली संख्या जैसी नहीं लगती। बनाने से पहले जाँचें।',
+                );
+              }
+              return null;
+            },
+          ),
+          _field(_company, 'Company name', 'कंपनी का नाम'),
           _field(_signatory, 'Signatory name', 'हस्ताक्षरकर्ता का नाम'),
           _field(
             _designation,
@@ -382,13 +418,20 @@ class _WarrantyDeclarationPageState extends State<WarrantyDeclarationPage> {
             _warrantyPeriod,
             'Warranty period',
             'वारंटी अवधि',
-            helper: t('e.g. 6 months', 'जैसे 6 months'),
+            helper: t('e.g. 24 months', 'जैसे 24 months'),
+          ),
+          _field(
+            _warrantyResponseDays,
+            'Warranty response days',
+            'वारंटी प्रतिक्रिया दिवस',
+            keyboard: TextInputType.number,
+            helper: t('Working days to respond to defect', 'दोष के जवाब के लिए कार्य दिवस'),
           ),
           _field(_contactName, 'Contact person name', 'संपर्क व्यक्ति का नाम'),
           _field(
-            _contactPosition,
-            'Contact position',
-            'संपर्क पद',
+            _contactDesignation,
+            'Contact designation',
+            'संपर्क पदनाम',
             helper: t('e.g. Director', 'जैसे Director'),
           ),
           _field(
@@ -424,11 +467,10 @@ class _WarrantyDeclarationPageState extends State<WarrantyDeclarationPage> {
     return [
       DividedList(
         children: [
-          KeyValueRow(
-            t('Signatory', 'हस्ताक्षरकर्ता'),
-            '${i.signatoryName} (${i.designation})',
-          ),
+          KeyValueRow(t('Tender no.', 'निविदा संख्या'), i.tenderNo),
+          KeyValueRow(t('Company', 'कंपनी'), i.company),
           KeyValueRow(t('Warranty period', 'वारंटी अवधि'), i.warrantyPeriod),
+          KeyValueRow(t('Response days', 'प्रतिक्रिया दिवस'), i.warrantyResponseDays),
           KeyValueRow(t('Contact', 'संपर्क'), i.contactName),
         ],
       ),

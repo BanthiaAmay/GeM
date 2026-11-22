@@ -41,18 +41,15 @@ class _LowestPriceDeclarationPageState
   final _form = GlobalKey<FormState>();
   final _scroll = ScrollController();
 
-  LowestPriceTemplate _template = LowestPriceTemplate.template1;
   late final TextEditingController _tenderNo;
-  late final TextEditingController _recipientTitle;
-  late final TextEditingController _organization;
-  late final TextEditingController _organizationAddress;
+  late final TextEditingController _buyerDesignation;
+  late final TextEditingController _buyerOrg;
   late final TextEditingController _company;
-  late final TextEditingController _companyAddress;
   late final TextEditingController _signatory;
   late final TextEditingController _designation;
 
   _Step _step = _Step.details;
-  LowestPriceDeclarationInput? _input;
+  LowestPriceInput? _input;
   List<LetterBlock>? _blocks;
   List<TextEditingController>? _editors;
   bool _confirmed = false;
@@ -69,13 +66,9 @@ class _LowestPriceDeclarationPageState
     String pv(String k) => (p[k] as String?)?.trim() ?? '';
     final signatoryName = pv(BidDocProfileKeys.signatoryName);
     _tenderNo = TextEditingController(text: widget.tenderNo ?? '');
-    _recipientTitle = TextEditingController();
-    _organization = TextEditingController();
-    _organizationAddress = TextEditingController();
+    _buyerDesignation = TextEditingController();
+    _buyerOrg = TextEditingController();
     _company = TextEditingController(text: pv(BidDocProfileKeys.companyName));
-    _companyAddress = TextEditingController(
-      text: pv(BidDocProfileKeys.companyAddress),
-    );
     _signatory = TextEditingController(
       text: signatoryName.isNotEmpty
           ? signatoryName
@@ -91,11 +84,9 @@ class _LowestPriceDeclarationPageState
     _scroll.dispose();
     for (final c in [
       _tenderNo,
-      _recipientTitle,
-      _organization,
-      _organizationAddress,
+      _buyerDesignation,
+      _buyerOrg,
       _company,
-      _companyAddress,
       _signatory,
       _designation,
     ]) {
@@ -136,20 +127,16 @@ class _LowestPriceDeclarationPageState
   void _generate() {
     if (!_form.currentState!.validate()) return;
     _disposeEditors();
-    final input = LowestPriceDeclarationInput(
-      template: _template,
-      recipientTitle: _recipientTitle.text.trim(),
-      organization: _organization.text.trim(),
-      organizationAddress: _organizationAddress.text.trim(),
-      tenderNo: _tenderNo.text.trim(),
+    final input = LowestPriceInput(
+      tenderNo: _tenderNo.text.trim().toUpperCase(),
+      buyerDesignation: _buyerDesignation.text.trim(),
+      buyerOrg: _buyerOrg.text.trim(),
       company: _company.text.trim(),
-      companyAddress: _companyAddress.text.trim(),
       signatory: _signatory.text.trim(),
       designation: _designation.text.trim(),
       date: DateTime.now(),
     );
     s.setProfile(BidDocProfileKeys.companyName, input.company);
-    s.setProfile(BidDocProfileKeys.companyAddress, input.companyAddress);
     s.setProfile(BidDocProfileKeys.signatoryName, input.signatory);
     s.setProfile(BidDocProfileKeys.signatoryDesignation, input.designation);
 
@@ -178,11 +165,9 @@ class _LowestPriceDeclarationPageState
   void _resetAll() {
     for (final c in [
       _tenderNo,
-      _recipientTitle,
-      _organization,
-      _organizationAddress,
+      _buyerDesignation,
+      _buyerOrg,
       _company,
-      _companyAddress,
       _signatory,
       _designation,
     ]) {
@@ -190,7 +175,6 @@ class _LowestPriceDeclarationPageState
     }
     _disposeEditors();
     setState(() {
-      _template = LowestPriceTemplate.template1;
       _blocks = null;
       _input = null;
       _confirmed = false;
@@ -381,39 +365,25 @@ class _LowestPriceDeclarationPageState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Template dropdown
-          Padding(
-            key: const ValueKey('template-dropdown'),
-            padding: const EdgeInsets.only(bottom: AppSpace.lg),
-            child: DropdownButtonFormField<LowestPriceTemplate>(
-              initialValue: _template,
-              decoration: InputDecoration(labelText: t('Template', 'टेम्पलेट')),
-              items: [
-                DropdownMenuItem(
-                  value: LowestPriceTemplate.template1,
-                  child: Text(t('Template 1', 'टेम्पलेट 1')),
-                ),
-              ],
-              onChanged: (v) {
-                if (v == null || v == _template) return;
-                setState(() => _template = v);
-                _invalidateLetter();
-              },
-            ),
-          ),
-          _field(_recipientTitle, 'Recipient title', 'प्राप्तकर्ता का शीर्षक'),
-          _field(_organization, 'Organization', 'संगठन'),
-          _field(_organizationAddress, 'Organization address', 'संगठन का पता'),
           _field(
             _tenderNo,
             'Tender / bid number',
-            'निविदा / बिड नंबर',
+            'निविदा / बोली संख्या',
             caps: TextCapitalization.characters,
             validator: _tenderValidator,
-            helper: t('e.g. GEM/2026/B/1234567', 'जैसे GEM/2026/B/1234567'),
+            helper: t('e.g. GEM/2026/B/7845020', 'जैसे GEM/2026/B/7845020'),
           ),
+          _field(
+            _buyerDesignation,
+            'Buyer\'s designation',
+            'खरीदार का पदनाम',
+            helper: t(
+              'e.g. Deputy General Manager, Procurement Officer',
+              'जैसे उप महाप्रबंधक, खरीद अधिकारी',
+            ),
+          ),
+          _field(_buyerOrg, 'Buyer\'s organisation', 'खरीदार का संगठन'),
           _field(_company, 'Company name', 'कंपनी का नाम'),
-          _field(_companyAddress, 'Company address', 'कंपनी का पता'),
           _field(_signatory, 'Signatory name', 'हस्ताक्षरकर्ता का नाम'),
           _field(
             _designation,
@@ -444,8 +414,10 @@ class _LowestPriceDeclarationPageState
       DividedList(
         children: [
           KeyValueRow(t('Tender no.', 'निविदा नं.'), i.tenderNo),
-          KeyValueRow(t('Recipient', 'प्राप्तकर्ता'), i.recipientTitle),
-          KeyValueRow(t('Organization', 'संगठन'), i.organization),
+          KeyValueRow(
+            t('Buyer', 'खरीदार'),
+            '${i.buyerDesignation}, ${i.buyerOrg}',
+          ),
           KeyValueRow(t('Company', 'कंपनी'), i.company),
         ],
       ),

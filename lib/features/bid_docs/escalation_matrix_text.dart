@@ -122,3 +122,10 @@ List<LetterBlock> buildEscalationMatrix(EscalationMatrixInput i) {
     LetterBlock.plain(LetterBlockKind.signature, 'Date:                              | Place:'),
   ];
 }
+
+String? validatePhone(String? v) {
+  if (v == null || v.trim().isEmpty) return 'Required';
+  final digits = v.replaceAll(RegExp(r'\D'), '');
+  if (digits.length < 7 || digits.length > 15) return 'Enter a valid phone number';
+  return null;
+}

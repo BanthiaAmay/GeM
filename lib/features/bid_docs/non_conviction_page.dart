@@ -1,9 +1,5 @@
 /// Non-Conviction Certificate generator.
-/// Registered in tools_hub/tool_registry.dart, route `/tool-non-conviction`.
-///
-/// No tender number — this certificate is company-level.
-/// Follows the same pattern as [MiiCertificatePage], [EscalationMatrixPage],
-/// and [NonRelationPage].
+/// Route: `/tool-non-conviction`
 library;
 
 import 'package:flutter/material.dart';
@@ -17,6 +13,7 @@ import 'letter_model.dart';
 import 'letter_pdf.dart';
 import 'letter_preview.dart';
 import 'mii_certificate_page.dart' show BidDocProfileKeys;
+import 'mii_certificate_text.dart' show looksLikeGemTenderNo;
 import 'non_conviction_text.dart';
 
 enum _Step { details, preview }
@@ -34,8 +31,10 @@ class _NonConvictionPageState extends State<NonConvictionPage> {
   final _form = GlobalKey<FormState>();
   final _scroll = ScrollController();
 
+  late final TextEditingController _tenderNo;
+  late final TextEditingController _buyerDesignation;
+  late final TextEditingController _buyerOrg;
   late final TextEditingController _company;
-  late final TextEditingController _companyAddress;
   late final TextEditingController _signatory;
   late final TextEditingController _designation;
 
@@ -55,10 +54,10 @@ class _NonConvictionPageState extends State<NonConvictionPage> {
     s.event('page_view', page: 'tool-non-conviction');
     final p = s.profile;
     String pv(String k) => (p[k] as String?)?.trim() ?? '';
+    _tenderNo = TextEditingController();
+    _buyerDesignation = TextEditingController();
+    _buyerOrg = TextEditingController();
     _company = TextEditingController(text: pv(BidDocProfileKeys.companyName));
-    _companyAddress = TextEditingController(
-      text: pv(BidDocProfileKeys.companyAddress),
-    );
     final signatory = pv(BidDocProfileKeys.signatoryName);
     _signatory = TextEditingController(
       text: signatory.isNotEmpty
@@ -73,7 +72,7 @@ class _NonConvictionPageState extends State<NonConvictionPage> {
   @override
   void dispose() {
     _scroll.dispose();
-    for (final c in [_company, _companyAddress, _signatory, _designation]) {
+    for (final c in [_tenderNo, _buyerDesignation, _buyerOrg, _company, _signatory, _designation]) {
       c.dispose();
     }
     _disposeEditors();
@@ -89,9 +88,16 @@ class _NonConvictionPageState extends State<NonConvictionPage> {
 
   // ---------------------------------------------------------------- validation
 
-  String? _required(String? v) => (v == null || v.trim().isEmpty)
-      ? t('This is required', 'यह आवश्यक है')
-      : null;
+  String? _required(String? v) =>
+      (v == null || v.trim().isEmpty) ? t('This is required', 'यह आवश्यक है') : null;
+
+  String? _validateTender(String? v) {
+    if (v == null || v.trim().isEmpty) return t('This is required', 'यह आवश्यक है');
+    if (!looksLikeGemTenderNo(v.trim())) {
+      return t('Enter a valid GeM Bid / Tender number', 'सही GeM बिड / टेंडर नंबर दर्ज करें');
+    }
+    return null;
+  }
 
   // ----------------------------------------------------------------- actions
 
@@ -99,14 +105,15 @@ class _NonConvictionPageState extends State<NonConvictionPage> {
     if (!_form.currentState!.validate()) return;
     _disposeEditors();
     final input = NonConvictionInput(
+      tenderNo: _tenderNo.text.trim(),
+      buyerDesignation: _buyerDesignation.text.trim(),
+      buyerOrg: _buyerOrg.text.trim(),
       company: _company.text.trim(),
-      companyAddress: _companyAddress.text.trim(),
       signatory: _signatory.text.trim(),
       designation: _designation.text.trim(),
       date: DateTime.now(),
     );
     s.setProfile(BidDocProfileKeys.companyName, input.company);
-    s.setProfile(BidDocProfileKeys.companyAddress, input.companyAddress);
     s.setProfile(BidDocProfileKeys.signatoryName, input.signatory);
     s.setProfile(BidDocProfileKeys.signatoryDesignation, input.designation);
 
@@ -133,7 +140,7 @@ class _NonConvictionPageState extends State<NonConvictionPage> {
   }
 
   void _resetAll() {
-    for (final c in [_company, _companyAddress, _signatory, _designation]) {
+    for (final c in [_tenderNo, _buyerDesignation, _buyerOrg, _company, _signatory, _designation]) {
       c.clear();
     }
     _disposeEditors();
@@ -330,13 +337,14 @@ class _NonConvictionPageState extends State<NonConvictionPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _field(_tenderNo, 'GeM Bid / Tender number', 'GeM बिड / टेंडर नंबर',
+              validator: _validateTender),
+          _field(_buyerDesignation, 'Buyer designation', 'क्रेता का पदनाम',
+              helper: t('e.g. Commandant, Principal, Director', 'जैसे कमांडेंट, प्रिंसिपल, निदेशक'),
+              caps: TextCapitalization.words),
+          _field(_buyerOrg, 'Buyer organisation', 'क्रेता संस्था',
+              caps: TextCapitalization.words),
           _field(_company, 'Company name', 'कंपनी का नाम'),
-          _field(
-            _companyAddress,
-            'Company address',
-            'कंपनी का पता',
-            caps: TextCapitalization.words,
-          ),
           _field(_signatory, 'Signatory name', 'हस्ताक्षरकर्ता का नाम'),
           _field(
             _designation,
@@ -366,12 +374,10 @@ class _NonConvictionPageState extends State<NonConvictionPage> {
     return [
       DividedList(
         children: [
+          KeyValueRow(t('Tender No.', 'टेंडर नं.'), i.tenderNo),
+          KeyValueRow(t('Buyer', 'क्रेता'), '${i.buyerDesignation}, ${i.buyerOrg}'),
           KeyValueRow(t('Company', 'कंपनी'), i.company),
-          KeyValueRow(t('Address', 'पता'), i.companyAddress),
-          KeyValueRow(
-            t('Signatory', 'हस्ताक्षरकर्ता'),
-            '${i.signatory} (${i.designation})',
-          ),
+          KeyValueRow(t('Signatory', 'हस्ताक्षरकर्ता'), '${i.signatory} (${i.designation})'),
         ],
       ),
       const SizedBox(height: AppSpace.xl),

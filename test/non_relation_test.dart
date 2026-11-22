@@ -20,8 +20,9 @@ void main() {
 
   NonRelationInput makeInput() => NonRelationInput(
     tenderNo: 'GEM/2026/B/7845020',
+    buyerDesignation: 'The Commandant',
+    buyerOrg: 'Indian Army',
     company: 'Example Pvt Ltd',
-    companyAddress: '123 MG Road, Mumbai',
     signatory: 'Ravi Kumar',
     designation: 'Director',
     date: DateTime(2026, 10, 9),

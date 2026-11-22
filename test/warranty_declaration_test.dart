@@ -19,11 +19,14 @@ void main() {
   // ── helpers ────────────────────────────────────────────────────────────────
 
   WarrantyDeclarationInput makeInput() => WarrantyDeclarationInput(
-    signatoryName: 'Ravi Kumar',
+    tenderNo: 'GEM/2026/B/7845020',
+    company: 'Example Pvt Ltd',
+    signatory: 'Ravi Kumar',
     designation: 'Director',
     warrantyPeriod: '1 year',
+    warrantyResponseDays: '5',
     contactName: 'Priya Sharma',
-    contactPosition: 'Manager',
+    contactDesignation: 'Manager',
     contactEmail: 'priya@example.com',
     contactPhone: '+91 9876543210',
     date: DateTime(2026, 10, 11),
