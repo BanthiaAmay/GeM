@@ -58,12 +58,9 @@ void main() {
   }
 
   Future<void> fillAll(WidgetTester tester) async {
-    await fill(tester, 'Recipient title', 'The Commandant');
-    await fill(tester, 'Organization', 'Indian Army');
-    await fill(tester, 'Organization address', 'New Delhi, 110001');
-    await fill(tester, 'Tender / bid number', 'GEM/2026/B/7845020');
+    await fill(tester, 'Buyer\'s designation', 'The Commandant');
+    await fill(tester, 'Buyer\'s organisation', 'Indian Army');
     await fill(tester, 'Company name', 'Example Pvt Ltd');
-    await fill(tester, 'Company address', '123 MG Road, Mumbai');
     await fill(tester, 'Signatory name', 'Ravi Kumar');
     await fill(tester, 'Designation', 'Director');
   }
@@ -84,59 +81,48 @@ void main() {
       );
     });
 
-    test('"Subject:" bold; value is "Declaration of Lowest Price Quoted"', () {
+    test('tenderNo present in subtitle block', () {
       final blocks = buildLowestPriceDeclaration(makeInput());
-      final subjectBlock = blocks.firstWhere(
+      final subtitle = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
+      );
+      expect(subtitle.plainText, contains('GEM/2026/B/7845020'));
+    });
+
+    test('title is "DECLARATION OF BEST PRICE AND PRICE PARITY"', () {
+      final blocks = buildLowestPriceDeclaration(makeInput());
+      final title = blocks.firstWhere((b) => b.kind == LetterBlockKind.title);
+      expect(title.plainText, 'DECLARATION OF BEST PRICE AND PRICE PARITY');
+    });
+
+    test('company bold in opening para ("We, Z, … declare:")', () {
+      final blocks = buildLowestPriceDeclaration(makeInput());
+      final para = blocks.firstWhere(
         (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.spans.any((s) => s.bold && s.text == 'Subject: '),
+            b.kind == LetterBlockKind.body && b.plainText.contains('declare:'),
       );
       expect(
-        subjectBlock.plainText,
-        contains('Declaration of Lowest Price Quoted'),
+        para.spans.any((s) => s.bold && s.text == 'Example Pvt Ltd'),
+        isTrue,
       );
     });
 
-    test('"GeM Bid No:" bold; tenderNo value follows', () {
+    test('boilerplate contains "minimum discount of 10%"', () {
       final blocks = buildLowestPriceDeclaration(makeInput());
-      final bidNoBlock = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.spans.any((s) => s.bold && s.text == 'GeM Bid No: '),
-      );
-      expect(bidNoBlock.plainText, contains('GEM/2026/B/7845020'));
+      final allText = blocks.map((b) => b.plainText).join(' ');
+      expect(allText, contains('minimum discount of 10%'));
     });
 
-    test('para 1: company bold AND companyAddress bold', () {
+    test('boilerplate contains "Competition Act, 2002"', () {
       final blocks = buildLowestPriceDeclaration(makeInput());
-      final para1 = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.plainText.contains('having our registered office at'),
-      );
-      expect(
-        para1.spans.any((s) => s.bold && s.text == 'Example Pvt Ltd'),
-        isTrue,
-        reason: 'company should be bold',
-      );
-      expect(
-        para1.spans.any((s) => s.bold && s.text == '123 MG Road, Mumbai'),
-        isTrue,
-        reason: 'companyAddress should be bold',
-      );
+      final allText = blocks.map((b) => b.plainText).join(' ');
+      expect(allText, contains('Competition Act, 2002'));
     });
 
-    test('"Duly authorized": company bold', () {
+    test('no "Subject:" in any block', () {
       final blocks = buildLowestPriceDeclaration(makeInput());
-      final closingBlock = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.plainText.contains('Duly authorized'),
-      );
-      expect(
-        closingBlock.spans.any((s) => s.bold && s.text == 'Example Pvt Ltd'),
-        isTrue,
-      );
+      final allText = blocks.map((b) => b.plainText).join(' ');
+      expect(allText, isNot(contains('Subject:')));
     });
 
     test('no "Sincerely" in output', () {
@@ -150,43 +136,6 @@ void main() {
         isFalse,
       );
     });
-
-    test('boilerplate contains "public sector undertaking (PSU)"', () {
-      final blocks = buildLowestPriceDeclaration(makeInput());
-      final allText = blocks.map((b) => b.plainText).join(' ');
-      expect(allText, contains('public sector undertaking (PSU)'));
-    });
-
-    test(
-      'boilerplate contains "disqualification from the tendering process"',
-      () {
-        final blocks = buildLowestPriceDeclaration(makeInput());
-        final allText = blocks.map((b) => b.plainText).join(' ');
-        expect(
-          allText,
-          contains('disqualification from the tendering process'),
-        );
-      },
-    );
-
-    test(
-      'items 13, 14, 15 are consecutive body blocks (no spacers between)',
-      () {
-        final blocks = buildLowestPriceDeclaration(makeInput());
-        final para1Idx = blocks.indexWhere(
-          (b) =>
-              b.kind == LetterBlockKind.body &&
-              b.plainText.contains('having our registered office at'),
-        );
-        expect(para1Idx, isNot(-1));
-        // block at para1Idx+1 is item 14 (affirm)
-        expect(blocks[para1Idx + 1].kind, LetterBlockKind.body);
-        expect(blocks[para1Idx + 1].plainText, contains('We affirm'));
-        // block at para1Idx+2 is item 15 (understand)
-        expect(blocks[para1Idx + 2].kind, LetterBlockKind.body);
-        expect(blocks[para1Idx + 2].plainText, contains('We understand'));
-      },
-    );
   });
 
   // ── Widget tests ───────────────────────────────────────────────────────────
@@ -243,12 +192,6 @@ void main() {
         expect(find.text('Your letter'), findsNothing);
       },
     );
-
-    testWidgets('template dropdown defaults to Template 1', (tester) async {
-      final s = await makeStore();
-      await open(tester, s);
-      expect(find.text('Template 1'), findsOneWidget);
-    });
 
     testWidgets('generate → preview → confirm → print/share unlocked', (
       tester,

@@ -65,36 +65,23 @@ void main() {
     test('matches the reference letter (Class-I, 100%)', () {
       final blocks = buildMiiCertificate(_input());
       final text = blocks.map((b) => b.plainText).join('\n');
-      expect(text, contains('Date: Oct 04 2026'));
-      expect(
-        text,
-        contains(
-          'Self Certification under Preference to “MAKE IN INDIA” Policy',
-        ),
-      );
-      expect(text, contains('(Refer Clause No. 2.8 & 3.4.4 of ITT)'));
-      expect(text, contains('CERTIFICATE'));
-      expect(text, contains('P-45021/2/2017-BE-II dt. 15.06.2017'));
-      expect(text, contains('we hereby certify that we Z are local supplier'));
-      expect(text, contains('minimum Local content (50%)'));
-      expect(text, contains('against tender no GEM/2026/B/7845020'));
-      expect(text, contains('Local Content : 100%'));
-      expect(text, contains('Rule 175(1)(i)(h)'));
-      expect(text, contains('Rule 151 (iii)'));
-      expect(
-        text,
-        contains('Duly authorized to sign the bid for and on behalf of Z.'),
-      );
-      expect(blocks.where((b) => b.isSpacer).length, 1);
-      expect(blocks.last.plainText, 'Owner');
+      expect(text, contains('SELF-CERTIFICATION OF LOCAL CONTENT'));
+      expect(text, contains('P-45021/2/2017-PP (BE-II)-Part (4) Vol. II'));
+      expect(text, contains('hereby declare:'));
+      expect(text, contains('Class I'));
+      expect(text, contains('Local Content (LC) of 100%'));
+      expect(text, contains('GFR Rule 175(1)(i)(h)'));
+      expect(text, contains('Rule 151(iii)'));
+      expect(blocks.where((b) => b.isSpacer).length, 6);
+      expect(blocks.last.plainText, 'Date:                              | Place:');
     });
 
-    test('Class-II quotes 20% minimum', () {
+    test('Class-II uses Class II label and correct percentage', () {
       final text = buildMiiCertificate(
         _input(pct: 35),
       ).map((b) => b.plainText).join('\n');
-      expect(text, contains('minimum Local content (20%)'));
-      expect(text, contains('Local Content : 35%'));
+      expect(text, contains('Class II'));
+      expect(text, contains('35%'));
     });
 
     test('user values are bold, boilerplate is not', () {
@@ -109,7 +96,7 @@ void main() {
         containsAll([
           'Z',
           'GEM/2026/B/7845020',
-          'Local Content : 100%',
+          '100%',
           'India',
         ]),
       );

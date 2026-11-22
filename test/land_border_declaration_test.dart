@@ -57,7 +57,6 @@ void main() {
 
   Future<void> fillAll(WidgetTester tester) async {
     await fill(tester, 'Company name', 'Example Pvt Ltd');
-    await fill(tester, 'Company address', '123 MG Road, Mumbai');
     await fill(tester, 'Signatory name', 'Ravi Kumar');
     await fill(tester, 'Designation', 'Director');
   }
@@ -65,118 +64,73 @@ void main() {
   // ── Unit tests — letter builder ────────────────────────────────────────────
 
   group('buildLandBorderDeclaration', () {
-    test('"To Whom It May Concern" renders as LetterBlockKind.title', () {
+    test('title is "DECLARATION — COMPLIANCE WITH LAND BORDER RESTRICTION"', () {
       final blocks = buildLandBorderDeclaration(makeInput());
       final titleBlock = blocks.firstWhere(
         (b) => b.kind == LetterBlockKind.title,
       );
-      expect(titleBlock.plainText, 'To Whom It May Concern');
+      expect(
+        titleBlock.plainText,
+        'DECLARATION — COMPLIANCE WITH LAND BORDER RESTRICTION',
+      );
     });
 
-    test('"Subject:" bold; value contains Rule 144 (xi) without tender info', () {
+    test('subtitle contains "GFR Rule 144(xi)" and "23.02.2023"', () {
       final blocks = buildLandBorderDeclaration(makeInput());
-      final subjectBlock = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.spans.any((s) => s.bold && s.text == 'Subject: '),
-      );
-      expect(
-        subjectBlock.plainText,
-        contains(
-          'Declaration of Compliance with Restrictions under Rule 144 (xi) of GFR 2017',
-        ),
-      );
-      // No tender number in subject
-      expect(subjectBlock.plainText, isNot(contains('GEM/')));
+      final subtitles = blocks
+          .where((b) => b.kind == LetterBlockKind.subtitle)
+          .map((b) => b.plainText)
+          .join(' ');
+      expect(subtitles, contains('GFR Rule 144(xi)'));
+      expect(subtitles, contains('23.02.2023'));
     });
 
-    test('company name bold in para 1 ("We, X, hereby declare…")', () {
+    test('tenderNo present in subtitle block', () {
       final blocks = buildLandBorderDeclaration(makeInput());
-      final para1 = blocks.firstWhere(
+      final subtitleWithBidNo = blocks.firstWhere(
         (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.plainText.contains('hereby declare'),
+            b.kind == LetterBlockKind.subtitle &&
+            b.plainText.contains('GEM/2026/B/7845020'),
+      );
+      expect(subtitleWithBidNo.plainText, contains('GEM/2026/B/7845020'));
+    });
+
+    test('company name bold in opening para ("We, X, … declare:")', () {
+      final blocks = buildLandBorderDeclaration(makeInput());
+      final para = blocks.firstWhere(
+        (b) =>
+            b.kind == LetterBlockKind.body && b.plainText.contains('declare:'),
       );
       expect(
-        para1.spans.any((s) => s.bold && s.text == 'Example Pvt Ltd'),
+        para.spans.any((s) => s.bold && s.text == 'Example Pvt Ltd'),
         isTrue,
       );
     });
 
-    test('company name NOT bold anywhere else', () {
-      final blocks = buildLandBorderDeclaration(makeInput());
-      final boldCompanyBlocks = blocks
-          .where((b) => b.kind == LetterBlockKind.body)
-          .where(
-            (b) => b.spans.any((s) => s.bold && s.text == 'Example Pvt Ltd'),
-          )
-          .toList();
-      expect(boldCompanyBlocks.length, 1);
-    });
-
-    test('"Sincerely," is present', () {
-      final blocks = buildLandBorderDeclaration(makeInput());
-      expect(
-        blocks.any(
-          (b) => b.kind == LetterBlockKind.body && b.plainText == 'Sincerely,',
-        ),
-        isTrue,
-      );
-    });
-
-    test('numbered list items 1–4 are separate body blocks', () {
+    test('numbered clauses 1–5 each in separate body blocks', () {
       final blocks = buildLandBorderDeclaration(makeInput());
       final bodyTexts = blocks
           .where((b) => b.kind == LetterBlockKind.body)
           .map((b) => b.plainText)
           .toList();
-      expect(bodyTexts.any((t) => t.startsWith('1. We do not share')), isTrue);
-      expect(
-        bodyTexts.any((t) => t.startsWith('2. We do not have any Specified')),
-        isTrue,
-      );
-      expect(
-        bodyTexts.any((t) => t.startsWith('3. Our beneficial ownership')),
-        isTrue,
-      );
-      expect(
-        bodyTexts.any((t) => t.startsWith('4. We understand that any false')),
-        isTrue,
-      );
-      // Each must be its own block (not combined)
-      final item1Blocks = blocks
-          .where(
-            (b) =>
-                b.kind == LetterBlockKind.body && b.plainText.startsWith('1.'),
-          )
-          .length;
-      expect(item1Blocks, 1);
+      expect(bodyTexts.any((t) => t.startsWith('1.')), isTrue);
+      expect(bodyTexts.any((t) => t.startsWith('2.')), isTrue);
+      expect(bodyTexts.any((t) => t.startsWith('3.')), isTrue);
+      expect(bodyTexts.any((t) => t.startsWith('4.')), isTrue);
+      expect(bodyTexts.any((t) => t.startsWith('5.')), isTrue);
     });
 
-    test(
-      'template1 contains "Rule 144 (xi)", "23.02.2023", "GeM 4.0 (Version 1.11)"',
-      () {
-        final blocks = buildLandBorderDeclaration(makeInput());
-        final allText = blocks.map((b) => b.plainText).join(' ');
-        expect(allText, contains('Rule 144 (xi)'));
-        expect(allText, contains('23.02.2023'));
-        expect(allText, contains('GeM 4.0 (Version 1.11)'));
-      },
-    );
+    test('boilerplate contains "land border with India"', () {
+      final blocks = buildLandBorderDeclaration(makeInput());
+      final allText = blocks.map((b) => b.plainText).join(' ');
+      expect(allText, contains('land border with India'));
+    });
 
-    test(
-      'boilerplate contains "Department of Expenditure (DOE) Order (Public Procurement No.4)"',
-      () {
-        final blocks = buildLandBorderDeclaration(makeInput());
-        final allText = blocks.map((b) => b.plainText).join(' ');
-        expect(
-          allText,
-          contains(
-            'Department of Expenditure (DOE) Order (Public Procurement No.4)',
-          ),
-        );
-      },
-    );
+    test('no "Sincerely" in new document format', () {
+      final blocks = buildLandBorderDeclaration(makeInput());
+      final allText = blocks.map((b) => b.plainText).join(' ');
+      expect(allText, isNot(contains('Sincerely')));
+    });
   });
 
   // ── Widget tests ───────────────────────────────────────────────────────────
@@ -234,12 +188,6 @@ void main() {
       },
     );
 
-    testWidgets('template dropdown defaults to Template 1', (tester) async {
-      final s = await makeStore();
-      await open(tester, s);
-      expect(find.text('Template 1'), findsOneWidget);
-    });
-
     testWidgets('generate → preview → confirm → print/share unlocked', (
       tester,
     ) async {
@@ -252,7 +200,6 @@ void main() {
 
       expect(find.text('Your letter'), findsOneWidget);
       expect(s.profile['companyName'], 'Example Pvt Ltd');
-      expect(s.profile['companyAddress'], '123 MG Road, Mumbai');
       expect(s.profile['signatoryName'], 'Ravi Kumar');
 
       AppButton printBtn() => tester.widget<AppButton>(

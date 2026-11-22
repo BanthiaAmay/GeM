@@ -59,11 +59,9 @@ void main() {
 
   Future<void> fillAll(WidgetTester tester) async {
     await fill(tester, 'Tender / bid number', 'GEM/2026/B/7845020');
-    await fill(tester, 'Recipient title', 'The Commandant');
-    await fill(tester, 'Organization', 'Indian Army');
-    await fill(tester, 'Organization address', 'New Delhi, 110001');
+    await fill(tester, 'Buyer\'s designation', 'The Commandant');
+    await fill(tester, 'Buyer\'s organisation', 'Indian Army');
     await fill(tester, 'Company name', 'Example Pvt Ltd');
-    await fill(tester, 'Company address', '123 MG Road, Mumbai');
     await fill(tester, 'Signatory name', 'Ravi Kumar');
     await fill(tester, 'Designation', 'Director');
   }
@@ -84,37 +82,20 @@ void main() {
       );
     });
 
-    test('"Subject:" bold; value is "Acceptance of Terms and Conditions"', () {
+    test('tenderNo present in subtitle block', () {
       final blocks = buildAtcCertificate(makeInput());
-      final subjectBlock = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.spans.any((s) => s.bold && s.text == 'Subject: '),
+      final subtitleBlock = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
       );
-      expect(
-        subjectBlock.plainText,
-        contains('Acceptance of Terms and Conditions'),
-      );
-      // Subject line must NOT contain tender number
-      expect(subjectBlock.plainText, isNot(contains('GEM/')));
+      expect(subtitleBlock.plainText, contains('GEM/2026/B/7845020'));
     });
 
-    test('"GeM Bid No:" bold on its own line; tenderNo value follows', () {
-      final blocks = buildAtcCertificate(makeInput());
-      final bidNoBlock = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.spans.any((s) => s.bold && s.text == 'GeM Bid No: '),
-      );
-      expect(bidNoBlock.plainText, contains('GEM/2026/B/7845020'));
-    });
-
-    test('company name bold in para 1 ("We, Z, hereby…")', () {
+    test('company name bold in opening para ("We, Z, … confirm:")', () {
       final blocks = buildAtcCertificate(makeInput());
       final para1 = blocks.firstWhere(
         (b) =>
             b.kind == LetterBlockKind.body &&
-            b.plainText.contains('hereby acknowledge'),
+            b.plainText.contains('confirm:'),
       );
       expect(
         para1.spans.any((s) => s.bold && s.text == 'Example Pvt Ltd'),
@@ -122,20 +103,7 @@ void main() {
       );
     });
 
-    test('company name bold in closing line ("…on behalf of Z.")', () {
-      final blocks = buildAtcCertificate(makeInput());
-      final closingBlock = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.plainText.contains('Duly authorized'),
-      );
-      expect(
-        closingBlock.spans.any((s) => s.bold && s.text == 'Example Pvt Ltd'),
-        isTrue,
-      );
-    });
-
-    test('company name bold in exactly two places', () {
+    test('company name bold in exactly one body block', () {
       final blocks = buildAtcCertificate(makeInput());
       final boldCompanyBlocks = blocks
           .where((b) => b.kind == LetterBlockKind.body)
@@ -143,7 +111,7 @@ void main() {
             (b) => b.spans.any((s) => s.bold && s.text == 'Example Pvt Ltd'),
           )
           .toList();
-      expect(boldCompanyBlocks.length, 2);
+      expect(boldCompanyBlocks.length, 1);
     });
 
     test('no "Sincerely" line in output', () {
@@ -155,10 +123,10 @@ void main() {
       );
     });
 
-    test('boilerplate contains "integral part of the bidding process"', () {
+    test('boilerplate contains "ATC takes precedence"', () {
       final blocks = buildAtcCertificate(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
-      expect(allText, contains('integral part of the bidding process'));
+      expect(allText, contains('ATC takes precedence'));
     });
 
     test('boilerplate contains "disqualification or termination"', () {
@@ -210,7 +178,7 @@ void main() {
   });
 
   group('AtcCertificatePage', () {
-    testWidgets('empty form — all 8 fields required', (tester) async {
+    testWidgets('empty form — all 6 fields required', (tester) async {
       final s = await makeStore();
       await open(tester, s);
       await tester.tap(find.text('Generate letter'));
@@ -219,14 +187,12 @@ void main() {
       expect(find.text('Your letter'), findsNothing);
     });
 
-    testWidgets('partial fill (7 of 8) still blocks generate', (tester) async {
+    testWidgets('partial fill (5 of 6) still blocks generate', (tester) async {
       final s = await makeStore();
       await open(tester, s, tender: 'GEM/2026/B/7845020');
-      await fill(tester, 'Recipient title', 'The Commandant');
-      await fill(tester, 'Organization', 'Indian Army');
-      await fill(tester, 'Organization address', 'New Delhi');
+      await fill(tester, 'Buyer\'s designation', 'The Commandant');
+      await fill(tester, 'Buyer\'s organisation', 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
-      await fill(tester, 'Company address', '123 MG Road');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       // Designation empty
       await tester.tap(find.text('Generate letter'));

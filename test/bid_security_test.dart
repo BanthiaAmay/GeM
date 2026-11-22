@@ -75,79 +75,52 @@ void main() {
       );
     });
 
-    test('"Subject:" span is bold', () {
+    test('tenderNo present in subtitle block', () {
       final blocks = buildBidSecurityDeclaration(makeInput());
-      final subjectBlock = blocks.firstWhere(
+      final subtitleBlock = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
+      );
+      expect(subtitleBlock.plainText, contains('GEM/2026/B/7845020'));
+    });
+
+    test('date uses abbreviated month format in subtitle', () {
+      final blocks = buildBidSecurityDeclaration(makeInput());
+      final subtitleBlock = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
+      );
+      expect(subtitleBlock.plainText, contains('Oct'));
+      expect(subtitleBlock.plainText, contains('2026'));
+    });
+
+    test('company name bold in opening para ("We, Z, … confirm")', () {
+      final blocks = buildBidSecurityDeclaration(makeInput());
+      final para = blocks.firstWhere(
         (b) =>
             b.kind == LetterBlockKind.body &&
-            b.spans.any((s) => s.bold && s.text.startsWith('Subject:')),
+            b.plainText.contains('confirm that EMD'),
       );
       expect(
-        subjectBlock.spans.any((s) => s.bold && s.text.startsWith('Subject:')),
+        para.spans.any((s) => s.bold && s.text == 'Example Pvt Ltd'),
         isTrue,
       );
     });
 
-    test('tender no. appears verbatim in subject line', () {
-      final blocks = buildBidSecurityDeclaration(makeInput());
-      final subjectBlock = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.spans.any((s) => s.bold && s.text.startsWith('Subject:')),
-      );
-      expect(subjectBlock.plainText, contains('GEM/2026/B/7845020'));
-    });
-
-    test('company name is bold in closing "Duly authorized…" line', () {
-      final blocks = buildBidSecurityDeclaration(makeInput());
-      final authBlock = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.plainText.contains('Duly authorized'),
-      );
-      expect(
-        authBlock.spans.any((s) => s.bold && s.text == 'Example Pvt Ltd'),
-        isTrue,
-      );
-    });
-
-    test('company name does NOT appear bold elsewhere in the body', () {
-      final blocks = buildBidSecurityDeclaration(makeInput());
-      final boldCompanyBlocks = blocks
-          .where((b) => b.kind == LetterBlockKind.body)
-          .where(
-            (b) => b.spans.any((s) => s.bold && s.text == 'Example Pvt Ltd'),
-          )
-          .toList();
-      // Only the "Duly authorized" closing line should have bold company name
-      expect(boldCompanyBlocks.length, 1);
-      expect(boldCompanyBlocks.first.plainText, contains('Duly authorized'));
-    });
-
-    test('boilerplate contains "six months"', () {
+    test('boilerplate contains "debarment from GeM"', () {
       final blocks = buildBidSecurityDeclaration(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
-      expect(allText, contains('six months'));
+      expect(allText, contains('debarment from GeM'));
     });
 
-    test('boilerplate contains "Bid Securing Declaration shall cease"', () {
+    test('forfeiture clause (a) present', () {
       final blocks = buildBidSecurityDeclaration(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
-      expect(allText, contains('Bid Securing Declaration shall cease'));
+      expect(allText, contains('withdraw or modify our Bid'));
     });
 
-    test('boilerplate contains "thirty days"', () {
+    test('no "Subject:" in any block', () {
       final blocks = buildBidSecurityDeclaration(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
-      expect(allText, contains('thirty days'));
-    });
-
-    test('date uses abbreviated month format', () {
-      final blocks = buildBidSecurityDeclaration(makeInput());
-      final dateBlock = blocks.first;
-      expect(dateBlock.kind, LetterBlockKind.date);
-      expect(dateBlock.plainText, contains('Oct'));
-      expect(dateBlock.plainText, contains('2026'));
+      expect(allText, isNot(contains('Subject:')));
     });
   });
 
@@ -208,11 +181,11 @@ void main() {
       final s = await makeStore();
       await open(tester, s, tender: 'GEM/2026/B/7845020');
       // Fill 7 of 8 — missing Designation
-      await fill(tester, 'Recipient title', 'The Commandant');
-      await fill(tester, 'Organization', 'Indian Army');
-      await fill(tester, 'Organization address', 'New Delhi');
+      await fill(tester, 'Buyer\'s designation', 'The Commandant');
+      await fill(tester, 'Buyer\'s organisation', 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
-      await fill(tester, 'Company address', '123 MG Road');
+      await fill(tester, 'EMD amount (₹)', '50,000');
+      await fill(tester, 'Mode of payment', 'DD/BG');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       // Designation empty
       await tester.tap(find.text('Generate letter'));
@@ -226,11 +199,11 @@ void main() {
     ) async {
       final s = await makeStore();
       await open(tester, s, tender: 'GEM/2026/B/7845020');
-      await fill(tester, 'Recipient title', 'The Commandant');
-      await fill(tester, 'Organization', 'Indian Army');
-      await fill(tester, 'Organization address', 'New Delhi, 110001');
+      await fill(tester, 'Buyer\'s designation', 'The Commandant');
+      await fill(tester, 'Buyer\'s organisation', 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
-      await fill(tester, 'Company address', '123 MG Road, Mumbai');
+      await fill(tester, 'EMD amount (₹)', '50,000');
+      await fill(tester, 'Mode of payment', 'DD/BG');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       await fill(tester, 'Designation', 'Director');
 
@@ -258,11 +231,11 @@ void main() {
     ) async {
       final s = await makeStore();
       await open(tester, s, tender: 'GEM/2026/B/7845020');
-      await fill(tester, 'Recipient title', 'The Commandant');
-      await fill(tester, 'Organization', 'Indian Army');
-      await fill(tester, 'Organization address', 'New Delhi, 110001');
+      await fill(tester, 'Buyer\'s designation', 'The Commandant');
+      await fill(tester, 'Buyer\'s organisation', 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
-      await fill(tester, 'Company address', '123 MG Road, Mumbai');
+      await fill(tester, 'EMD amount (₹)', '50,000');
+      await fill(tester, 'Mode of payment', 'DD/BG');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       await fill(tester, 'Designation', 'Director');
 

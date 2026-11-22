@@ -75,27 +75,24 @@ void main() {
       expect(bodyBold, contains('Example Pvt Ltd'));
     });
 
-    test('company name appears bold in second (authorisation) paragraph', () {
+    test('company name bold in exactly one body block (opening para)', () {
       final blocks = buildFinancialStandingUndertaking(makeInput());
-      // "Duly authorized..." paragraph contains the second bold company mention
       final allBoldBodies = blocks
           .where((b) => b.kind == LetterBlockKind.body)
           .where(
             (b) => b.spans.any((s) => s.bold && s.text == 'Example Pvt Ltd'),
           )
           .toList();
-      expect(allBoldBodies.length, 2);
+      expect(allBoldBodies.length, 1);
+      expect(allBoldBodies.first.plainText, contains('declare:'));
     });
 
-    test('tenderNo appears in GeM Bid No block', () {
+    test('tenderNo present in subtitle block', () {
       final blocks = buildFinancialStandingUndertaking(makeInput());
-      final gemBidBlock = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.spans.any((s) => s.bold && s.text.contains('GeM Bid No')),
+      final subtitleBlock = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
       );
-      final allText = gemBidBlock.plainText;
-      expect(allText, contains('GEM/2026/B/7845020'));
+      expect(subtitleBlock.plainText, contains('GEM/2026/B/7845020'));
     });
 
     test('recipient title appears bold in recipient block', () {
@@ -111,18 +108,25 @@ void main() {
       );
     });
 
-    test('date uses abbreviated month format', () {
+    test('date uses abbreviated month format in subtitle', () {
       final blocks = buildFinancialStandingUndertaking(makeInput());
-      final dateBlock = blocks.first;
-      expect(dateBlock.kind, LetterBlockKind.date);
-      expect(dateBlock.plainText, contains('Oct'));
-      expect(dateBlock.plainText, contains('2026'));
+      final subtitleBlock = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
+      );
+      expect(subtitleBlock.plainText, contains('Oct'));
+      expect(subtitleBlock.plainText, contains('2026'));
     });
 
-    test('letter contains "Dear Sir/Ma\'am,"', () {
+    test('no "Dear Sir/Ma\'am" in new document format', () {
       final blocks = buildFinancialStandingUndertaking(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
-      expect(allText, contains('Dear Sir/Ma\'am,'));
+      expect(allText, isNot(contains('Dear Sir')));
+    });
+
+    test('boilerplate contains "Insolvency and Bankruptcy Code"', () {
+      final blocks = buildFinancialStandingUndertaking(makeInput());
+      final allText = blocks.map((b) => b.plainText).join(' ');
+      expect(allText, contains('Insolvency and Bankruptcy Code'));
     });
   });
 
@@ -182,12 +186,13 @@ void main() {
     ) async {
       final s = await makeStore();
       await open(tester, s, tender: 'GEM/2026/B/7845020');
-      // Fill 7 of 8 — missing Designation
-      await fill(tester, 'Recipient title', 'The Commandant');
-      await fill(tester, 'Organization', 'Indian Army');
-      await fill(tester, 'Organization address', 'New Delhi');
+      // Fill 7 of 10 — missing Designation
+      await fill(tester, 'Buyer\'s designation', 'The Commandant');
+      await fill(tester, 'Buyer\'s organisation', 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
-      await fill(tester, 'Company address', '123 MG Road');
+      await fill(tester, 'Turnover FY 2022–23 (₹)', '1,00,00,000');
+      await fill(tester, 'Turnover FY 2023–24 (₹)', '1,20,00,000');
+      await fill(tester, 'Turnover FY 2024–25 (₹)', '1,50,00,000');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       // Designation empty
       await tester.tap(find.text('Generate letter'));
@@ -201,11 +206,13 @@ void main() {
     ) async {
       final s = await makeStore();
       await open(tester, s, tender: 'GEM/2026/B/7845020');
-      await fill(tester, 'Recipient title', 'The Commandant');
-      await fill(tester, 'Organization', 'Indian Army');
-      await fill(tester, 'Organization address', 'New Delhi, 110001');
+      await fill(tester, 'Buyer\'s designation', 'The Commandant');
+      await fill(tester, 'Buyer\'s organisation', 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
-      await fill(tester, 'Company address', '123 MG Road, Mumbai');
+      await fill(tester, 'Turnover FY 2022–23 (₹)', '1,00,00,000');
+      await fill(tester, 'Turnover FY 2023–24 (₹)', '1,20,00,000');
+      await fill(tester, 'Turnover FY 2024–25 (₹)', '1,50,00,000');
+      await fill(tester, 'Net worth year', '2024');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       await fill(tester, 'Designation', 'Director');
 
@@ -233,11 +240,13 @@ void main() {
     ) async {
       final s = await makeStore();
       await open(tester, s, tender: 'GEM/2026/B/7845020');
-      await fill(tester, 'Recipient title', 'The Commandant');
-      await fill(tester, 'Organization', 'Indian Army');
-      await fill(tester, 'Organization address', 'New Delhi, 110001');
+      await fill(tester, 'Buyer\'s designation', 'The Commandant');
+      await fill(tester, 'Buyer\'s organisation', 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
-      await fill(tester, 'Company address', '123 MG Road, Mumbai');
+      await fill(tester, 'Turnover FY 2022–23 (₹)', '1,00,00,000');
+      await fill(tester, 'Turnover FY 2023–24 (₹)', '1,20,00,000');
+      await fill(tester, 'Turnover FY 2024–25 (₹)', '1,50,00,000');
+      await fill(tester, 'Net worth year', '2024');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       await fill(tester, 'Designation', 'Director');
 

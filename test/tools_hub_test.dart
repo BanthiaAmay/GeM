@@ -126,7 +126,7 @@ void main() {
 
       expect(find.text('Your letter'), findsOneWidget);
       expect(
-        find.textContaining('Local Content : 100%', findRichText: true),
+        find.textContaining('Local Content (LC) of 100%', findRichText: true),
         findsOneWidget,
       );
       // Remembered for next time, tender number is not.
