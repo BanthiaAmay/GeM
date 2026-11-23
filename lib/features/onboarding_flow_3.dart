@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/transitions.dart';
 import '../data/app_store.dart';
-import 'fact_deck.dart';
 import 'onboarding_widgets.dart';
 import '../core/tokens.dart';
 
@@ -63,7 +62,7 @@ class _FlowAuthorisedPageState extends State<FlowAuthorisedPage> {
               if (!context.mounted) return;
               Navigator.of(context).pushNamed('/flow-turnover');
             },
-      fact: FactMini(key: const ValueKey('fact-authorised'), store: s, factIndex: 1),
+      factIndex: 1,
       children: [
         const OnboardingArt('authorised', topGap: 0),
         const SizedBox(height: 20),
@@ -119,7 +118,7 @@ class _FlowPrivacyPageState extends State<FlowPrivacyPage> {
       onContinue: understood
           ? () => Navigator.of(context).pushNamed('/flow-records')
           : null,
-      fact: FactMini(key: const ValueKey('fact-privacy'), store: s, factIndex: 4),
+      factIndex: 4,
       children: [
         const OnboardingArt('privacy', topGap: 0),
         const SizedBox(height: 24),
@@ -221,7 +220,7 @@ class _FlowRecordsPageState extends State<FlowRecordsPage> {
         }
         Navigator.of(context).pushNamed('/flow-pan');
       },
-      fact: FactMini(key: const ValueKey('fact-records'), store: s, factIndex: 2),
+      factIndex: 2,
       children: [
         const OnboardingArt('records', topGap: 0),
         const SizedBox(height: 16),
@@ -340,7 +339,7 @@ class _FlowPanPageState extends State<FlowPanPage> {
               s.setProfile('panReady', selected);
               Navigator.of(context).pushNamed('/flow-checklist');
             },
-      fact: FactMini(key: const ValueKey('fact-pan'), store: s, factIndex: 3),
+      factIndex: 3,
       children: [
         const OnboardingArt('pan', topGap: 0),
         const SizedBox(height: 16),

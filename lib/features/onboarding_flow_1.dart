@@ -6,7 +6,6 @@ import '../core/motion.dart';
 import '../core/phone.dart';
 import '../data/app_store.dart';
 import 'components.dart';
-import 'fact_deck.dart';
 import 'onboarding_widgets.dart';
 import '../core/tokens.dart';
 
@@ -93,7 +92,7 @@ class _FlowFullNamePageState extends State<FlowFullNamePage> {
                     : '/flow-phone',
               );
             },
-      fact: FactMini(key: const ValueKey('fact-name'), store: s, factIndex: 2),
+      factIndex: 2,
       children: [
         OnboardingTextField(
           label: s.t('Full name', 'पूरा नाम'),
@@ -162,7 +161,7 @@ class _FlowPhonePageState extends State<FlowPhonePage> {
               Navigator.of(context).pushNamed('/flow-location');
             }
           : null,
-      fact: FactMini(key: const ValueKey('fact-phone'), store: s, factIndex: 3),
+      factIndex: 3,
       children: [
         OnboardingTextField(
           label: s.t('Mobile number', 'मोबाइल नंबर'),
@@ -293,7 +292,7 @@ class _FlowOtpPageState extends State<FlowOtpPage>
       ),
       continueLabel: s.t('Continue', 'जारी रखें'),
       onContinue: _complete ? _proceed : null,
-      fact: FactMini(key: const ValueKey('fact-otp'), store: s, factIndex: 4),
+      factIndex: 4,
       children: [
         Text(
           s.t('Demo verification code', 'डेमो सत्यापन कोड'),
@@ -403,7 +402,7 @@ class _FlowLocationPageState extends State<FlowLocationPage> {
               if (!context.mounted) return;
               Navigator.of(context).pushNamed('/flow-bizname');
             },
-      fact: FactMini(key: const ValueKey('fact-location'), store: s, factIndex: 0),
+      factIndex: 0,
       children: [
         const OnboardingArt('location_map', topGap: 0),
         const SizedBox(height: 20),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../core/tokens.dart';
 import '../data/app_store.dart';
 import 'components.dart';
-import 'fact_deck.dart';
 import 'onboarding_widgets.dart';
 
 /// The "GeM bidding" section — inserted between "Your business" and
@@ -80,7 +79,7 @@ class _FlowTurnoverPageState extends State<FlowTurnoverPage> {
               s.setProfile('turnoverLatest', selected);
               Navigator.of(context).pushNamed('/flow-turnover-history');
             },
-      fact: FactMini(key: const ValueKey('fact-turnover'), store: s, factIndex: 2),
+      factIndex: 2,
       children: [
         for (final band in _kTurnoverBands)
           OnboardingRadioOption(
@@ -150,7 +149,7 @@ class _FlowTurnoverHistoryPageState extends State<FlowTurnoverHistoryPage> {
               Navigator.of(context).pushNamed('/flow-experience');
             }
           : null,
-      fact: FactMini(key: const ValueKey('fact-turnover-history'), store: s, factIndex: 3),
+      factIndex: 3,
       children: [
         Text('FY 2024–25', style: AppText.secondary(AppText.bodySmall)),
         const SizedBox(height: 8),
@@ -329,7 +328,7 @@ class _FlowExperiencePageState extends State<FlowExperiencePage> {
                 await _finishSection(context);
               }
             },
-      fact: FactMini(key: const ValueKey('fact-experience'), store: s, factIndex: 0),
+      factIndex: 0,
       children: [
         OnboardingRadioOption(
           icon: Icons.check_circle_outline,
@@ -412,7 +411,7 @@ class _FlowExperienceDetailPageState extends State<FlowExperienceDetailPage> {
         if (!context.mounted) return;
         Navigator.of(context).pushNamed('/flow-privacy');
       },
-      fact: FactMini(key: const ValueKey('fact-exp-detail'), store: s, factIndex: 1),
+      factIndex: 1,
       children: [
         OnboardingTextField(
           label: s.t('Number of orders', 'ऑर्डर की संख्या'),

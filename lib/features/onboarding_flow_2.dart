@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../core/keywords.dart';
 import '../data/app_store.dart';
 import 'components.dart';
-import 'fact_deck.dart';
 import 'onboarding_widgets.dart';
 import '../core/tokens.dart';
 
@@ -47,7 +46,7 @@ class _FlowBusinessNamePageState extends State<FlowBusinessNamePage> {
               s.setProfile('businessName', controller.text.trim());
               Navigator.of(context).pushNamed('/flow-bizform');
             },
-      fact: FactMini(key: const ValueKey('fact-bizname'), store: s, factIndex: 1),
+      factIndex: 1,
       children: [
         OnboardingTextField(
           label: s.t('Business name', 'व्यवसाय का नाम'),
@@ -113,7 +112,7 @@ class _FlowBusinessFormPageState extends State<FlowBusinessFormPage> {
               }
               Navigator.of(context).pushNamed('/flow-sector');
             },
-      fact: FactMini(key: const ValueKey('fact-bizform'), store: s, factIndex: 2),
+      factIndex: 2,
       children: [
         OnboardingRadioOption(
           iconAsset: 'form_proprietorship',
@@ -196,7 +195,7 @@ class _FlowSectorPageState extends State<FlowSectorPage> {
               }
               Navigator.of(context).pushNamed('/flow-products');
             },
-      fact: FactMini(key: const ValueKey('fact-sector'), store: s, factIndex: 3),
+      factIndex: 3,
       children: [
         OnboardingRadioOption(
           iconAsset: 'sector_manufacturing',
@@ -345,7 +344,7 @@ class _FlowProductsPageState extends State<FlowProductsPage> {
           ? s.t('Skip for now', 'अभी छोड़ें')
           : s.t('Continue', 'जारी रखें'),
       onContinue: saving ? null : _continue,
-      fact: FactMini(key: const ValueKey('fact-products'), store: s, factIndex: 4),
+      factIndex: 4,
       children: [
         if (inferred && answers.isNotEmpty) ...[
           ReassuranceNote(
@@ -443,7 +442,7 @@ class _FlowRolePageState extends State<FlowRolePage> {
               }
               Navigator.of(context).pushNamed('/flow-authorised');
             },
-      fact: FactMini(key: const ValueKey('fact-role'), store: s, factIndex: 0),
+      factIndex: 0,
       children: [
         OnboardingRadioOption(
           iconAsset: 'role_owner',

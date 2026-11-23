@@ -8,6 +8,7 @@ import '../core/phone.dart';
 import '../core/theme.dart';
 import '../data/app_store.dart';
 import 'components.dart';
+import 'fact_deck.dart' show FactToast;
 import 'glass.dart';
 import 'scroll_hint.dart';
 import 'widgets.dart' show openLink;
@@ -221,7 +222,7 @@ class OnboardingStepScaffold extends StatefulWidget {
   final VoidCallback onBack;
   final String headline;
   final String? subtitle;
-  final Widget? fact;
+  final int? factIndex;
   final List<Widget> children;
   final String continueLabel;
   final VoidCallback? onContinue;
@@ -232,7 +233,7 @@ class OnboardingStepScaffold extends StatefulWidget {
     required this.onBack,
     required this.headline,
     this.subtitle,
-    this.fact,
+    this.factIndex,
     required this.children,
     required this.continueLabel,
     required this.onContinue,
@@ -338,8 +339,11 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
+            Positioned.fill(
+              child: Column(
+                children: [
             // Fixed navigation chrome — the one place blur belongs
             // (Apple HIG: blur signals content scrolling behind
             // fixed chrome, not decoration). Content scrolls under
@@ -411,17 +415,10 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                           ),
                         ),
                       ],
-                      if (widget.fact != null) ...[
-                        const SizedBox(height: 20),
-                        StaggeredEntrance(index: 2, child: widget.fact!),
-                      ],
                       const SizedBox(height: 28),
                       for (var i = 0; i < widget.children.length; i++)
                         StaggeredEntrance(
-                          index: (i + (widget.fact != null ? 3 : 2)).clamp(
-                            0,
-                            7,
-                          ),
+                          index: (i + 2).clamp(0, 7),
                           child: widget.children[i],
                         ),
                     ],
@@ -435,6 +432,18 @@ class _OnboardingStepScaffoldState extends State<OnboardingStepScaffold> {
                 onContinue: widget.onContinue,
               ),
             ),
+                ],
+              ),
+            ),
+            if (widget.factIndex != null)
+              Positioned(
+                bottom: 96,
+                right: AppSpace.lg,
+                child: FactToast(
+                  store: widget.store,
+                  factIndex: widget.factIndex!,
+                ),
+              ),
           ],
         ),
       ),

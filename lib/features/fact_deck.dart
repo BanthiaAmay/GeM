@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:math' as math;
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import '../core/motion.dart';
 import '../core/theme.dart';
@@ -704,6 +706,141 @@ class _FactCarouselState extends State<FactCarousel>
           ],
         ),
       ],
+    );
+  }
+}
+
+/// Floating toast that appears at the bottom-right of an onboarding screen
+/// ~1 second after mount, slides in, plays a chime, and can be dismissed
+/// with the × button. Wraps the fact selected by [factIndex].
+class FactToast extends StatefulWidget {
+  final AppStore store;
+  final int factIndex;
+  const FactToast({super.key, required this.store, required this.factIndex});
+
+  @override
+  State<FactToast> createState() => _FactToastState();
+}
+
+class _FactToastState extends State<FactToast>
+    with SingleTickerProviderStateMixin {
+  bool _visible = false;
+  late final AnimationController _anim;
+  late final Animation<Offset> _slide;
+  late final Animation<double> _fade;
+  Timer? _timer;
+  final _player = AudioPlayer();
+
+  @override
+  void initState() {
+    super.initState();
+    _anim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    final curved = CurvedAnimation(parent: _anim, curve: Curves.easeOutCubic);
+    _slide = curved.drive(
+      Tween<Offset>(begin: const Offset(0.4, 0), end: Offset.zero),
+    );
+    _fade = curved;
+    _timer = Timer(const Duration(milliseconds: 1000), _show);
+  }
+
+  void _show() {
+    if (!mounted) return;
+    setState(() => _visible = true);
+    _anim.forward();
+    unawaited(_player.play(AssetSource('sounds/section_complete.mp3')));
+  }
+
+  void _dismiss() {
+    _anim.reverse().then((_) {
+      if (mounted) setState(() => _visible = false);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _anim.dispose();
+    _player.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_visible) return const SizedBox.shrink();
+    final facts = gemFacts(widget.store);
+    final fact = facts[widget.factIndex.clamp(0, facts.length - 1)];
+    return SlideTransition(
+      position: _slide,
+      child: FadeTransition(
+        opacity: _fade,
+        child: Container(
+          width: 220,
+          padding: const EdgeInsets.all(AppSpace.md),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            boxShadow: AppShadow.floating,
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: fact.tint,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(fact.icon, size: 13, color: fact.accent),
+                  ),
+                  const SizedBox(width: AppSpace.xs),
+                  Expanded(
+                    child: Text(
+                      widget.store.t('GeM FACT', 'GeM तथ्य'),
+                      style: AppText.overline.copyWith(color: fact.accent),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _dismiss,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: AppSpace.xs),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 16,
+                        color: AppColors.textHint,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpace.xs),
+              Text(
+                fact.figure,
+                style: AppText.h3.copyWith(
+                  color: fact.accent,
+                  letterSpacing: -0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                fact.caption,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.tick.copyWith(height: 1.4),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
