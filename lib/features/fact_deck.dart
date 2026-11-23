@@ -724,16 +724,23 @@ class FactToast extends StatefulWidget {
 
 class _FactToastState extends State<FactToast>
     with SingleTickerProviderStateMixin {
+  // Show once every 3 pages across the whole onboarding session.
+  static int _mountCount = 0;
+  static int _lastShownAt = -3;
+
   bool _visible = false;
   late final AnimationController _anim;
   late final Animation<Offset> _slide;
   late final Animation<double> _fade;
   Timer? _timer;
   final _player = AudioPlayer();
+  late final int _myMount;
 
   @override
   void initState() {
     super.initState();
+    _mountCount++;
+    _myMount = _mountCount;
     _anim = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 350),
@@ -743,11 +750,14 @@ class _FactToastState extends State<FactToast>
       Tween<Offset>(begin: const Offset(0.4, 0), end: Offset.zero),
     );
     _fade = curved;
-    _timer = Timer(const Duration(milliseconds: 1000), _show);
+    if (_myMount - _lastShownAt >= 3) {
+      _timer = Timer(const Duration(milliseconds: 1000), _show);
+    }
   }
 
   void _show() {
     if (!mounted) return;
+    _lastShownAt = _myMount;
     setState(() => _visible = true);
     _anim.forward();
     unawaited(_player.play(AssetSource('sounds/section_complete.mp3')));
