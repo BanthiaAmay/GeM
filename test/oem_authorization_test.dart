@@ -29,7 +29,7 @@ void main() {
     resellerAddress: 'Pune, 411001',
     productName: 'Office Chair',
     cmsQuadrant: 'Q3',
-    date: DateTime(2026, 10, 11),
+    date: DateTime(2026, 10, 4),
   );
 
   Future<AppStore> makeStore() async {
@@ -62,22 +62,50 @@ void main() {
   }
 
   Future<void> fillAll(WidgetTester tester) async {
-    await fill(tester, 'Tender No', 'GEM/2026/B/7845020');
-    await fill(tester, 'Recipient title', 'The Commandant');
-    await fill(tester, 'Organization', 'Indian Army');
-    await fill(tester, 'Organization address', 'New Delhi, 110001');
-    await fill(tester, 'Reseller name', 'XYZ Pvt. Ltd');
-    await fill(tester, 'Reseller address', 'Pune, 411001');
-    await fill(tester, 'Company name', 'Example OEM Pvt Ltd');
-    await fill(tester, 'Company address', '123 MG Road, Mumbai');
+    await fill(tester, 'Tender / bid number', 'GEM/2026/B/7845020');
+    await fill(tester, "Buyer's designation", 'The Commandant');
+    await fill(tester, "Buyer's organisation", 'Indian Army');
+    await fill(tester, 'OEM company name', 'Example OEM Pvt Ltd');
+    await fill(tester, 'Reseller / distributor name', 'XYZ Pvt. Ltd');
+    await fill(tester, 'Reseller / distributor address', 'Pune, 411001');
+    await fill(tester, 'Product name', 'Office Chair');
     await fill(tester, 'Signatory name', 'Ravi Kumar');
     await fill(tester, 'Designation', 'Director');
   }
 
   // ── Unit tests — letter builder ────────────────────────────────────────────
 
-  group('buildOemAuthorization', () {
-    test('recipientTitle bold in recipient block', () {
+  group('buildOemAuthorizationCertificate', () {
+    test('title is "OEM AUTHORIZATION CERTIFICATE"', () {
+      final blocks = buildOemAuthorizationCertificate(makeInput());
+      final titleBlock = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.title,
+      );
+      expect(titleBlock.plainText, 'OEM AUTHORIZATION CERTIFICATE');
+    });
+
+    test('tenderNo appears bold in subtitle block', () {
+      final blocks = buildOemAuthorizationCertificate(makeInput());
+      final subtitle = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
+      );
+      expect(
+        subtitle.spans.any((s) => s.bold && s.text == 'GEM/2026/B/7845020'),
+        isTrue,
+      );
+    });
+
+    test('date is embedded bold in subtitle block (no standalone date block)', () {
+      final blocks = buildOemAuthorizationCertificate(makeInput());
+      final subtitle = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
+      );
+      expect(subtitle.plainText, contains('Oct'));
+      expect(subtitle.plainText, contains('2026'));
+      expect(blocks.any((b) => b.kind == LetterBlockKind.date), isFalse);
+    });
+
+    test('buyerDesignation bold in recipient block', () {
       final blocks = buildOemAuthorizationCertificate(makeInput());
       final recipientBlock = blocks.firstWhere(
         (b) =>
@@ -90,103 +118,88 @@ void main() {
       );
     });
 
-    test('"Subject:" bold; value is "Authorization Letter" (no tender no)', () {
+    test('no Subject block in document', () {
       final blocks = buildOemAuthorizationCertificate(makeInput());
-      final subjectBlock = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.spans.any((s) => s.bold && s.text == 'Subject: '),
-      );
-      expect(subjectBlock.plainText, contains('Authorization Letter'));
-      expect(subjectBlock.plainText, isNot(contains('GEM/')));
+      final subjectBlocks = blocks.where((b) {
+        return b.kind == LetterBlockKind.body &&
+            b.spans.any((s) => s.bold && s.text.contains('Subject'));
+      }).toList();
+      expect(subjectBlocks.length, 0);
     });
 
-    test('"GeM Bid No:" bold on its own line; tenderNo value follows', () {
+    test('authorization para contains "hereby authorize" and correct bold spans', () {
       final blocks = buildOemAuthorizationCertificate(makeInput());
-      final bidNoBlock = blocks.firstWhere(
+      final authPara = blocks.firstWhere(
         (b) =>
             b.kind == LetterBlockKind.body &&
-            b.spans.any((s) => s.bold && s.text == 'GeM Bid No: '),
+            b.plainText.contains('hereby authorize'),
       );
-      expect(bidNoBlock.plainText, contains('GEM/2026/B/7845020'));
-    });
-
-    test(
-      'para 1: company, companyAddress, M/s+resellerName, resellerAddress all bold',
-      () {
-        final blocks = buildOemAuthorizationCertificate(makeInput());
-        final para1 = blocks.firstWhere(
-          (b) =>
-              b.kind == LetterBlockKind.body &&
-              b.plainText.contains('would like to inform you'),
-        );
-        expect(
-          para1.spans.any((s) => s.bold && s.text == 'Example OEM Pvt Ltd'),
-          isTrue,
-          reason: 'company should be bold',
-        );
-        expect(
-          para1.spans.any((s) => s.bold && s.text == '123 MG Road, Mumbai'),
-          isTrue,
-          reason: 'companyAddress should be bold',
-        );
-        expect(
-          para1.spans.any((s) => s.bold && s.text == 'M/s XYZ Pvt. Ltd'),
-          isTrue,
-          reason: '"M/s " prefix + resellerName should be bold',
-        );
-        expect(
-          para1.spans.any((s) => s.bold && s.text == 'Pune, 411001'),
-          isTrue,
-          reason: 'resellerAddress should be bold',
-        );
-      },
-    );
-
-    test('closing line: company bold in "on behalf of Z."', () {
-      final blocks = buildOemAuthorizationCertificate(makeInput());
-      final closingBlock = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.plainText.contains('Duly authorized'),
-      );
+      // oemCompany bold
       expect(
-        closingBlock.spans.any(
-          (s) => s.bold && s.text == 'Example OEM Pvt Ltd',
-        ),
+        authPara.spans.any((s) => s.bold && s.text == 'Example OEM Pvt Ltd'),
+        isTrue,
+      );
+      // signatory bold
+      expect(
+        authPara.spans.any((s) => s.bold && s.text == 'Ravi Kumar'),
+        isTrue,
+      );
+      // designation bold
+      expect(
+        authPara.spans.any((s) => s.bold && s.text == 'Director'),
+        isTrue,
+      );
+      // 'M/s ' is a separate bold span
+      expect(
+        authPara.spans.any((s) => s.bold && s.text == 'M/s '),
+        isTrue,
+      );
+      // resellerName bold
+      expect(
+        authPara.spans.any((s) => s.bold && s.text == 'XYZ Pvt. Ltd'),
+        isTrue,
+      );
+      // resellerAddress bold
+      expect(
+        authPara.spans.any((s) => s.bold && s.text == 'Pune, 411001'),
         isTrue,
       );
     });
 
-    test('no "Sincerely" in output', () {
+    test('boilerplate contains correct authorization scope', () {
       final blocks = buildOemAuthorizationCertificate(makeInput());
-      final lines = blocks.map((b) => b.plainText.trim()).toList();
+      final allText = blocks.map((b) => b.plainText).join(' ');
       expect(
-        lines.any(
-          (l) =>
-              l == 'Sincerely' || l == 'Sincerely,' || l == 'Yours Sincerely',
-        ),
-        isFalse,
+        allText,
+        contains('quote, bid, accept Supply Orders, supply, invoice, and collect payment'),
       );
     });
 
-    test('boilerplate contains "quote rates, collect supply orders"', () {
+    test('validity note contains correct text', () {
       final blocks = buildOemAuthorizationCertificate(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
-      expect(allText, contains('quote rates, collect supply orders'));
+      expect(
+        allText,
+        contains(
+          'sole and exclusive for this Bid, remains valid for the full duration of any resulting Supply Order',
+        ),
+      );
     });
 
-    test(
-      'boilerplate contains "valid till the validity of the above mentioned GeM Bid"',
-      () {
-        final blocks = buildOemAuthorizationCertificate(makeInput());
-        final allText = blocks.map((b) => b.plainText).join(' ');
-        expect(
-          allText,
-          contains('valid till the validity of the above mentioned GeM Bid'),
-        );
-      },
-    );
+    test('signature block contains oemCompany bold', () {
+      final blocks = buildOemAuthorizationCertificate(makeInput());
+      final sigBlocks = blocks
+          .where((b) => b.kind == LetterBlockKind.signature)
+          .toList();
+      expect(sigBlocks.isNotEmpty, isTrue);
+      final boldText = sigBlocks
+          .expand((b) => b.spans)
+          .where((s) => s.bold)
+          .map((s) => s.text)
+          .join(' ');
+      expect(boldText, contains('Example OEM Pvt Ltd'));
+      expect(boldText, contains('Ravi Kumar'));
+    });
   });
 
   // ── Widget tests ───────────────────────────────────────────────────────────
@@ -200,9 +213,7 @@ void main() {
       expect(kTools.map((t) => t.route).toSet().length, kTools.length);
     });
 
-    testWidgets('tool card visible and routes to /tool-oem-authorization', (
-      tester,
-    ) async {
+    testWidgets('tool card routes to /tool-oem-authorization', (tester) async {
       phone(tester, 390);
       final s = await makeStore();
       String? opened;
@@ -231,22 +242,30 @@ void main() {
   });
 
   group('OemAuthorizationPage', () {
-    testWidgets(
-      'all 10 text fields required; generate disabled until all filled',
-      (tester) async {
-        final s = await makeStore();
-        await open(tester, s);
-        await tester.tap(find.text('Generate letter'));
-        await tester.pumpAndSettle();
-        expect(find.text('This is required'), findsWidgets);
-        expect(find.text('Your letter'), findsNothing);
-      },
-    );
-
-    testWidgets('template dropdown defaults to Template 1', (tester) async {
+    testWidgets('empty form — all 9 text fields required', (tester) async {
       final s = await makeStore();
       await open(tester, s);
-      expect(find.text('Template 1'), findsOneWidget);
+      await tester.tap(find.text('Generate letter'));
+      await tester.pumpAndSettle();
+      expect(find.text('This is required'), findsWidgets);
+      expect(find.text('Your letter'), findsNothing);
+    });
+
+    testWidgets('partial fill (8 of 9) still blocks generate', (tester) async {
+      final s = await makeStore();
+      await open(tester, s, tender: 'GEM/2026/B/7845020');
+      await fill(tester, "Buyer's designation", 'The Commandant');
+      await fill(tester, "Buyer's organisation", 'Indian Army');
+      await fill(tester, 'OEM company name', 'Example OEM Pvt Ltd');
+      await fill(tester, 'Reseller / distributor name', 'XYZ Pvt. Ltd');
+      await fill(tester, 'Reseller / distributor address', 'Pune, 411001');
+      await fill(tester, 'Product name', 'Office Chair');
+      await fill(tester, 'Signatory name', 'Ravi Kumar');
+      // Designation still empty
+      await tester.tap(find.text('Generate letter'));
+      await tester.pumpAndSettle();
+      expect(find.text('Your letter'), findsNothing);
+      expect(find.text('This is required'), findsWidgets);
     });
 
     testWidgets('generate → preview → confirm → print/share unlocked', (
@@ -260,10 +279,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Your letter'), findsOneWidget);
+      // OEM company saved to profile; tender NOT saved
       expect(s.profile['companyName'], 'Example OEM Pvt Ltd');
-      // Tender no and recipient must NOT be saved to profile
       expect(s.profile.containsKey('tenderNo'), isFalse);
-      expect(s.profile.containsKey('recipientTitle'), isFalse);
 
       AppButton printBtn() => tester.widget<AppButton>(
         find.widgetWithText(AppButton, 'Print / Save as PDF'),
@@ -276,7 +294,7 @@ void main() {
       expect(printBtn().onPressed, isNotNull);
     });
 
-    testWidgets('field edit clears confirmation', (tester) async {
+    testWidgets('field edit after confirmation clears letter', (tester) async {
       final s = await makeStore();
       await open(tester, s);
       await fillAll(tester);
@@ -286,26 +304,26 @@ void main() {
 
       await tester.tap(find.text('Details'));
       await tester.pumpAndSettle();
-      await fill(tester, 'Company name', 'New OEM Co Ltd');
+      await fill(tester, 'OEM company name', 'New OEM Ltd');
       await tester.pumpAndSettle();
       expect(find.text('Generate letter'), findsOneWidget);
     });
 
-    testWidgets('profile fields prefill on load', (tester) async {
+    testWidgets('OEM company name prefilled from profile', (tester) async {
       SharedPreferences.setMockInitialValues({
         'saathi.v1.guest':
-            '{"profile":{"companyName":"Prefilled Co","companyAddress":"99 Link Road","signatoryName":"Jane Doe","signatoryDesignation":"CEO"}}',
+            '{"profile":{"companyName":"Prefilled OEM Co","signatoryName":"Jane Doe","signatoryDesignation":"CEO"}}',
       });
       final s = AppStore(await SharedPreferences.getInstance());
       await open(tester, s);
       expect(
         tester
             .widget<TextFormField>(
-              find.widgetWithText(TextFormField, 'Company name'),
+              find.widgetWithText(TextFormField, 'OEM company name'),
             )
             .controller
             ?.text,
-        'Prefilled Co',
+        'Prefilled OEM Co',
       );
       expect(
         tester
@@ -318,32 +336,35 @@ void main() {
       );
     });
 
-    testWidgets('reseller name and address NOT prefilled from profile', (
+    testWidgets('reseller fields are NOT prefilled from profile', (
       tester,
     ) async {
       SharedPreferences.setMockInitialValues({
         'saathi.v1.guest':
-            '{"profile":{"companyName":"Prefilled Co","signatoryName":"Jane Doe"}}',
+            '{"profile":{"companyName":"OEM Co","signatoryName":"Jane Doe","signatoryDesignation":"CEO"}}',
       });
       final s = AppStore(await SharedPreferences.getInstance());
       await open(tester, s);
       expect(
         tester
             .widget<TextFormField>(
-              find.widgetWithText(TextFormField, 'Reseller name'),
+              find.widgetWithText(TextFormField, 'Reseller / distributor name'),
             )
             .controller
             ?.text,
-        isEmpty,
+        '',
       );
       expect(
         tester
             .widget<TextFormField>(
-              find.widgetWithText(TextFormField, 'Reseller address'),
+              find.widgetWithText(
+                TextFormField,
+                'Reseller / distributor address',
+              ),
             )
             .controller
             ?.text,
-        isEmpty,
+        '',
       );
     });
 

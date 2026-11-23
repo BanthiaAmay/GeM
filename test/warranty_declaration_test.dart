@@ -62,11 +62,14 @@ void main() {
   }
 
   Future<void> fillAll(WidgetTester tester) async {
+    await fill(tester, 'Tender / bid number', 'GEM/2026/B/7845020');
+    await fill(tester, 'Company name', 'Example Pvt Ltd');
     await fill(tester, 'Signatory name', 'Ravi Kumar');
     await fill(tester, 'Designation', 'Director');
     await fill(tester, 'Warranty period', '1 year');
+    await fill(tester, 'Warranty response days', '5');
     await fill(tester, 'Contact person name', 'Priya Sharma');
-    await fill(tester, 'Contact position', 'Manager');
+    await fill(tester, 'Contact designation', 'Manager');
     await fill(tester, 'Contact email', 'priya@example.com');
     await fill(tester, 'Contact phone', '+91 9876543210');
   }
@@ -74,28 +77,43 @@ void main() {
   // ── Unit tests — letter builder ────────────────────────────────────────────
 
   group('buildWarrantyDeclaration', () {
-    test('"To Whom It May Concern" block is LetterBlockKind.title', () {
+    test('title is "WARRANTY DECLARATION"', () {
       final blocks = buildWarrantyDeclaration(makeInput());
       final titleBlock = blocks.firstWhere(
-        (b) => b.plainText.contains('To Whom It May Concern'),
+        (b) => b.kind == LetterBlockKind.title,
       );
-      expect(titleBlock.kind, LetterBlockKind.title);
+      expect(titleBlock.plainText, 'WARRANTY DECLARATION');
     });
 
     test(
-      'signatoryName + " (" + designation + ")" renders bold together in one span',
+      'signatoryName and designation are separate bold spans in opening paragraph',
       () {
         final blocks = buildWarrantyDeclaration(makeInput());
-        final boldSpan = blocks
-            .where((b) => b.kind == LetterBlockKind.body)
-            .expand((b) => b.spans)
-            .firstWhere(
-              (s) =>
-                  s.bold &&
-                  s.text.contains('Ravi Kumar') &&
-                  s.text.contains('Director'),
-            );
-        expect(boldSpan.text, 'Ravi Kumar (Director)');
+        final openingPara = blocks.firstWhere(
+          (b) =>
+              b.kind == LetterBlockKind.body &&
+              b.plainText.contains('declare:'),
+        );
+        expect(
+          openingPara.spans.any((s) => s.bold && s.text == 'Ravi Kumar'),
+          isTrue,
+          reason: 'signatory should be its own bold span',
+        );
+        expect(
+          openingPara.spans.any((s) => s.bold && s.text == 'Director'),
+          isTrue,
+          reason: 'designation should be its own bold span',
+        );
+        expect(
+          openingPara.spans.any(
+            (s) =>
+                s.text.contains('Ravi Kumar') &&
+                s.text.contains('Director') &&
+                s.text.contains('('),
+          ),
+          isFalse,
+          reason: 'they should not be combined in one span',
+        );
       },
     );
 
@@ -109,36 +127,40 @@ void main() {
       expect(boldPeriodSpan, isNotEmpty);
     });
 
-    test('Name contact line present with correct value', () {
+    test('inline "Warranty Claims Contact:" block present with all details bold', () {
       final blocks = buildWarrantyDeclaration(makeInput());
-      final allText = blocks.map((b) => b.plainText).join('\n');
-      expect(allText, contains('Name: Priya Sharma'));
+      final contactBlock = blocks.firstWhere(
+        (b) =>
+            b.kind == LetterBlockKind.body &&
+            b.plainText.contains('Warranty Claims Contact:'),
+      );
+      expect(
+        contactBlock.spans.any((s) => s.bold && s.text == 'Priya Sharma'),
+        isTrue,
+      );
+      expect(
+        contactBlock.spans.any((s) => s.bold && s.text == 'Manager'),
+        isTrue,
+      );
+      expect(
+        contactBlock.spans.any((s) => s.bold && s.text == 'priya@example.com'),
+        isTrue,
+      );
+      expect(
+        contactBlock.spans.any((s) => s.bold && s.text == '+91 9876543210'),
+        isTrue,
+      );
     });
 
-    test('Position contact line present with correct value', () {
+    test('tender number appears bold in subtitle block', () {
       final blocks = buildWarrantyDeclaration(makeInput());
-      final allText = blocks.map((b) => b.plainText).join('\n');
-      expect(allText, contains('Position: Manager'));
-    });
-
-    test('Email contact line present with correct value', () {
-      final blocks = buildWarrantyDeclaration(makeInput());
-      final allText = blocks.map((b) => b.plainText).join('\n');
-      expect(allText, contains('Email: priya@example.com'));
-    });
-
-    test('Phone No contact line present with correct value', () {
-      final blocks = buildWarrantyDeclaration(makeInput());
-      final allText = blocks.map((b) => b.plainText).join('\n');
-      expect(allText, contains('Phone No: +91 9876543210'));
-    });
-
-    test('no tender number reference anywhere in the letter', () {
-      final blocks = buildWarrantyDeclaration(makeInput());
-      final allText = blocks.map((b) => b.plainText).join('\n').toLowerCase();
-      expect(allText, isNot(contains('gem/')));
-      expect(allText, isNot(contains('tender no')));
-      expect(allText, isNot(contains('bid no')));
+      final subtitle = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
+      );
+      expect(
+        subtitle.spans.any((s) => s.bold && s.text == 'GEM/2026/B/7845020'),
+        isTrue,
+      );
     });
   });
 
@@ -184,7 +206,7 @@ void main() {
   });
 
   group('WarrantyDeclarationPage', () {
-    testWidgets('empty form — all 7 fields required', (tester) async {
+    testWidgets('empty form — all 10 fields required', (tester) async {
       final s = await makeStore();
       await open(tester, s);
       await tester.tap(find.text('Generate letter'));
@@ -193,14 +215,17 @@ void main() {
       expect(find.text('Your letter'), findsNothing);
     });
 
-    testWidgets('partial fill (6 of 7) still blocks generate', (tester) async {
+    testWidgets('partial fill (9 of 10) still blocks generate', (tester) async {
       final s = await makeStore();
       await open(tester, s);
+      await fill(tester, 'Tender / bid number', 'GEM/2026/B/7845020');
+      await fill(tester, 'Company name', 'Example Pvt Ltd');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       await fill(tester, 'Designation', 'Director');
       await fill(tester, 'Warranty period', '1 year');
+      await fill(tester, 'Warranty response days', '5');
       await fill(tester, 'Contact person name', 'Priya Sharma');
-      await fill(tester, 'Contact position', 'Manager');
+      await fill(tester, 'Contact designation', 'Manager');
       await fill(tester, 'Contact email', 'priya@example.com');
       // Contact phone empty
       await tester.tap(find.text('Generate letter'));
@@ -284,11 +309,14 @@ void main() {
     testWidgets('invalid email shows inline error', (tester) async {
       final s = await makeStore();
       await open(tester, s);
+      await fill(tester, 'Tender / bid number', 'GEM/2026/B/7845020');
+      await fill(tester, 'Company name', 'Example Pvt Ltd');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       await fill(tester, 'Designation', 'Director');
       await fill(tester, 'Warranty period', '1 year');
+      await fill(tester, 'Warranty response days', '5');
       await fill(tester, 'Contact person name', 'Priya Sharma');
-      await fill(tester, 'Contact position', 'Manager');
+      await fill(tester, 'Contact designation', 'Manager');
       await fill(tester, 'Contact email', 'not-an-email');
       await fill(tester, 'Contact phone', '+91 9876543210');
       await tester.tap(find.text('Generate letter'));
@@ -300,11 +328,14 @@ void main() {
     testWidgets('invalid phone shows inline error', (tester) async {
       final s = await makeStore();
       await open(tester, s);
+      await fill(tester, 'Tender / bid number', 'GEM/2026/B/7845020');
+      await fill(tester, 'Company name', 'Example Pvt Ltd');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       await fill(tester, 'Designation', 'Director');
       await fill(tester, 'Warranty period', '1 year');
+      await fill(tester, 'Warranty response days', '5');
       await fill(tester, 'Contact person name', 'Priya Sharma');
-      await fill(tester, 'Contact position', 'Manager');
+      await fill(tester, 'Contact designation', 'Manager');
       await fill(tester, 'Contact email', 'priya@example.com');
       await fill(tester, 'Contact phone', '123'); // too short
       await tester.tap(find.text('Generate letter'));

@@ -118,7 +118,7 @@ void main() {
       await open(tester, s, tender: 'GEM/2026/B/7845020');
       await fill(tester, 'Local content (%)', '100');
       await fill(tester, 'Company name', 'Z');
-      await fill(tester, 'Where the local value addition is done', 'India');
+      await fill(tester, 'Place of business / manufacturing premises', 'India');
       await fill(tester, 'Signatory name', 'Z');
       await fill(tester, 'Designation', 'Owner');
       await tester.tap(find.text('Generate certificate'));
@@ -151,7 +151,7 @@ void main() {
       await open(tester, s, tender: 'GEM/2026/B/7845020');
       await fill(tester, 'Local content (%)', '60');
       await fill(tester, 'Company name', 'Z');
-      await fill(tester, 'Where the local value addition is done', 'India');
+      await fill(tester, 'Place of business / manufacturing premises', 'India');
       await fill(tester, 'Signatory name', 'Z');
       await fill(tester, 'Designation', 'Owner');
       await tester.tap(find.text('Generate certificate'));

@@ -92,21 +92,25 @@ void main() {
       expect(boldTexts, contains('Director'));
     });
 
-    test('exactly one Subject block with bold "Subject:" span', () {
+    test('no Subject block in document', () {
       final blocks = buildNonConvictionCertificate(makeInput());
       final subjectBlocks = blocks.where((b) {
         return b.kind == LetterBlockKind.body &&
             b.spans.any((s) => s.bold && s.text.contains('Subject'));
       }).toList();
-      expect(subjectBlocks.length, 1);
+      expect(subjectBlocks.length, 0);
     });
 
-    test('letter body does NOT contain any tender/bid number reference', () {
+    test('body blocks do NOT contain tender/bid number (only subtitle does)', () {
       final blocks = buildNonConvictionCertificate(makeInput());
-      final allText = blocks.map((b) => b.plainText).join(' ').toLowerCase();
-      expect(allText, isNot(contains('gem/')));
-      expect(allText, isNot(contains('tender no')));
-      expect(allText, isNot(contains('bid no')));
+      final bodyText = blocks
+          .where((b) => b.kind == LetterBlockKind.body)
+          .map((b) => b.plainText)
+          .join(' ')
+          .toLowerCase();
+      expect(bodyText, isNot(contains('gem/')));
+      expect(bodyText, isNot(contains('tender no')));
+      expect(bodyText, isNot(contains('bid no')));
     });
 
     test('signatory name appears bold in signature block', () {
@@ -123,13 +127,14 @@ void main() {
       expect(boldText, contains('Ravi Kumar'));
     });
 
-    test('date uses abbreviated month format (Oct, not October)', () {
+    test('date is embedded bold in subtitle block (no standalone date block)', () {
       final blocks = buildNonConvictionCertificate(makeInput());
-      final dateBlock = blocks.first;
-      expect(dateBlock.kind, LetterBlockKind.date);
-      expect(dateBlock.plainText, contains('Oct'));
-      expect(dateBlock.plainText, contains('2026'));
-      expect(dateBlock.plainText, isNot(contains('October')));
+      final subtitle = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
+      );
+      expect(subtitle.plainText, contains('Oct'));
+      expect(subtitle.plainText, contains('2026'));
+      expect(blocks.any((b) => b.kind == LetterBlockKind.date), isFalse);
     });
   });
 
@@ -184,12 +189,14 @@ void main() {
       expect(find.text('Your letter'), findsNothing);
     });
 
-    testWidgets('generate blocked until all 4 fields filled', (tester) async {
+    testWidgets('generate blocked until all 6 fields filled', (tester) async {
       final s = await makeStore();
       await open(tester, s);
-      // Fill only 3 of 4 required fields — missing Designation
+      // Fill only 5 of 6 required fields — missing Designation
+      await fill(tester, 'GeM Bid / Tender number', 'GEM/2026/B/7845020');
+      await fill(tester, 'Buyer designation', 'The Commandant');
+      await fill(tester, 'Buyer organisation', 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
-      await fill(tester, 'Company address', '123 MG Road, Mumbai');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       // Designation still empty
       await tester.tap(find.text('Generate letter'));
@@ -203,8 +210,10 @@ void main() {
     ) async {
       final s = await makeStore();
       await open(tester, s);
+      await fill(tester, 'GeM Bid / Tender number', 'GEM/2026/B/7845020');
+      await fill(tester, 'Buyer designation', 'The Commandant');
+      await fill(tester, 'Buyer organisation', 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
-      await fill(tester, 'Company address', '123 MG Road, Mumbai');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       await fill(tester, 'Designation', 'Director');
 
@@ -233,8 +242,10 @@ void main() {
     ) async {
       final s = await makeStore();
       await open(tester, s);
+      await fill(tester, 'GeM Bid / Tender number', 'GEM/2026/B/7845020');
+      await fill(tester, 'Buyer designation', 'The Commandant');
+      await fill(tester, 'Buyer organisation', 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
-      await fill(tester, 'Company address', '123 MG Road, Mumbai');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       await fill(tester, 'Designation', 'Director');
 

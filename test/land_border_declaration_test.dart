@@ -56,6 +56,7 @@ void main() {
   }
 
   Future<void> fillAll(WidgetTester tester) async {
+    await fill(tester, 'Tender / bid number', 'GEM/2026/B/7845020');
     await fill(tester, 'Company name', 'Example Pvt Ltd');
     await fill(tester, 'Signatory name', 'Ravi Kumar');
     await fill(tester, 'Designation', 'Director');

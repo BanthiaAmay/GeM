@@ -94,19 +94,26 @@ void main() {
   }
 
   Future<void> fillCard1(WidgetTester tester) async {
+    await fill(tester, 'Tender / bid number', 'GEM/2026/B/7845020');
+    await fill(tester, 'Company name', 'Example Pvt Ltd');
+    await fill(tester, 'Signatory name', 'Ravi Kumar');
+    await fill(tester, 'Designation', 'Director');
+    await tester.ensureVisible(find.widgetWithText(TextFormField, 'Product name'));
     await fill(tester, 'Product name', 'Office Chair');
-    await fill(tester, 'Brand name', 'ErgoMax');
+    await fill(tester, 'Make / Brand', 'ErgoMax');
     await fill(tester, 'Model / Item No.', 'EC-200');
     await fill(tester, 'MRP (₹)', '15000');
+    await fill(tester, 'GeM Bid Price (₹)', '14000');
+    await fill(tester, 'Discount %', '7%');
   }
 
   // ── Unit tests — letter builder ────────────────────────────────────────────
 
   group('buildMrpDeclaration', () {
-    test('titleUnderlined block present', () {
+    test('title block present', () {
       final blocks = buildMrpDeclaration(makeInput());
       expect(
-        blocks.any((b) => b.kind == LetterBlockKind.titleUnderlined),
+        blocks.any((b) => b.kind == LetterBlockKind.title),
         isTrue,
       );
     });
@@ -114,7 +121,7 @@ void main() {
     test('title contains "DECLARATION OF MAXIMUM RETAIL PRICE (MRP)"', () {
       final blocks = buildMrpDeclaration(makeInput());
       final title = blocks.firstWhere(
-        (b) => b.kind == LetterBlockKind.titleUnderlined,
+        (b) => b.kind == LetterBlockKind.title,
       );
       expect(title.plainText, contains('DECLARATION OF MAXIMUM RETAIL PRICE'));
     });
@@ -150,37 +157,34 @@ void main() {
       );
     });
 
-    test('productImage block present when imageBytes provided', () {
+    test('no productImage block even when imageBytes param passed', () {
       final fakeImage = Uint8List.fromList([1, 2, 3]);
-      final blocks = buildMrpDeclaration(
-        makeInput(imageBytes: fakeImage),
-      );
-      final imgBlock = blocks.firstWhere(
-        (b) => b.kind == LetterBlockKind.productImage,
-      );
-      expect(imgBlock.imageBytes, equals(fakeImage));
-    });
-
-    test('declaration item 1: MRP as printed on product', () {
-      final blocks = buildMrpDeclaration(makeInput());
-      final allText = blocks.map((b) => b.plainText).join(' ');
+      final blocks = buildMrpDeclaration(makeInput(imageBytes: fakeImage));
       expect(
-        allText,
-        contains('Maximum Retail Price as printed on the product'),
+        blocks.any((b) => b.kind == LetterBlockKind.productImage),
+        isFalse,
       );
     });
 
-    test('declaration item 2: price quoted does not exceed MRP', () {
+    test('declaration item 1: MRP as printed on product/packaging', () {
       final blocks = buildMrpDeclaration(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
-      expect(allText, contains('does not exceed'));
+      expect(allText, contains('MRP above is as printed on the product/packaging'));
+      expect(allText, contains('Legal Metrology Act, 2009'));
     });
 
-    test('declaration item 3: misrepresentation → disqualification', () {
+    test('declaration item 2: minimum 10% discount', () {
       final blocks = buildMrpDeclaration(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
-      expect(allText, contains('misrepresentation'));
-      expect(allText, contains('disqualification'));
+      expect(allText, contains('minimum 10% discount on the above MRP'));
+      expect(allText, contains('GTC Clause 3(A)(xi)'));
+    });
+
+    test('declaration item 3: misrepresent MRP on GeM', () {
+      final blocks = buildMrpDeclaration(makeInput());
+      final allText = blocks.map((b) => b.plainText).join(' ');
+      expect(allText, contains('misrepresent MRP'));
+      expect(allText, contains('GTC Clause 23.5(iv)'));
     });
 
     test('"We undertake" responsibility block present', () {
@@ -189,34 +193,28 @@ void main() {
       expect(allText, contains('We undertake'));
     });
 
-    test('"Authorization Signatory" in signature block', () {
+    test('signatory name appears bold in signature block', () {
       final blocks = buildMrpDeclaration(makeInput());
       final sigBlock = blocks.firstWhere(
         (b) => b.kind == LetterBlockKind.signature,
       );
-      expect(sigBlock.plainText, contains('Authorization Signatory'));
+      expect(sigBlock.spans.any((s) => s.bold && s.text == 'Ravi Kumar'), isTrue);
     });
 
-    test('two products: two productTable blocks', () {
+    test('two products: one productTable block with two rows', () {
       final blocks = buildMrpDeclaration(makeTwoProductInput());
       final tables = blocks
           .where((b) => b.kind == LetterBlockKind.productTable)
           .toList();
-      expect(tables.length, 2);
-      expect(tables[0].tableRows!.first, contains('Office Chair'));
-      expect(tables[1].tableRows!.first, contains('Standing Desk'));
+      expect(tables.length, 1);
+      expect(tables[0].tableRows![0], contains('Office Chair'));
+      expect(tables[0].tableRows![1], contains('Standing Desk'));
     });
 
-    test('single product with image: 21 blocks', () {
-      final fakeImage = Uint8List.fromList([
-        0xFF,
-        0xD8,
-        0xFF,
-      ]); // fake JPEG header
-      final blocks = buildMrpDeclaration(
-        makeInput(imageBytes: fakeImage),
-      );
-      expect(blocks.length, 21);
+    test('single product: 18 blocks total', () {
+      final fakeImage = Uint8List.fromList([0xFF, 0xD8, 0xFF]);
+      final blocks = buildMrpDeclaration(makeInput(imageBytes: fakeImage));
+      expect(blocks.length, 18);
     });
   });
 
@@ -285,8 +283,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Your letter'), findsOneWidget);
-      // No profile saves for MRP
-      expect(s.profile.containsKey('companyName'), isFalse);
+      expect(s.profile['companyName'], 'Example Pvt Ltd');
+      expect(s.profile.containsKey('tenderNo'), isFalse);
 
       AppButton printBtn() => tester.widget<AppButton>(
         find.widgetWithText(AppButton, 'Print / Save as PDF'),
@@ -353,13 +351,16 @@ void main() {
       expect(find.text('Generate letter'), findsOneWidget);
     });
 
-    testWidgets('no profile fields saved after generate', (tester) async {
+    testWidgets('profile fields (company, signatory, designation) saved after generate', (tester) async {
       final s = await makeStore();
       await open(tester, s);
       await fillCard1(tester);
       await tester.tap(find.text('Generate letter'));
       await tester.pumpAndSettle();
-      expect(s.profile.isEmpty, isTrue);
+      expect(s.profile['companyName'], 'Example Pvt Ltd');
+      expect(s.profile['signatoryName'], 'Ravi Kumar');
+      expect(s.profile['signatoryDesignation'], 'Director');
+      expect(s.profile.containsKey('tenderNo'), isFalse);
     });
 
     testWidgets('renders without overflow in all 9 languages', (tester) async {

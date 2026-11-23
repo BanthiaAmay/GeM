@@ -61,11 +61,9 @@ void main() {
 
   Future<void> fillAll(WidgetTester tester) async {
     await fill(tester, 'Tender / bid number', 'GEM/2026/B/7845020');
-    await fill(tester, 'Recipient title', 'The Commandant');
-    await fill(tester, 'Organization', 'Indian Army');
-    await fill(tester, 'Organization address', 'New Delhi, 110001');
+    await fill(tester, "Buyer's designation", 'The Commandant');
+    await fill(tester, "Buyer's organisation", 'Indian Army');
     await fill(tester, 'Company name', 'Example Pvt Ltd');
-    await fill(tester, 'Company address', '123 MG Road, Mumbai');
     await fill(tester, 'Signatory name', 'Ravi Kumar');
     await fill(tester, 'Designation', 'Director');
     await fill(tester, 'Udyam Registration No.', 'UDYAM-MH-01-0012345');
@@ -74,47 +72,52 @@ void main() {
   // ── Unit tests — letter builder ────────────────────────────────────────────
 
   group('buildMsmeTurnoverDeclaration', () {
-    test('subject line contains "Turnover/Experience" not "EMD"', () {
+    test('no Subject block in document', () {
       final blocks = buildMsmeTurnoverDeclaration(makeInput());
-      final subjectBlock = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.spans.any((s) => s.bold && s.text == 'Subject: '),
-      );
-      expect(subjectBlock.plainText, contains('Turnover/Experience'));
-      expect(subjectBlock.plainText, isNot(contains('EMD')));
+      final subjectBlocks = blocks.where((b) {
+        return b.kind == LetterBlockKind.body &&
+            b.spans.any((s) => s.bold && s.text.contains('Subject'));
+      }).toList();
+      expect(subjectBlocks.length, 0);
     });
 
-    test('para 2 contains "Turnover and Experience for MSMEs" not "EMD"', () {
+    test('subtitle contains "Prior Turnover and Prior Experience" and tenderNo', () {
       final blocks = buildMsmeTurnoverDeclaration(makeInput());
-      final para2 = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.plainText.contains('Development Act, 2006'),
+      final subtitle = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
       );
-      expect(para2.plainText, contains('Turnover and Experience for MSMEs'));
-      expect(para2.plainText, isNot(contains('EMD')));
+      expect(
+        subtitle.plainText,
+        contains('Para 11(a)'),
+      );
+      expect(
+        subtitle.spans.any((s) => s.bold && s.text == 'GEM/2026/B/7845020'),
+        isTrue,
+      );
     });
 
-    test(
-      'para 3 contains "[Micro/Small/Medium] Enterprise" and "MSMED Act"',
-      () {
-        final blocks = buildMsmeTurnoverDeclaration(makeInput());
-        final para3 = blocks.firstWhere(
-          (b) =>
-              b.kind == LetterBlockKind.body &&
-              b.plainText.contains('[Micro/Small/Medium] Enterprise'),
-        );
-        expect(para3.plainText, contains('MSMED Act'));
-      },
-    );
+    test('opening para contains "Prior Turnover and Prior Experience criteria"', () {
+      final blocks = buildMsmeTurnoverDeclaration(makeInput());
+      final para = blocks.firstWhere(
+        (b) =>
+            b.kind == LetterBlockKind.body &&
+            b.plainText.contains('Prior Turnover and Prior Experience criteria'),
+      );
+      expect(para.plainText, contains('Prior Turnover and Prior Experience criteria'));
+    });
 
-    test('udyamRegistrationNo bold in MSME Registration Number line', () {
+    test('boilerplate contains "Udyam Registration Certificate is enclosed"', () {
+      final blocks = buildMsmeTurnoverDeclaration(makeInput());
+      final allText = blocks.map((b) => b.plainText).join(' ');
+      expect(allText, contains('Udyam Registration Certificate is enclosed'));
+    });
+
+    test('udyamRegistrationNo is bold in Udyam Registration No. line', () {
       final blocks = buildMsmeTurnoverDeclaration(makeInput());
       final udyamBlock = blocks.firstWhere(
         (b) =>
             b.kind == LetterBlockKind.body &&
-            b.plainText.contains('MSME Registration Number'),
+            b.plainText.contains('Udyam Registration No.'),
       );
       expect(
         udyamBlock.spans.any((s) => s.bold && s.text == 'UDYAM-MH-01-0012345'),
@@ -122,45 +125,29 @@ void main() {
       );
     });
 
-    test(
-      '"As an MSME, we may be exempted from the turnover/experience requirements" present',
-      () {
-        final blocks = buildMsmeTurnoverDeclaration(makeInput());
-        final allText = blocks.map((b) => b.plainText).join(' ');
-        expect(
-          allText,
-          contains(
-            'As an MSME, we may be exempted from the turnover/experience requirements',
-          ),
-        );
-      },
-    );
+    test('"As an MSME, we may be exempted from the turnover/experience requirements" is NOT present', () {
+      final blocks = buildMsmeTurnoverDeclaration(makeInput());
+      final allText = blocks.map((b) => b.plainText).join(' ');
+      expect(
+        allText,
+        isNot(contains('As an MSME, we may be exempted')),
+      );
+    });
 
-    test(
-      'NO "Furthermore, we confirm that our MSME registration is valid" paragraph',
-      () {
-        final blocks = buildMsmeTurnoverDeclaration(makeInput());
-        final allText = blocks.map((b) => b.plainText).join(' ');
-        expect(allText, isNot(contains('Furthermore, we confirm')));
-      },
-    );
-
-    test('company name NOT bold anywhere in the body', () {
+    test('company name IS bold in the body', () {
       final blocks = buildMsmeTurnoverDeclaration(makeInput());
       final boldCompanySpans = blocks
           .where((b) => b.kind == LetterBlockKind.body)
           .expand((b) => b.spans)
           .where((s) => s.bold && s.text.contains('Example Pvt Ltd'))
           .toList();
-      expect(boldCompanySpans, isEmpty);
+      expect(boldCompanySpans, isNotEmpty);
     });
 
-    test('closing is "Yours Sincerely"', () {
+    test('no "Yours Sincerely" in document', () {
       final blocks = buildMsmeTurnoverDeclaration(makeInput());
       final allText = blocks.map((b) => b.plainText).join('\n');
-      expect(allText, contains('Yours Sincerely'));
-      final lines = blocks.map((b) => b.plainText).toList();
-      expect(lines.any((l) => l.trim() == 'Sincerely'), isFalse);
+      expect(allText, isNot(contains('Sincerely')));
     });
   });
 
@@ -208,7 +195,7 @@ void main() {
   });
 
   group('MsmeTurnoverPage', () {
-    testWidgets('empty form — all 9 fields required', (tester) async {
+    testWidgets('empty form — all 7 fields required', (tester) async {
       final s = await makeStore();
       await open(tester, s);
       await tester.tap(find.text('Generate letter'));
@@ -217,14 +204,12 @@ void main() {
       expect(find.text('Your letter'), findsNothing);
     });
 
-    testWidgets('partial fill (8 of 9) still blocks generate', (tester) async {
+    testWidgets('partial fill (5 of 6) still blocks generate', (tester) async {
       final s = await makeStore();
       await open(tester, s, tender: 'GEM/2026/B/7845020');
-      await fill(tester, 'Recipient title', 'The Commandant');
-      await fill(tester, 'Organization', 'Indian Army');
-      await fill(tester, 'Organization address', 'New Delhi');
+      await fill(tester, "Buyer's designation", 'The Commandant');
+      await fill(tester, "Buyer's organisation", 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
-      await fill(tester, 'Company address', '123 MG Road');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       await fill(tester, 'Designation', 'Director');
       // Udyam No. empty
@@ -278,7 +263,7 @@ void main() {
     testWidgets('profile fields prefill on load', (tester) async {
       SharedPreferences.setMockInitialValues({
         'saathi.v1.guest':
-            '{"profile":{"companyName":"Prefilled Co","companyAddress":"99 Link Road","signatoryName":"Jane Doe","signatoryDesignation":"CEO","udyamRegistrationNo":"UDYAM-MH-01-9999999"}}',
+            '{"profile":{"companyName":"Prefilled Co","signatoryName":"Jane Doe","signatoryDesignation":"CEO","udyamRegistrationNo":"UDYAM-MH-01-9999999"}}',
       });
       final s = AppStore(await SharedPreferences.getInstance());
       await open(tester, s);

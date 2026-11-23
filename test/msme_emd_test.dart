@@ -63,11 +63,11 @@ void main() {
 
   Future<void> fillAll(WidgetTester tester) async {
     await fill(tester, 'Tender / bid number', 'GEM/2026/B/7845020');
-    await fill(tester, 'Recipient title', 'The Commandant');
-    await fill(tester, 'Organization', 'Indian Army');
-    await fill(tester, 'Organization address', 'New Delhi, 110001');
+    await fill(tester, "Buyer's designation", 'The Commandant');
+    await fill(tester, "Buyer's organisation", 'Indian Army');
     await fill(tester, 'Company name', 'Example Pvt Ltd');
-    await fill(tester, 'Company address', '123 MG Road, Mumbai');
+    await fill(tester, 'Product / service name', 'Office Chair');
+    await fill(tester, 'Place of business', 'Mumbai');
     await fill(tester, 'Signatory name', 'Ravi Kumar');
     await fill(tester, 'Designation', 'Director');
     await fill(tester, 'Udyam Registration No.', 'UDYAM-MH-01-0012345');
@@ -76,7 +76,7 @@ void main() {
   // ── Unit tests — letter builder ────────────────────────────────────────────
 
   group('buildMsmeEmdDeclaration', () {
-    test('recipientTitle bold in recipient block', () {
+    test('buyerDesignation bold in recipient block', () {
       final blocks = buildMsmeEmdDeclaration(makeInput());
       final recipientBlock = blocks.firstWhere(
         (b) =>
@@ -89,46 +89,42 @@ void main() {
       );
     });
 
-    test('"Subject:" span bold', () {
+    test('no Subject block in document', () {
       final blocks = buildMsmeEmdDeclaration(makeInput());
-      final subjectBlock = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.spans.any((s) => s.bold && s.text.startsWith('Subject:')),
+      final subjectBlocks = blocks.where((b) {
+        return b.kind == LetterBlockKind.body &&
+            b.spans.any((s) => s.bold && s.text.contains('Subject'));
+      }).toList();
+      expect(subjectBlocks.length, 0);
+    });
+
+    test('tenderNo appears bold in subtitle block', () {
+      final blocks = buildMsmeEmdDeclaration(makeInput());
+      final subtitle = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
       );
       expect(
-        subjectBlock.spans.any((s) => s.bold && s.text == 'Subject: '),
+        subtitle.spans.any((s) => s.bold && s.text == 'GEM/2026/B/7845020'),
         isTrue,
       );
     });
 
-    test('tender no. appears verbatim in subject line', () {
+    test('company name IS bold in opening paragraph', () {
       final blocks = buildMsmeEmdDeclaration(makeInput());
-      final subjectBlock = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.spans.any((s) => s.bold && s.text == 'Subject: '),
-      );
-      expect(subjectBlock.plainText, contains('GEM/2026/B/7845020'));
+      final boldCompanySpans = blocks
+          .where((b) => b.kind == LetterBlockKind.body)
+          .expand((b) => b.spans)
+          .where((s) => s.bold && s.text.contains('Example Pvt Ltd'))
+          .toList();
+      expect(boldCompanySpans, isNotEmpty);
     });
 
-    test('organization appears in para 1 body (not just recipient block)', () {
-      final blocks = buildMsmeEmdDeclaration(makeInput());
-      // Para 1 (item 12) contains the organization in the body text
-      final para1 = blocks.firstWhere(
-        (b) =>
-            b.kind == LetterBlockKind.body &&
-            b.plainText.contains('I am writing on behalf of'),
-      );
-      expect(para1.plainText, contains('Indian Army'));
-    });
-
-    test('udyamRegistrationNo is bold in MSME Registration Number line', () {
+    test('udyamRegistrationNo is bold in Udyam Registration No. line', () {
       final blocks = buildMsmeEmdDeclaration(makeInput());
       final udyamBlock = blocks.firstWhere(
         (b) =>
             b.kind == LetterBlockKind.body &&
-            b.plainText.contains('MSME Registration Number'),
+            b.plainText.contains('Udyam Registration No.'),
       );
       expect(
         udyamBlock.spans.any((s) => s.bold && s.text == 'UDYAM-MH-01-0012345'),
@@ -136,41 +132,28 @@ void main() {
       );
     });
 
-    test('company name is NOT bold anywhere in the body', () {
-      final blocks = buildMsmeEmdDeclaration(makeInput());
-      final boldCompanySpans = blocks
-          .where((b) => b.kind == LetterBlockKind.body)
-          .expand((b) => b.spans)
-          .where((s) => s.bold && s.text.contains('Example Pvt Ltd'))
-          .toList();
-      expect(boldCompanySpans, isEmpty);
-    });
-
-    test('closing is "Yours Sincerely" not "Sincerely"', () {
+    test('no "Yours Sincerely" in document', () {
       final blocks = buildMsmeEmdDeclaration(makeInput());
       final allText = blocks.map((b) => b.plainText).join('\n');
-      expect(allText, contains('Yours Sincerely'));
-      // Ensure plain "Sincerely" without "Yours" does not appear separately
-      final lines = blocks.map((b) => b.plainText).toList();
-      expect(lines.any((l) => l.trim() == 'Sincerely'), isFalse);
+      expect(allText, isNot(contains('Sincerely')));
     });
 
-    test('boilerplate contains "MSME Development Act, 2006"', () {
+    test('boilerplate contains "claim EMD exemption"', () {
       final blocks = buildMsmeEmdDeclaration(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
-      expect(allText, contains('Development Act, 2006'));
+      expect(allText, contains('claim EMD exemption'));
     });
 
-    test('boilerplate contains "Earnest Money Deposit"', () {
+    test('boilerplate contains "EARNEST MONEY DEPOSIT"', () {
       final blocks = buildMsmeEmdDeclaration(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
-      expect(allText, contains('Earnest Money Deposit'));
+      expect(allText, contains('EARNEST MONEY DEPOSIT'));
     });
 
-    test('boilerplate contains "MSME registration certificate"', () {
+    test('boilerplate contains "not a trader or reseller"', () {
       final blocks = buildMsmeEmdDeclaration(makeInput());
       final allText = blocks.map((b) => b.plainText).join(' ');
-      expect(allText, contains('MSME registration certificate'));
+      expect(allText, contains('not a trader or reseller'));
     });
   });
 
@@ -228,11 +211,11 @@ void main() {
     testWidgets('partial fill (8 of 9) still blocks generate', (tester) async {
       final s = await makeStore();
       await open(tester, s, tender: 'GEM/2026/B/7845020');
-      await fill(tester, 'Recipient title', 'The Commandant');
-      await fill(tester, 'Organization', 'Indian Army');
-      await fill(tester, 'Organization address', 'New Delhi');
+      await fill(tester, "Buyer's designation", 'The Commandant');
+      await fill(tester, "Buyer's organisation", 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
-      await fill(tester, 'Company address', '123 MG Road');
+      await fill(tester, 'Product / service name', 'Office Chair');
+      await fill(tester, 'Place of business', 'Mumbai');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       await fill(tester, 'Designation', 'Director');
       // Udyam No. empty
@@ -253,7 +236,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Your letter'), findsOneWidget);
-      // Profile saved; tender/recipient/org NOT saved
+      // Profile saved; tender NOT saved
       expect(s.profile['companyName'], 'Example Pvt Ltd');
       expect(s.profile['udyamRegistrationNo'], 'UDYAM-MH-01-0012345');
       expect(s.profile.containsKey('tenderNo'), isFalse);
@@ -289,7 +272,7 @@ void main() {
       (tester) async {
         SharedPreferences.setMockInitialValues({
           'saathi.v1.guest':
-              '{"profile":{"companyName":"Prefilled Co","companyAddress":"99 Link Road","signatoryName":"Jane Doe","signatoryDesignation":"CEO","udyamRegistrationNo":"UDYAM-MH-01-9999999"}}',
+              '{"profile":{"companyName":"Prefilled Co","signatoryName":"Jane Doe","signatoryDesignation":"CEO","udyamRegistrationNo":"UDYAM-MH-01-9999999"}}',
         });
         final s = AppStore(await SharedPreferences.getInstance());
         await open(tester, s);

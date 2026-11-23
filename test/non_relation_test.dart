@@ -99,32 +99,39 @@ void main() {
       expect(boldTexts, contains('Director'));
     });
 
-    test('tender number appears bold in first body paragraph', () {
+    test('tender number appears bold in subtitle (not body) block', () {
       final blocks = buildNonRelationUndertaking(makeInput());
-      final bodyBlocks = blocks
+      // tenderNo is in subtitle only
+      final subtitle = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
+      );
+      expect(
+        subtitle.spans.any((s) => s.bold && s.text == 'GEM/2026/B/7845020'),
+        isTrue,
+      );
+      // tenderNo should NOT appear in any body block
+      final bodyText = blocks
           .where((b) => b.kind == LetterBlockKind.body)
-          .toList();
-      final boldTexts = bodyBlocks
-          .expand((b) => b.spans)
-          .where((s) => s.bold)
-          .map((s) => s.text)
-          .toList();
-      expect(boldTexts, contains('GEM/2026/B/7845020'));
+          .map((b) => b.plainText)
+          .join(' ');
+      expect(bodyText, isNot(contains('GEM/2026/B/7845020')));
     });
 
-    test('tender number text appears in body paragraph content', () {
+    test('tender number text appears in subtitle block content', () {
       final blocks = buildNonRelationUndertaking(makeInput());
-      final allText = blocks.map((b) => b.plainText).join(' ');
-      expect(allText, contains('GEM/2026/B/7845020'));
+      final subtitle = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
+      );
+      expect(subtitle.plainText, contains('GEM/2026/B/7845020'));
     });
 
-    test('exactly one Subject block with bold "Subject:" span', () {
+    test('no Subject block in document', () {
       final blocks = buildNonRelationUndertaking(makeInput());
       final subjectBlocks = blocks.where((b) {
         return b.kind == LetterBlockKind.body &&
             b.spans.any((s) => s.bold && s.text.contains('Subject'));
       }).toList();
-      expect(subjectBlocks.length, 1);
+      expect(subjectBlocks.length, 0);
     });
 
     test('signatory name appears bold in signature block', () {
@@ -141,13 +148,14 @@ void main() {
       expect(boldText, contains('Ravi Kumar'));
     });
 
-    test('date uses abbreviated month format (Oct, not October)', () {
+    test('date is embedded bold in subtitle block (no standalone date block)', () {
       final blocks = buildNonRelationUndertaking(makeInput());
-      final dateBlock = blocks.first;
-      expect(dateBlock.kind, LetterBlockKind.date);
-      expect(dateBlock.plainText, contains('Oct'));
-      expect(dateBlock.plainText, contains('2026'));
-      expect(dateBlock.plainText, isNot(contains('October')));
+      final subtitle = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
+      );
+      expect(subtitle.plainText, contains('Oct'));
+      expect(subtitle.plainText, contains('2026'));
+      expect(blocks.any((b) => b.kind == LetterBlockKind.date), isFalse);
     });
   });
 
@@ -182,9 +190,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Non-Relation Undertaking'), findsOneWidget);
-      await tester.ensureVisible(find.text('Non-Relation Undertaking'));
-      await tester.tap(find.text('Non-Relation Undertaking'));
+      expect(find.text('Conflict of Interest Declaration'), findsOneWidget);
+      await tester.ensureVisible(find.text('Conflict of Interest Declaration'));
+      await tester.tap(find.text('Conflict of Interest Declaration'));
       await tester.pumpAndSettle();
       expect(opened, '/tool-non-relation');
     });
@@ -200,15 +208,16 @@ void main() {
       expect(find.text('Your letter'), findsNothing);
     });
 
-    testWidgets('generate blocked until all 5 fields filled', (tester) async {
+    testWidgets('generate blocked until all 6 fields filled', (tester) async {
       final s = await makeStore();
       await open(tester, s);
-      // Fill only 4 of 5 required fields — missing Company address
+      // Fill only 5 of 6 required fields — missing Designation
       await fill(tester, 'Tender / bid number', 'GEM/2026/B/7845020');
+      await fill(tester, "Buyer's designation", 'The Commandant');
+      await fill(tester, "Buyer's organisation", 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
-      await fill(tester, 'Designation', 'Director');
-      // Company address still empty
+      // Designation still empty
       await tester.tap(find.text('Generate letter'));
       await tester.pumpAndSettle();
       expect(find.text('Your letter'), findsNothing);
@@ -220,8 +229,9 @@ void main() {
     ) async {
       final s = await makeStore();
       await open(tester, s, tender: 'GEM/2026/B/7845020');
+      await fill(tester, "Buyer's designation", 'The Commandant');
+      await fill(tester, "Buyer's organisation", 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
-      await fill(tester, 'Company address', '123 MG Road, Mumbai');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       await fill(tester, 'Designation', 'Director');
 
@@ -249,8 +259,9 @@ void main() {
     ) async {
       final s = await makeStore();
       await open(tester, s, tender: 'GEM/2026/B/7845020');
+      await fill(tester, "Buyer's designation", 'The Commandant');
+      await fill(tester, "Buyer's organisation", 'Indian Army');
       await fill(tester, 'Company name', 'Example Pvt Ltd');
-      await fill(tester, 'Company address', '123 MG Road, Mumbai');
       await fill(tester, 'Signatory name', 'Ravi Kumar');
       await fill(tester, 'Designation', 'Director');
 

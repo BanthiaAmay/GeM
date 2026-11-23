@@ -82,36 +82,36 @@ void main() {
   // ── Unit tests — letter builder ────────────────────────────────────────────
 
   group('buildEscalationMatrix', () {
-    test('primary-only produces exactly one numbered section', () {
+    test('primary-only produces exactly one table row', () {
       final blocks = buildEscalationMatrix(input());
-      final headings = blocks
-          .where((b) => b.kind == LetterBlockKind.heading)
-          .map((b) => b.plainText)
-          .toList();
-      expect(headings.length, 1);
-      expect(headings.first, contains('1.'));
-      expect(headings.first, contains('Primary Contact'));
+      final tableBlock = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.productTable,
+      );
+      expect(tableBlock.tableRows?.length, 1);
+      expect(tableBlock.tableRows?.first[0], '1 — Operational');
     });
 
-    test('all three contacts produce three numbered sections', () {
+    test('all three contacts produce three table rows', () {
       final blocks = buildEscalationMatrix(
         input(sec: secondary, ter: tertiary),
       );
-      final headings = blocks
-          .where((b) => b.kind == LetterBlockKind.heading)
-          .map((b) => b.plainText)
-          .toList();
-      expect(headings.length, 3);
-      expect(headings[0], contains('1.'));
-      expect(headings[1], contains('2.'));
-      expect(headings[2], contains('3.'));
+      final tableBlock = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.productTable,
+      );
+      expect(tableBlock.tableRows?.length, 3);
+      expect(tableBlock.tableRows![0][0], '1 — Operational');
+      expect(tableBlock.tableRows![1][0], '2 — Management');
+      expect(tableBlock.tableRows![2][0], '3 — Senior/Legal');
     });
 
-    test('secondary absent from output when not provided', () {
+    test('secondary absent from table rows when not provided', () {
       final blocks = buildEscalationMatrix(input());
-      final allText = blocks.map((b) => b.plainText).join(' ');
-      expect(allText, isNot(contains('Secondary Contact')));
-      expect(allText, isNot(contains('Additional Contact')));
+      final tableBlock = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.productTable,
+      );
+      final tiers = tableBlock.tableRows?.map((r) => r[0]).join(' ') ?? '';
+      expect(tiers, isNot(contains('2 — Management')));
+      expect(tiers, isNot(contains('3 — Senior/Legal')));
     });
 
     test('tender number appears bold in subtitle block', () {
@@ -137,20 +137,22 @@ void main() {
       expect(boldText, contains('Ravi Kumar'));
     });
 
-    test('secondary-only (no tertiary) produces two sections', () {
+    test('secondary-only (no tertiary) produces two table rows', () {
       final blocks = buildEscalationMatrix(input(sec: secondary));
-      final headings = blocks
-          .where((b) => b.kind == LetterBlockKind.heading)
-          .toList();
-      expect(headings.length, 2);
+      final tableBlock = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.productTable,
+      );
+      expect(tableBlock.tableRows?.length, 2);
     });
 
-    test('date is formatted as month-name format', () {
+    test('date is embedded bold in subtitle block (no standalone date block)', () {
       final blocks = buildEscalationMatrix(input());
-      final dateBlock = blocks.first;
-      expect(dateBlock.kind, LetterBlockKind.date);
-      expect(dateBlock.plainText, contains('October'));
-      expect(dateBlock.plainText, contains('2026'));
+      final subtitle = blocks.firstWhere(
+        (b) => b.kind == LetterBlockKind.subtitle,
+      );
+      expect(subtitle.plainText, contains('Oct'));
+      expect(subtitle.plainText, contains('2026'));
+      expect(blocks.any((b) => b.kind == LetterBlockKind.date), isFalse);
     });
   });
 
@@ -206,11 +208,11 @@ void main() {
     });
 
     testWidgets(
-      'generate requires tender, signatory, designation, company, primary four fields',
+      'generate requires tender, signatory, designation, company, primary three fields',
       (tester) async {
         final s = await makeStore();
         await open(tester, s, tender: 'GEM/2026/B/7845020');
-        // Only primary name filled — should still fail (position, email, phone missing)
+        // Only primary name filled — should still fail (designation, email missing)
         final names = find.widgetWithText(TextFormField, 'Name');
         await tester.enterText(names.at(0), 'Ravi Kumar');
         await tester.tap(find.text('Generate letter'));
@@ -221,28 +223,26 @@ void main() {
     );
 
     testWidgets(
-      'partial secondary contact (email only) triggers validation for all four',
+      'partial secondary contact (email only) triggers validation for all three',
       (tester) async {
         final s = await makeStore();
         await open(tester, s, tender: 'GEM/2026/B/7845020');
         // Fill required header fields
         await fill(tester, 'Signatory name', 'Z');
-        await fill(tester, 'Designation', 'Owner');
         await fill(tester, 'Company name', 'Z Ltd');
+        final designations = find.widgetWithText(TextFormField, 'Designation');
+        await tester.enterText(designations.at(0), 'Owner');
         // Fill required primary fields
         final names = find.widgetWithText(TextFormField, 'Name');
         await tester.enterText(names.at(0), 'Ravi');
-        final positions = find.widgetWithText(TextFormField, 'Position');
-        await tester.enterText(positions.at(0), 'Director');
+        await tester.enterText(designations.at(1), 'Director');
         final emails = find.widgetWithText(TextFormField, 'Email');
         await tester.enterText(emails.at(0), 'r@x.com');
-        final phones = find.widgetWithText(TextFormField, 'Phone');
-        await tester.enterText(phones.at(0), '9876543210');
         // Fill ONLY secondary email — should require the rest of secondary group
         await tester.enterText(emails.at(1), 'sec@x.com');
         await tester.tap(find.text('Generate letter'));
         await tester.pumpAndSettle();
-        // Secondary name/position/phone should now be required
+        // Secondary name/designation should now be required
         expect(find.text('This is required'), findsWidgets);
         expect(find.text('Your letter'), findsNothing);
       },
@@ -254,16 +254,14 @@ void main() {
       final s = await makeStore();
       await open(tester, s, tender: 'GEM/2026/B/7845020');
       await fill(tester, 'Signatory name', 'Z');
-      await fill(tester, 'Designation', 'Owner');
       await fill(tester, 'Company name', 'Z Ltd');
+      final designations = find.widgetWithText(TextFormField, 'Designation');
+      await tester.enterText(designations.at(0), 'Owner');
       final names = find.widgetWithText(TextFormField, 'Name');
       await tester.enterText(names.at(0), 'Ravi');
-      final positions = find.widgetWithText(TextFormField, 'Position');
-      await tester.enterText(positions.at(0), 'Director');
+      await tester.enterText(designations.at(1), 'Director');
       final emails = find.widgetWithText(TextFormField, 'Email');
       await tester.enterText(emails.at(0), 'r@x.com');
-      final phones = find.widgetWithText(TextFormField, 'Phone');
-      await tester.enterText(phones.at(0), '9876543210');
 
       await tester.tap(find.text('Generate letter'));
       await tester.pumpAndSettle();
@@ -290,16 +288,14 @@ void main() {
       final s = await makeStore();
       await open(tester, s, tender: 'GEM/2026/B/7845020');
       await fill(tester, 'Signatory name', 'Z');
-      await fill(tester, 'Designation', 'Owner');
       await fill(tester, 'Company name', 'Z Ltd');
+      final designations = find.widgetWithText(TextFormField, 'Designation');
+      await tester.enterText(designations.at(0), 'Owner');
       final names = find.widgetWithText(TextFormField, 'Name');
       await tester.enterText(names.at(0), 'Ravi');
-      final positions = find.widgetWithText(TextFormField, 'Position');
-      await tester.enterText(positions.at(0), 'Director');
+      await tester.enterText(designations.at(1), 'Director');
       final emails = find.widgetWithText(TextFormField, 'Email');
       await tester.enterText(emails.at(0), 'r@x.com');
-      final phones = find.widgetWithText(TextFormField, 'Phone');
-      await tester.enterText(phones.at(0), '9876543210');
 
       await tester.tap(find.text('Generate letter'));
       await tester.pumpAndSettle();
