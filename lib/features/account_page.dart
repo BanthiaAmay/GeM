@@ -912,7 +912,7 @@ class _AccountPageState extends State<AccountPage> {
         ),
         const SizedBox(height: AppSpace.md),
         AppButton(
-          label: s.t('Bid alerts & WhatsApp', 'बोली अलर्ट और WhatsApp'),
+          label: s.t('Bid alerts', 'बोली अलर्ट'),
           icon: Icons.notifications_outlined,
           onPressed: () => Navigator.pushNamed(context, '/alerts'),
           variant: AppButtonVariant.secondary,
