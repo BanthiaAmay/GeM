@@ -39,14 +39,6 @@ const _kOnboardingSteps = <_OnboardingStep>[
   _OnboardingStep('flow-products', 'Your business', 'आपका व्यवसाय'),
   _OnboardingStep('flow-role', 'Your business', 'आपका व्यवसाय'),
   _OnboardingStep('flow-authorised', 'Your business', 'आपका व्यवसाय'),
-  _OnboardingStep('flow-turnover', 'GeM bidding', 'GeM बोली'),
-  _OnboardingStep('flow-turnover-history', 'GeM bidding', 'GeM बोली'),
-  _OnboardingStep('flow-experience', 'GeM bidding', 'GeM बोली'),
-  // Only ever reached on the "Yes" branch of flow-experience — a user who
-  // answers "No" never sees it, so their own last reading in this section
-  // is "3 OF 4" (this table's real length), the same convention already
-  // used for the already-on-GeM early exit out of "Get ready" below.
-  _OnboardingStep('flow-experience-detail', 'GeM bidding', 'GeM बोली'),
   _OnboardingStep('flow-privacy', 'Get ready', 'तैयार हो जाएँ'),
   _OnboardingStep('flow-records', 'Get ready', 'तैयार हो जाएँ'),
   _OnboardingStep('flow-pan', 'Get ready', 'तैयार हो जाएँ'),

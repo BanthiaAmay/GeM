@@ -60,7 +60,7 @@ class _FlowAuthorisedPageState extends State<FlowAuthorisedPage> {
                 s.t('Your business complete', 'आपका व्यवसाय पूर्ण'),
               );
               if (!context.mounted) return;
-              Navigator.of(context).pushNamed('/flow-turnover');
+              Navigator.of(context).pushNamed('/flow-privacy');
             },
       factIndex: 1,
       children: [
