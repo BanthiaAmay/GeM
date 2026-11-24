@@ -1311,7 +1311,15 @@ class _BidAlertsSection extends StatefulWidget {
 
 class _BidAlertsSectionState extends State<_BidAlertsSection> {
   bool _unreadOnly = false;
+  bool _refreshing = false;
   AppStore get s => widget.store;
+
+  Future<void> _refresh() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    await widget.store.loadAlerts();
+    if (mounted) setState(() => _refreshing = false);
+  }
 
   List<Map<String, dynamic>> get _filtered {
     final all = s.bidNotifications;
@@ -1333,10 +1341,53 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(
-            s.t('Bid Alerts', 'बोली अलर्ट'),
-            actionLabel: s.t('See all', 'सभी देखें'),
-            onAction: () => Navigator.of(context).pushNamed('/bids'),
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpace.md),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      s.t('Bid Alerts', 'बोली अलर्ट'),
+                      style: AppText.h3,
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _refresh,
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpace.sm,
+                      vertical: AppSpace.xs,
+                    ),
+                    child: _refreshing
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.5,
+                              color: AppColors.textHint,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.refresh_rounded,
+                            size: 18,
+                            color: AppColors.textHint,
+                          ),
+                  ),
+                ),
+                AppButton(
+                  label: s.t('See all', 'सभी देखें'),
+                  onPressed: () => Navigator.of(context).pushNamed('/bids'),
+                  variant: AppButtonVariant.tertiary,
+                  size: AppButtonSize.sm,
+                  expand: false,
+                  haptic: false,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: AppSpace.sm),
           Wrap(
@@ -2147,14 +2198,28 @@ class _SaathiButton extends StatelessWidget {
 
 // ── Active Bids Card ─────────────────────────────────────────────────────────
 
-class _ActiveBidsCard extends StatelessWidget {
+class _ActiveBidsCard extends StatefulWidget {
   const _ActiveBidsCard({required this.store});
   final AppStore store;
 
-  /// Same translucent tile as the rest of the hero card's content.
+  @override
+  State<_ActiveBidsCard> createState() => _ActiveBidsCardState();
+}
+
+class _ActiveBidsCardState extends State<_ActiveBidsCard> {
+  bool _refreshing = false;
+
+  Future<void> _refresh() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    await widget.store.loadGemStats();
+    if (mounted) setState(() => _refreshing = false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final count = store.gemActiveBids;
+    final count = widget.store.gemActiveBids;
+    final dim = AppColors.surface.withValues(alpha: 0.72);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -2166,18 +2231,43 @@ class _ActiveBidsCard extends StatelessWidget {
         horizontal: AppSpace.md,
         vertical: AppSpace.lg,
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            count != null ? count.toString() : '—',
-            style: AppText.h2.copyWith(color: AppColors.surface),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  count != null ? count.toString() : '—',
+                  style: AppText.h2.copyWith(color: AppColors.surface),
+                ),
+                const SizedBox(height: AppSpace.xs),
+                Text(
+                  widget.store.t(
+                    'Active bids on GeM',
+                    'GeM पर सक्रिय बोलियाँ',
+                  ),
+                  style: AppText.overline.copyWith(color: dim),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: AppSpace.xs),
-          Text(
-            store.t('Active bids on GeM', 'GeM पर सक्रिय बोलियाँ'),
-            style: AppText.overline.copyWith(
-              color: AppColors.surface.withValues(alpha: 0.72),
+          GestureDetector(
+            onTap: _refresh,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.only(left: AppSpace.sm),
+              child: _refreshing
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.5,
+                        color: dim,
+                      ),
+                    )
+                  : Icon(Icons.refresh_rounded, size: 16, color: dim),
             ),
           ),
         ],
