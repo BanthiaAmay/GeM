@@ -724,9 +724,8 @@ class FactToast extends StatefulWidget {
 
 class _FactToastState extends State<FactToast>
     with SingleTickerProviderStateMixin {
-  // Show once every 3 pages across the whole onboarding session.
+  // Show only on every 3rd page (3, 6, 9 …) across the onboarding session.
   static int _mountCount = 0;
-  static int _lastShownAt = -3;
 
   bool _visible = false;
   late final AnimationController _anim;
@@ -750,14 +749,13 @@ class _FactToastState extends State<FactToast>
       Tween<Offset>(begin: const Offset(0.4, 0), end: Offset.zero),
     );
     _fade = curved;
-    if (_myMount - _lastShownAt >= 3) {
+    if (_myMount % 3 == 0) {
       _timer = Timer(const Duration(milliseconds: 1000), _show);
     }
   }
 
   void _show() {
     if (!mounted) return;
-    _lastShownAt = _myMount;
     setState(() => _visible = true);
     _anim.forward();
     unawaited(_player.play(AssetSource('sounds/section_complete.mp3')));
