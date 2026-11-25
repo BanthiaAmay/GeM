@@ -87,7 +87,9 @@ class _BankSolvencyPageState extends State<BankSolvencyPage> {
   }
 
   void _disposeEditors() {
-    for (final c in _editors ?? const <TextEditingController>[]) c.dispose();
+    for (final c in _editors ?? const <TextEditingController>[]) {
+      c.dispose();
+    }
     _editors = null;
   }
 
@@ -344,7 +346,7 @@ class _BankSolvencyPageState extends State<BankSolvencyPage> {
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpace.lg),
             child: DropdownButtonFormField<String>(
-              value: _validityMonths,
+              initialValue: _validityMonths,
               decoration: InputDecoration(
                 labelText: t('Solvency certificate validity', 'सॉल्वेंसी प्रमाणपत्र वैधता'),
               ),

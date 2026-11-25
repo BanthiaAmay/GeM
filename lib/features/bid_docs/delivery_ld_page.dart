@@ -107,13 +107,17 @@ class _DeliveryLdPageState extends State<DeliveryLdPage> {
     for (final c in [_tenderNo, _buyerDesignation, _buyerOrg, _company, _signatory, _designation]) {
       c.dispose();
     }
-    for (final r in _rows) r.dispose();
+    for (final r in _rows) {
+      r.dispose();
+    }
     _disposeEditors();
     super.dispose();
   }
 
   void _disposeEditors() {
-    for (final c in _editors ?? const <TextEditingController>[]) c.dispose();
+    for (final c in _editors ?? const <TextEditingController>[]) {
+      c.dispose();
+    }
     _editors = null;
   }
 
@@ -181,7 +185,9 @@ class _DeliveryLdPageState extends State<DeliveryLdPage> {
     for (final c in [_tenderNo, _buyerDesignation, _buyerOrg, _company, _signatory, _designation]) {
       c.clear();
     }
-    for (final r in _rows) r.dispose();
+    for (final r in _rows) {
+      r.dispose();
+    }
     _rows.clear();
     _rows.add(_DeliveryRowCard());
     _disposeEditors();
