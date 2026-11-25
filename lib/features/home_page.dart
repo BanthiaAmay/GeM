@@ -1310,7 +1310,6 @@ class _BidAlertsSection extends StatefulWidget {
 }
 
 class _BidAlertsSectionState extends State<_BidAlertsSection> {
-  bool _unreadOnly = false;
   bool _refreshing = false;
   AppStore get s => widget.store;
 
@@ -1321,13 +1320,8 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
     if (mounted) setState(() => _refreshing = false);
   }
 
-  List<Map<String, dynamic>> get _filtered {
-    final all = s.bidNotifications;
-    if (_unreadOnly) {
-      return all.where((n) => n['read_at'] == null).take(3).toList();
-    }
-    return all.take(3).toList();
-  }
+  List<Map<String, dynamic>> get _filtered =>
+      s.bidNotifications.take(3).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -1389,23 +1383,6 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
               ],
             ),
           ),
-          const SizedBox(height: AppSpace.sm),
-          Wrap(
-            spacing: AppSpace.sm,
-            runSpacing: AppSpace.sm,
-            children: [
-              _FilterPill(
-                label: s.t('All', 'सभी'),
-                selected: !_unreadOnly,
-                onTap: () => setState(() => _unreadOnly = false),
-              ),
-              _FilterPill(
-                label: s.t('Unread', 'अपठित'),
-                selected: _unreadOnly,
-                onTap: () => setState(() => _unreadOnly = true),
-              ),
-            ],
-          ),
           const SizedBox(height: AppSpace.md),
           AnimatedSwitcher(
             duration: Motion.of(context, Motion.normal),
@@ -1428,12 +1405,7 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
                         const SizedBox(width: AppSpace.md),
                         Expanded(
                           child: Text(
-                            _unreadOnly
-                                ? s.t(
-                                    'No unread alerts',
-                                    'कोई अपठित अलर्ट नहीं',
-                                  )
-                                : s.t('No alerts yet', 'अभी कोई अलर्ट नहीं'),
+                            s.t('No alerts yet', 'अभी कोई अलर्ट नहीं'),
                             style: AppText.secondary(AppText.bodySmall),
                           ),
                         ),
@@ -1460,42 +1432,6 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
   }
 }
 
-class _FilterPill extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  const _FilterPill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpace.md,
-        vertical: AppSpace.xs + 2,
-      ),
-      decoration: BoxDecoration(
-        color: selected ? AppColors.brand : AppColors.surface,
-        borderRadius: const BorderRadius.all(Radius.circular(AppRadius.pill)),
-        border: Border.all(
-          color: selected ? AppColors.brand : AppColors.borderStrong,
-        ),
-      ),
-      child: Text(
-        label,
-        style: AppText.bodySmall.copyWith(
-          color: selected ? AppColors.surface : AppColors.textSecondary,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ),
-  );
-}
 
 class _BidAlertRow extends StatelessWidget {
   final Map<String, dynamic> alert;
