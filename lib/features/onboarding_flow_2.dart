@@ -365,6 +365,7 @@ class _FlowProductsPageState extends State<FlowProductsPage> {
         ? _categoryOtherController.text.trim()
         : _selectedCategory?.name ?? '';
     final catLink = _categoryOtherMode ? '' : (_selectedCategory?.link ?? '');
+    final catQuadrant = _categoryOtherMode ? null : _selectedCategory?.quadrant;
 
     setState(() => _saving = true);
     try {
@@ -372,6 +373,7 @@ class _FlowProductsPageState extends State<FlowProductsPage> {
         industry: industry,
         categoryName: catName,
         categoryLink: catLink,
+        quadrant: catQuadrant,
       );
       // Also save as a keyword for the existing bid-matching pipeline.
       await s.saveBidInterests([catName]);

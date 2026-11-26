@@ -14,6 +14,7 @@ import 'search/search_store.dart';
 import 'tools_hub/tool_card.dart';
 import 'glass.dart';
 import 'onboarding_flow_4.dart' show gemRegistrationUrl;
+import 'quadrant_popup.dart';
 import 'onboarding_widgets.dart' show StaggeredEntrance;
 import 'scroll_hint.dart';
 import 'widgets.dart';
@@ -116,6 +117,11 @@ class _HomePageState extends State<HomePage>
     );
     _initAlerts();
     unawaited(widget.store.loadGemVideos());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(showQuadrantPopupIfNeeded(context, widget.store));
+      }
+    });
   }
 
   @override

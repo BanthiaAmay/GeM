@@ -358,6 +358,12 @@ class AppStore extends ChangeNotifier {
   String? get gemIndustry => profile['gemIndustry'] as String?;
   String? get gemCategoryName => profile['gemCategoryName'] as String?;
   String? get gemCategoryLink => profile['gemCategoryLink'] as String?;
+  String? get gemCategoryQuadrant => profile['gemCategoryQuadrant'] as String?;
+
+  bool get seenQuadrantPopup =>
+      prefs.getBool('saathi.v1.seenQuadrantPopup') ?? false;
+  Future<void> markQuadrantPopupSeen() =>
+      prefs.setBool('saathi.v1.seenQuadrantPopup', true);
   Map<String, dynamic> section(String key) =>
       Map<String, dynamic>.from(data[key] as Map? ?? {});
   List<String> get completed => List<String>.from(data['completed'] ?? []);
@@ -1511,12 +1517,14 @@ class AppStore extends ChangeNotifier {
     required String industry,
     required String categoryName,
     required String categoryLink,
+    String? quadrant,
   }) async {
     data['profile'] = {
       ...profile,
       'gemIndustry': industry,
       'gemCategoryName': categoryName,
       'gemCategoryLink': categoryLink,
+      if (quadrant != null) 'gemCategoryQuadrant': quadrant,
     };
     save();
     if (!signedIn || client == null) return;
