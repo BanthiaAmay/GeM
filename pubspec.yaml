@@ -87,6 +87,7 @@ flutter:
     - assets/illustrations/
     - assets/icons/
     - assets/sounds/
+    - assets/data/gem_categories.json
   fonts:
     - family: NotoSansDevanagari
       fonts:

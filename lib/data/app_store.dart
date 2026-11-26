@@ -353,6 +353,11 @@ class AppStore extends ChangeNotifier {
         ? alertPreferences['keywords'] ?? const []
         : profile['bidKeywords'] ?? const [],
   );
+
+  // ── GeM category (Level 1 / Level 2 from onboarding) ───────────────────────
+  String? get gemIndustry => profile['gemIndustry'] as String?;
+  String? get gemCategoryName => profile['gemCategoryName'] as String?;
+  String? get gemCategoryLink => profile['gemCategoryLink'] as String?;
   Map<String, dynamic> section(String key) =>
       Map<String, dynamic>.from(data[key] as Map? ?? {});
   List<String> get completed => List<String>.from(data['completed'] ?? []);
@@ -1095,15 +1100,38 @@ class AppStore extends ChangeNotifier {
               as Map,
         );
       }
-      final notifications = await client!
+      // Retry a pending category save from onboarding.
+      final pendingCat = profile['gemCategoryName'] as String?;
+      if (pendingCat != null && pendingCat.isNotEmpty) {
+        try {
+          await client!.rpc('save_gem_category', params: {
+            'p_industry': profile['gemIndustry'] ?? '',
+            'p_category_name': pendingCat,
+            'p_category_link': profile['gemCategoryLink'] ?? '',
+          });
+        } catch (_) {}
+      }
+
+      // Filter notifications by GeM category when the user has set one.
+      final catName = profile['gemCategoryName'] as String?;
+      var query = client!
           .from('bid_notifications')
           .select()
           .eq('user_id', userId)
           .order('created_at', ascending: false)
           .limit(50);
+      final notifications = await query;
+      // Client-side category filter: keep only notifications whose
+      // gem_category matches the user's chosen category (or all if unset).
+      final filtered = (catName != null && catName.isNotEmpty)
+          ? (notifications as List).where((n) {
+              final nc = (n['gem_category'] as String? ?? '').toLowerCase();
+              return nc.isEmpty || nc.contains(catName.toLowerCase());
+            }).toList()
+          : notifications;
       if (currentUser?.id != userId) return;
       alertPreferences = Map<String, dynamic>.from(preferences ?? {});
-      bidNotifications = List<Map<String, dynamic>>.from(notifications);
+      bidNotifications = List<Map<String, dynamic>>.from(filtered);
       alertsError = null;
       // Background: enrich any rows that are missing dates by fetching
       // their bid document page from the app (the app can reach GeM servers).
@@ -1474,6 +1502,33 @@ class AppStore extends ChangeNotifier {
     );
     if (currentUser?.id != userId) return;
     alertPreferences = Map<String, dynamic>.from(result as Map);
+    notifyListeners();
+  }
+
+  /// Saves the user's GeM industry (Level 1) and category (Level 2) chosen
+  /// during onboarding. Persisted locally first; Supabase write follows.
+  Future<void> saveGemCategory({
+    required String industry,
+    required String categoryName,
+    required String categoryLink,
+  }) async {
+    data['profile'] = {
+      ...profile,
+      'gemIndustry': industry,
+      'gemCategoryName': categoryName,
+      'gemCategoryLink': categoryLink,
+    };
+    save();
+    if (!signedIn || client == null) return;
+    try {
+      await client!.rpc('save_gem_category', params: {
+        'p_industry': industry,
+        'p_category_name': categoryName,
+        'p_category_link': categoryLink,
+      });
+    } catch (_) {
+      // Profile already saved locally; Supabase will sync on next session.
+    }
     notifyListeners();
   }
 
