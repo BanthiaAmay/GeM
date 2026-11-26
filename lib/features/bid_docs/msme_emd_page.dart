@@ -438,7 +438,7 @@ class _MsmeEmdPageState extends State<MsmeEmdPage> {
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpace.lg),
             child: DropdownButtonFormField<String>(
-              value: _msmeCategory,
+              initialValue: _msmeCategory,
               decoration: InputDecoration(
                 labelText: t('MSME Category', 'MSME श्रेणी'),
               ),

@@ -403,7 +403,7 @@ class _OemAuthorizationPageState extends State<OemAuthorizationPage> {
             key: const ValueKey('cms-quadrant-dropdown'),
             padding: const EdgeInsets.only(bottom: AppSpace.lg),
             child: DropdownButtonFormField<String>(
-              value: _cmsQuadrant,
+              initialValue: _cmsQuadrant,
               decoration: InputDecoration(
                 labelText: t('CMS Quadrant', 'CMS क्वाड्रेंट'),
               ),

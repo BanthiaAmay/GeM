@@ -78,7 +78,9 @@ class _NonBlacklistCertificatePageState
   }
 
   void _disposeEditors() {
-    for (final c in _editors ?? const <TextEditingController>[]) c.dispose();
+    for (final c in _editors ?? const <TextEditingController>[]) {
+      c.dispose();
+    }
     _editors = null;
   }
 

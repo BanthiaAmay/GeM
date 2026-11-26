@@ -177,7 +177,7 @@ class _ToolsHubState extends State<ToolsHub> {
       children: [
         // ── Section heading ──────────────────────────────────────
         for (final group in ToolGroup.values)
-          if (kTools.any((t) => t.group == group))
+          if (group != ToolGroup.analysis && kTools.any((t) => t.group == group))
             SectionHeader(s.t(group.titleEn, group.titleHi)),
 
         // ── Filter chips (horizontal scroll) ─────────────────────
