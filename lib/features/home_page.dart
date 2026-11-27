@@ -535,11 +535,7 @@ class _HomeDrawer extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.email_outlined, color: AppColors.brand),
-              title: const Text('Amay Banthia'),
-              subtitle: const Text(
-                'bid2scale@gmail.com',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
+              title: const Text('bid2scale@gmail.com'),
               onTap: () => openLink(
                 context,
                 s,
