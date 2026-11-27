@@ -868,6 +868,12 @@ class _ProfileTab extends StatelessWidget {
       ),
       (s.t('Sector', 'क्षेत्र'), field('sector')),
       (s.t('Role', 'भूमिका'), field('role')),
+      if ((s.gemIndustry ?? '').isNotEmpty)
+        (s.t('Industry', 'उद्योग'), s.gemIndustry!),
+      if ((s.gemCategoryName ?? '').isNotEmpty)
+        (s.t('GeM Category', 'GeM श्रेणी'), s.gemCategoryName!),
+      if ((s.gemCategoryQuadrant ?? '').isNotEmpty)
+        (s.t('Quadrant', 'क्वाड्रेंट'), s.gemCategoryQuadrant!),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
