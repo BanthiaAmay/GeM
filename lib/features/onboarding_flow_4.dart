@@ -203,8 +203,8 @@ class FlowVideoPage extends StatelessWidget {
               Expanded(
                 child: Text(
                   s.t(
-                    'This video guides you through creating your account on GeM.',
-                    'यह वीडियो GeM पर आपका खाता बनाने में आपकी मदद करता है।',
+                    'Step 1 of 2 — Watch this to create your GeM seller account. Complete both steps to start bidding.',
+                    'चरण 1 / 2 — यह वीडियो देखकर अपना GeM विक्रेता खाता बनाएं। बोली शुरू करने के लिए दोनों चरण पूरे करें।',
                   ),
                   style: AppText.bodySmall.copyWith(
                     color: AppColors.brand,
@@ -237,8 +237,8 @@ class FlowVideoPage extends StatelessWidget {
               Expanded(
                 child: Text(
                   s.t(
-                    'This video guides you through setting up your account for GeM bidding.',
-                    'यह वीडियो GeM बिडिंग के लिए आपका खाता सेट अप करने में आपकी मदद करता है।',
+                    'Step 2 of 2 — Watch this to set up your account details on GeM. Once done, you are ready to start bidding.',
+                    'चरण 2 / 2 — यह वीडियो देखकर GeM पर अपने खाते का विवरण सेट करें। पूरा होने पर, आप बोली लगाने के लिए तैयार हैं।',
                   ),
                   style: AppText.bodySmall.copyWith(
                     color: AppColors.brand,
