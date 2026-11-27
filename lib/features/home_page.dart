@@ -1355,7 +1355,7 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
                   child: Semantics(
                     header: true,
                     child: Text(
-                      s.t('Bid Alerts', 'बोली अलर्ट'),
+                      s.t('Bid Alerts for You', 'आपके लिए बोली अलर्ट'),
                       style: AppText.h3,
                     ),
                   ),
