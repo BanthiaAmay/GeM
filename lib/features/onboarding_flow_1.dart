@@ -148,8 +148,8 @@ class _FlowPhonePageState extends State<FlowPhonePage> {
       onBack: () => Navigator.of(context).pop(),
       headline: s.t('Your mobile number', 'आपका मोबाइल नंबर'),
       subtitle: s.t(
-        'Save your contact number. WhatsApp verification is not connected yet.',
-        'अपना संपर्क नंबर सहेजें। WhatsApp सत्यापन अभी जुड़ा नहीं है।',
+        'Saved to your business profile.',
+        'आपकी व्यवसाय प्रोफ़ाइल में सहेजा जाएगा।',
       ),
       continueLabel: s.t('Continue', 'जारी रखें'),
       onContinue: _valid
@@ -170,14 +170,6 @@ class _FlowPhonePageState extends State<FlowPhonePage> {
           hint: '12345 67890',
           keyboardType: TextInputType.phone,
           onChanged: (_) => setState(() {}),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          s.t(
-            'Your email verifies your app account. Saving this number does not verify WhatsApp ownership.',
-            'आपका ईमेल ऐप खाते को सत्यापित करता है। नंबर सहेजने से WhatsApp स्वामित्व सत्यापित नहीं होता।',
-          ),
-          style: AppText.secondary(AppText.bodySmall),
         ),
         const OnboardingArt('phone_shop', topGap: 28),
       ],

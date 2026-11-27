@@ -316,7 +316,6 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   Future<void> finishSignIn() async {
-    var contactSaved = true;
     if (signUp && normalizeWhatsapp(phone.text) != null) {
       final number = normalizeWhatsapp(phone.text)!;
       s.setProfile('mobile', number.substring(3));
@@ -326,20 +325,14 @@ class _AccountPageState extends State<AccountPage> {
         await saveContact();
       } catch (_) {
         // Email authentication is complete even if alert setup is unavailable.
-        contactSaved = false;
       }
     }
     if (mounted) {
       setState(() {
-        notice = contactSaved
-            ? s.t(
-                'Signed in. Your saved work is now connected to this account.',
-                'साइन इन हो गया। आपका सहेजा काम अब इस खाते से जुड़ा है।',
-              )
-            : s.t(
-                'Signed in. You can finish WhatsApp alert setup in Updates.',
-                'साइन इन हो गया। WhatsApp अलर्ट सेटअप सूचनाओं में पूरा कर सकते हैं।',
-              );
+        notice = s.t(
+          'Signed in. Your saved work is now connected to this account.',
+          'साइन इन हो गया। आपका सहेजा काम अब इस खाते से जुड़ा है।',
+        );
       });
     }
   }
@@ -721,9 +714,7 @@ class _AccountPageState extends State<AccountPage> {
                   ContactFields(
                     store: s,
                     phone: phone,
-                    optedIn: whatsapp,
                     enabled: !busy,
-                    onOptIn: (v) => setState(() => whatsapp = v),
                   ),
                 ],
               ],

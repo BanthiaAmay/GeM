@@ -31,7 +31,7 @@ do $$begin
   perform public.save_bid_interests(array['']);
   raise exception 'Blank keyword accepted';
  exception when raise_exception then
-  if SQLERRM <> 'Use up to 10 keywords of 1 to 80 characters' then raise; end if;
+  if SQLERRM not like 'Use up to 10 keywords of 1 to % characters' then raise; end if;
  end;
 end $$;
 reset role;

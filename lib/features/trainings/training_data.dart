@@ -157,12 +157,12 @@ const kTrainingModules = <TrainingModule>[
         optionsEn: [
           'Any registration agent',
           'The official GeM portal only',
-          'A WhatsApp group',
+          'A social media group',
         ],
         optionsHi: [
           'कोई भी पंजीकरण एजेंट',
           'केवल आधिकारिक GeM पोर्टल',
-          'WhatsApp समूह',
+          'सोशल मीडिया समूह',
         ],
         correctIndex: 1,
       ),

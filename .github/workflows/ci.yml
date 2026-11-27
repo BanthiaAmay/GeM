@@ -83,6 +83,16 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bid_valuations.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202611180001_saved_bids_and_analytics.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/saved_bids_and_analytics.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202611270001_prune_stale_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/prune_stale_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202611270002_alert_matching.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/alert_matching.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/keyword_stopwords.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bid_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/push_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/email_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/prune_stale_alerts.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/saved_bids_and_analytics.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/saathi.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/account_deletion.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bid_retention.sql

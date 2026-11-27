@@ -22,6 +22,13 @@ class PushService implements PushBridge {
   String? _registered;
   RemoteMessage? _launch;
 
+  /// The last FID Firebase gave this install. Kept on the phone because
+  /// onRegistered is a broadcast stream: an FID announced before sign-in (or
+  /// before we listened) would otherwise never reach the server, and the
+  /// seller would get no notifications at all.
+  static const _fidKey = 'saathi.push.fid';
+  String? get _savedFid => store.prefs.getString(_fidKey);
+
   FirebaseMessaging get _messaging => FirebaseMessaging.instance;
 
   @override
@@ -36,22 +43,26 @@ class PushService implements PushBridge {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-      _launch = await _messaging.getInitialMessage();
     } catch (_) {
       return; // Not configured: the in-app inbox still works.
     }
-    _ready = true;
-    FirebaseMessaging.onMessage.listen((m) => onForeground?.call(m));
-    FirebaseMessaging.onMessageOpenedApp.listen((m) => onOpened?.call(m));
     // FCM identifies this install by its Firebase Installation ID (FID); it
-    // arrives here after register() and whenever it changes.
+    // arrives here after register() and whenever it changes. Listen before
+    // anything else so an early announcement is not missed.
     _messaging.onRegistered.listen((fid) async {
+      await store.prefs.setString(_fidKey, fid);
       try {
         await _register(fid);
       } catch (_) {
         // Retried on the next launch or sign-in.
       }
     });
+    try {
+      _launch = await _messaging.getInitialMessage();
+    } catch (_) {}
+    _ready = true;
+    FirebaseMessaging.onMessage.listen((m) => onForeground?.call(m));
+    FirebaseMessaging.onMessageOpenedApp.listen((m) => onOpened?.call(m));
   }
 
   /// Every alert opens the inbox; the payload never chooses a route.
@@ -92,6 +103,7 @@ class PushService implements PushBridge {
     final fid = _registered;
     _registered = null;
     if (fid != null) await store.unregisterPushDevice(fid);
+    await store.prefs.remove(_fidKey);
     // Retires this FID, so the next account on the device gets a fresh one
     // and the server drops any copy it still holds on the next send.
     await _messaging.unregister();
@@ -113,6 +125,10 @@ class PushService implements PushBridge {
       }
     }
     await _messaging.register(); // onRegistered delivers the FID.
+    // Firebase may not announce an FID it already gave this install: send
+    // the remembered one so the server always has this phone.
+    final saved = _savedFid;
+    if (_registered == null && saved != null) await _register(saved);
   }
 
   Future<void> _register(String fid) async {

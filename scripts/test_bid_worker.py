@@ -241,3 +241,52 @@ class StorageTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class FcmTargetTest(unittest.TestCase):
+    """Pushes go to the app's Firebase Installation ID through `fid`."""
+
+    def sender(self, responses):
+        import io as _io
+        from urllib.error import HTTPError as _HTTPError
+        from bid_worker import FcmSender
+        bodies = []
+
+        def urlopen(request, timeout):
+            bodies.append(json.loads(request.data))
+            status, payload = responses.pop(0)
+            if status != 200:
+                raise _HTTPError(request.full_url, status, 'error', {}, _io.BytesIO(payload.encode()))
+
+            class Response(_io.BytesIO):
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *exc):
+                    return False
+            return Response(payload.encode())
+
+        sender = FcmSender.__new__(FcmSender)
+        sender._credentials = type('Creds', (), {'valid': True, 'token': 't'})()
+        sender.endpoint = 'https://fcm.googleapis.com/v1/projects/p/messages:send'
+        sender.urlopen = urlopen
+        return sender, bodies
+
+    def tearDown(self):
+        from bid_worker import FcmSender
+        FcmSender.target_field = 'fid'
+
+    def test_sends_to_the_fid_target(self):
+        sender, bodies = self.sender([(200, '{"name": "projects/p/messages/1"}')])
+        message = {'title': 'T', 'body': 'B', 'data': {'route': '/alerts'}}
+        self.assertEqual(sender.send('FID123', message), ('sent', 'projects/p/messages/1'))
+        self.assertEqual(bodies[0]['message']['fid'], 'FID123')
+        self.assertNotIn('token', bodies[0]['message'])
+
+    def test_falls_back_to_token_once_if_fid_is_refused(self):
+        refused = '{"error": {"message": "Invalid JSON payload received. Unknown name \\"fid\\""}}'
+        sender, bodies = self.sender([(400, refused), (200, '{"name": "m1"}'), (200, '{"name": "m2"}')])
+        message = {'title': 'T', 'body': 'B', 'data': {}}
+        self.assertEqual(sender.send('FID1', message)[0], 'sent')
+        self.assertEqual(sender.send('FID2', message)[0], 'sent')
+        self.assertEqual([list(b['message'])[0] for b in bodies], ['fid', 'token', 'token'])

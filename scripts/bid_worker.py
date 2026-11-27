@@ -342,6 +342,10 @@ def push(db, make_sender, *, now, min_gap_minutes=60, respect_quiet_hours=True, 
     return delivered
 
 
+_SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+_LOGO = 'https://banthiaamay.github.io/GeM/assets/bid2scale-logo-mark.png'
+
+
 def build_email(jobs, language):
     """One digest email (subject, html, text) listing every bid in `jobs`."""
     one, many, closes, more, *_ = PUSH_TEXT.get(language, PUSH_TEXT['en'])
@@ -355,25 +359,34 @@ def build_email(jobs, language):
         details = job.get('details') or {}
         needs = ', '.join(details.get('documents_required') or [])[:200]
         rows.append(
-            '<tr><td style="padding:16px 0;border-bottom:1px solid #E1E5E2">'
-            f'<div style="font:12px sans-serif;color:#5F6873">{html.escape(job["source_id"])}</div>'
-            f'<div style="font:bold 16px sans-serif;color:#151515;margin:4px 0">{html.escape(_short(job["title"], 160))}</div>'
-            f'<div style="font:14px sans-serif;color:#5F6873">{html.escape(where)}</div>'
-            f'<div style="font:bold 14px sans-serif;color:#151515;margin-top:4px">{html.escape(closes.format(date=deadline))}</div>'
-            + (f'<div style="font:13px sans-serif;color:#5F6873;margin-top:4px">{html.escape(needs)}</div>' if needs else '')
-            + f'<a href="{html.escape(job["source_url"])}" style="display:inline-block;margin-top:8px;'
-            f'font:bold 14px sans-serif;color:#22654C">{html.escape(view)} →</a></td></tr>')
+            '<tr><td style="padding:18px 0;border-top:1px solid #E1E5E2">'
+            f'<div style="font:12px {_SANS};color:#5F6873">{html.escape(job["source_id"])}</div>'
+            f'<div style="font:700 16px/1.35 {_SANS};color:#151515;margin:4px 0">{html.escape(_short(job["title"], 160))}</div>'
+            + (f'<div style="font:14px/1.5 {_SANS};color:#5F6873">{html.escape(where)}</div>' if where else '')
+            + f'<div style="font:600 14px {_SANS};color:#151515;margin-top:6px">{html.escape(closes.format(date=deadline))}</div>'
+            + (f'<div style="font:13px/1.5 {_SANS};color:#5F6873;margin-top:4px">{html.escape(needs)}</div>' if needs else '')
+            + f'<a href="{html.escape(job["source_url"])}" style="display:inline-block;margin-top:10px;padding:9px 18px;'
+            f'border-radius:999px;background:#151515;color:#FFFFFF;text-decoration:none;font:600 14px {_SANS}">'
+            f'{html.escape(view)} →</a></td></tr>')
         lines += [job['source_id'], _short(job['title'], 160), where, closes.format(date=deadline),
                   job['source_url'], '']
     # The digest lists the 30 soonest-closing bids; the rest are in the app.
     hidden = more.format(n=len(jobs) - 30) if len(jobs) > 30 else ''
-    body = ('<div style="max-width:560px;margin:0 auto;padding:24px">'
-            f'<h2 style="font:bold 22px sans-serif;color:#151515">{html.escape(subject)}</h2>'
-            f'<p style="font:15px sans-serif;color:#5F6873">{html.escape(intro)}</p>'
-            f'<table width="100%" cellspacing="0" cellpadding="0">{"".join(rows)}</table>'
-            + (f'<p style="font:bold 15px sans-serif;color:#22654C;margin-top:16px">'
-               f'{html.escape(hidden)} · Bid2Scale</p>' if hidden else '')
-            + f'<p style="font:12px sans-serif;color:#8A9199;margin-top:24px">{html.escape(footer)}</p></div>')
+    # Same look as the app and the sign-in emails (supabase/templates).
+    body = (
+        f'<div style="margin:0;padding:32px 16px;background:#F6F7F5">'
+        f'<div style="max-width:560px;margin:0 auto">'
+        f'<div style="padding:0 8px 20px"><img src="{_LOGO}" width="36" height="36" alt="Bid2Scale" '
+        f'style="vertical-align:middle;border:0;border-radius:9px"> '
+        f'<span style="vertical-align:middle;margin-left:8px;font:18px {_SANS};color:#151515">Bid<b>2Scale</b></span></div>'
+        f'<div style="background:#FFFFFF;border:1px solid #E1E5E2;border-radius:16px;padding:32px 32px 16px">'
+        f'<h1 style="margin:0;font:800 26px/1.2 {_SANS};color:#151515">{html.escape(subject)}</h1>'
+        f'<p style="margin:12px 0 20px;font:15px/1.6 {_SANS};color:#3A3F45">{html.escape(intro)}</p>'
+        f'<table width="100%" cellspacing="0" cellpadding="0">{"".join(rows)}</table>'
+        + (f'<p style="font:600 15px {_SANS};color:#22654C;margin:16px 0 0">{html.escape(hidden)} · Bid2Scale</p>'
+           if hidden else '')
+        + f'</div><p style="margin:24px 8px 0;text-align:center;font:12px/1.6 {_SANS};color:#5F6873">'
+        f'{html.escape(footer)}<br>Bid2Scale · Ready to bid. Ready to grow.</p></div></div>')
     return {'subject': subject, 'html': body, 'text': '\n'.join(lines + ([hidden, ''] if hidden else []) + [footer])}
 
 
@@ -562,14 +575,24 @@ class FcmSender:
         self.endpoint = f'https://fcm.googleapis.com/v1/projects/{info["project_id"]}/messages:send'
         self.urlopen = urlopen
 
+    # The app registers Firebase Installation IDs (FIDs). FCM's documented
+    # target for them is `fid`; `token` is deprecated and accepts FIDs only
+    # during FCM's migration, so it is the fallback if `fid` is refused.
+    target_field = 'fid'
+
     def send(self, token, message):
         if not self._credentials.valid:
             self._credentials.refresh(self._auth_request)
-        # The app registers Firebase Installation IDs (FIDs). FCM accepts them in
-        # `token` during its migration; switch to the `fid` target once FCM
-        # retires `token`.
+        status, detail = self._post(self.target_field, token, message)
+        if status == 'failed' and detail.startswith('FCM 400') and self.target_field == 'fid':
+            # This FCM project does not know `fid` yet: use `token` from now on.
+            FcmSender.target_field = 'token'
+            status, detail = self._post('token', token, message)
+        return status, detail
+
+    def _post(self, field, token, message):
         body = {'message': {
-            'token': token,
+            field: token,
             'notification': {'title': message['title'], 'body': message['body']},
             'data': message['data'],
             'android': {'priority': 'high'},

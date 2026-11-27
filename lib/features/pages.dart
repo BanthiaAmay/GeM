@@ -736,14 +736,6 @@ class ReportPage extends StatelessWidget {
               label: Text(s.t('Download / share', 'डाउनलोड / साझा करें')),
             ),
             OutlinedButton(
-              onPressed: () => openLink(
-                context,
-                s,
-                'https://wa.me/?text=${Uri.encodeComponent(s.report())}',
-              ),
-              child: Text(s.t('WhatsApp', 'व्हाट्सऐप')),
-            ),
-            OutlinedButton(
               onPressed: () => go(context, s, 'account'),
               child: Text(s.t('Save online', 'ऑनलाइन सहेजें')),
             ),
