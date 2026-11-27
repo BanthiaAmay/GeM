@@ -1524,7 +1524,7 @@ class AppStore extends ChangeNotifier {
       'gemIndustry': industry,
       'gemCategoryName': categoryName,
       'gemCategoryLink': categoryLink,
-      if (quadrant != null) 'gemCategoryQuadrant': quadrant,
+      'gemCategoryQuadrant': ?quadrant,
     };
     save();
     if (!signedIn || client == null) return;
