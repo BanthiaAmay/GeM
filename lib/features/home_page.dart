@@ -2166,60 +2166,65 @@ class _ActiveBidsCardState extends State<_ActiveBidsCard> {
 
   @override
   Widget build(BuildContext context) {
-    final count = widget.store.gemActiveBids;
     final dim = AppColors.surface.withValues(alpha: 0.72);
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.14),
-        borderRadius: AppRadius.card,
-        border: Border.all(color: AppColors.surface.withValues(alpha: 0.2)),
-      ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpace.md,
-        vertical: AppSpace.lg,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  count != null ? count.toString() : '—',
-                  style: AppText.h2.copyWith(color: AppColors.surface),
-                ),
-                const SizedBox(height: AppSpace.xs),
-                Text(
-                  widget.store.t(
-                    'Active bids on GeM',
-                    'GeM पर सक्रिय बोलियाँ',
-                  ),
-                  style: AppText.overline.copyWith(color: dim),
-                ),
-              ],
-            ),
+    return ListenableBuilder(
+      listenable: widget.store,
+      builder: (context, _) {
+        final count = widget.store.gemActiveBids;
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.14),
+            borderRadius: AppRadius.card,
+            border: Border.all(color: AppColors.surface.withValues(alpha: 0.2)),
           ),
-          GestureDetector(
-            onTap: _refresh,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.only(left: AppSpace.sm),
-              child: _refreshing
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 1.5,
-                        color: dim,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.md,
+            vertical: AppSpace.lg,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      count != null ? count.toString() : '—',
+                      style: AppText.h2.copyWith(color: AppColors.surface),
+                    ),
+                    const SizedBox(height: AppSpace.xs),
+                    Text(
+                      widget.store.t(
+                        'Active bids on GeM',
+                        'GeM पर सक्रिय बोलियाँ',
                       ),
-                    )
-                  : Icon(Icons.refresh_rounded, size: 16, color: dim),
-            ),
+                      style: AppText.overline.copyWith(color: dim),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: _refresh,
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: AppSpace.sm),
+                  child: _refreshing
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            color: dim,
+                          ),
+                        )
+                      : Icon(Icons.refresh_rounded, size: 16, color: dim),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
