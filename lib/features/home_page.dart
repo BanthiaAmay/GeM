@@ -524,6 +524,28 @@ class _HomeDrawer extends StatelessWidget {
                 _confirmStartOver(context, s);
               },
             ),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.lg, vertical: AppSpace.sm),
+              child: Text(
+                s.t('Contact Us', 'संपर्क करें'),
+                style: AppText.overline.copyWith(color: AppColors.textSecondary),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.email_outlined, color: AppColors.brand),
+              title: const Text('Amay Banthia'),
+              subtitle: const Text(
+                'bid2scale@gmail.com',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+              onTap: () => openLink(
+                context,
+                s,
+                'mailto:bid2scale@gmail.com',
+              ),
+            ),
           ],
         ),
       ),
