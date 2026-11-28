@@ -555,6 +555,28 @@ class _MsmeTurnoverPageState extends State<MsmeTurnoverPage> {
             style: AppText.caption,
           ),
         ),
+        const SizedBox(height: AppSpace.sm),
+        AppCard(
+          tone: AppCardTone.muted,
+          padding: const EdgeInsets.all(AppSpace.md),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.warning_amber_rounded,
+                  size: 16, color: AppColors.warning),
+              const SizedBox(width: AppSpace.sm),
+              Expanded(
+                child: Text(
+                  t(
+                    'Experience Certificate Disclaimer: Experience certificates must meet the specific bid requirements. Where government/PSU experience is explicitly required, certificates from private companies or MNCs alone may not be accepted. Always verify the bid\'s Past Experience Criteria before applying.',
+                    'अनुभव प्रमाणपत्र अस्वीकरण: अनुभव प्रमाणपत्र बोली की विशिष्ट आवश्यकताओं को पूरा करना चाहिए। जहाँ सरकार/PSU अनुभव अनिवार्य हो, निजी कंपनी या MNC के प्रमाणपत्र अकेले मान्य नहीं हो सकते। आवेदन से पहले बोली की पिछले अनुभव की शर्तें सत्यापित करें।',
+                  ),
+                  style: AppText.caption,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

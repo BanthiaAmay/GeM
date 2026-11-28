@@ -184,10 +184,74 @@ class FlowVideoPage extends StatelessWidget {
       children: [
         Text(s.t('VIDEO GUIDE', 'वीडियो गाइड'), style: AppText.overline),
         const SizedBox(height: 12),
-        for (final id in _gemVideoIds) ...[
-          YouTubeVideoCard(videoId: id, store: s),
-          const SizedBox(height: 10),
-        ],
+        // Video 1 caption
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpace.md, vertical: AppSpace.sm + 2),
+          decoration: BoxDecoration(
+            color: AppColors.brandTint,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: AppColors.brand, width: 1.2),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.play_circle_outline_rounded,
+                  color: AppColors.brand, size: 18),
+              const SizedBox(width: AppSpace.sm),
+              Expanded(
+                child: Text(
+                  s.t(
+                    'Step 1 of 2 — Watch this to create your GeM seller account. Complete both steps to start bidding.',
+                    'चरण 1 / 2 — यह वीडियो देखकर अपना GeM विक्रेता खाता बनाएं। बोली शुरू करने के लिए दोनों चरण पूरे करें।',
+                  ),
+                  style: AppText.bodySmall.copyWith(
+                    color: AppColors.brand,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpace.sm),
+        YouTubeVideoCard(videoId: _gemVideoIds[0], store: s),
+        const SizedBox(height: AppSpace.lg),
+        // Video 2 caption
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpace.md, vertical: AppSpace.sm + 2),
+          decoration: BoxDecoration(
+            color: AppColors.brandTint,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: AppColors.brand, width: 1.2),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.play_circle_outline_rounded,
+                  color: AppColors.brand, size: 18),
+              const SizedBox(width: AppSpace.sm),
+              Expanded(
+                child: Text(
+                  s.t(
+                    'Step 2 of 2 — Watch this to set up your account details on GeM. Once done, you are ready to start bidding.',
+                    'चरण 2 / 2 — यह वीडियो देखकर GeM पर अपने खाते का विवरण सेट करें। पूरा होने पर, आप बोली लगाने के लिए तैयार हैं।',
+                  ),
+                  style: AppText.bodySmall.copyWith(
+                    color: AppColors.brand,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpace.sm),
+        YouTubeVideoCard(videoId: _gemVideoIds[1], store: s),
+        const SizedBox(height: 10),
         YouTubeSourceNote(store: s),
         const SizedBox(height: 28),
         Text(

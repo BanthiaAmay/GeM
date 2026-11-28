@@ -25,9 +25,52 @@ class _BidFeedState extends State<BidFeed> {
   List<Map<String, dynamic>> bids = [];
   bool loading = true;
   String? error;
-  late _FeedView view = widget.store.bidKeywords.isEmpty
-      ? _FeedView.latest
-      : _FeedView.matching;
+  late _FeedView view = _hasPersonalProfile(widget.store)
+      ? _FeedView.matching
+      : _FeedView.latest;
+
+  static bool _hasPersonalProfile(AppStore s) =>
+      (s.gemCategoryName ?? '').isNotEmpty || (s.gemIndustry ?? '').isNotEmpty;
+
+  // Splits a name into meaningful lowercase tokens (≥3 chars, no stop words).
+  static List<String> _tokens(String s) {
+    const stop = {
+      'and', 'of', 'for', 'the', 'in', 'at', 'to', 'a', 'an', 'or', 'by',
+      'on', 'as', 'is', 'are', 'with', 'from', 'its', 'this', 'that', 'per',
+    };
+    return s
+        .toLowerCase()
+        .split(RegExp(r'[^a-z0-9]+'))
+        .where((w) => w.length >= 3 && !stop.contains(w))
+        .toList();
+  }
+
+  // Bids whose title matches the user's GeM category.
+  List<Map<String, dynamic>> get _categoryBids {
+    final cat = widget.store.gemCategoryName ?? '';
+    if (cat.isEmpty) return [];
+    final catLower = cat.toLowerCase();
+    final tokens = _tokens(cat);
+    return bids.where((bid) {
+      final title = (bid['title'] as String? ?? '').toLowerCase();
+      if (title.contains(catLower)) return true;
+      final hits = tokens.where(title.contains).length;
+      return hits >= (tokens.length >= 3 ? 2 : 1);
+    }).toList();
+  }
+
+  // Bids whose title matches the user's industry (excluding category matches).
+  List<Map<String, dynamic>> get _industryBids {
+    final industry = widget.store.gemIndustry ?? '';
+    if (industry.isEmpty) return [];
+    final tokens = _tokens(industry);
+    final catIds = _categoryBids.map((b) => b['source_id']).toSet();
+    return bids.where((bid) {
+      if (catIds.contains(bid['source_id'])) return false;
+      final title = (bid['title'] as String? ?? '').toLowerCase();
+      return tokens.any(title.contains);
+    }).toList();
+  }
 
   // Independent filter states per tab
   BidFilterState _forYouFilter = BidFilterState.empty;
@@ -84,33 +127,16 @@ class _BidFeedState extends State<BidFeed> {
     });
     try {
       List<dynamic> result;
-      if (view == _FeedView.matching &&
-          s.signedIn &&
-          s.bidKeywords.isNotEmpty) {
-        try {
-          result =
-              await s.client!.rpc('my_matching_bids', params: {'p_limit': 50})
-                  as List<dynamic>;
-        } catch (_) {
-          // RPC failed — fall back to latest bids silently.
-          if (mounted) setState(() => view = _FeedView.latest);
-          result = await s.client!
-              .from('gem_bids')
-              .select()
-              .eq('published', true)
-              .gt('closes_at', DateTime.now().toUtc().toIso8601String())
-              .order('starts_at', ascending: false, nullsFirst: false)
-              .limit(50);
-        }
-      } else {
-        result = await s.client!
-            .from('gem_bids')
-            .select()
-            .eq('published', true)
-            .gt('closes_at', DateTime.now().toUtc().toIso8601String())
-            .order('starts_at', ascending: false, nullsFirst: false)
-            .limit(50);
-      }
+      // For "For you": fetch a larger pool so the client-side category/industry
+      // filter has enough bids to work with. For "Latest": standard 50.
+      final limit = view == _FeedView.matching ? 200 : 50;
+      result = await s.client!
+          .from('gem_bids')
+          .select()
+          .eq('published', true)
+          .gt('closes_at', DateTime.now().toUtc().toIso8601String())
+          .order('starts_at', ascending: false, nullsFirst: false)
+          .limit(limit);
       if (mounted) {
         setState(
           () => bids = [
@@ -143,28 +169,95 @@ class _BidFeedState extends State<BidFeed> {
         ),
       );
     }
-    if (s.bidKeywords.isEmpty) {
+    if (!_hasPersonalProfile(s)) {
       return StateView(
         kind: StateKind.empty,
-        title: s.t('Tell us what you sell', 'बताएँ आप क्या बेचते हैं'),
+        title: s.t('Complete your profile', 'अपनी प्रोफ़ाइल पूरी करें'),
         message: s.t(
-          'Add products or services to see bids that match your business.',
-          'अपने व्यवसाय से मेल खाती बोलियाँ देखने के लिए उत्पाद या सेवाएँ जोड़ें।',
+          'Set your GeM category and industry during sign-up to see bids matched to your business.',
+          'अपने व्यवसाय से मेल खाती बोलियाँ देखने के लिए साइन-अप में GeM श्रेणी और उद्योग चुनें।',
         ),
-        actionLabel: s.t('Set my alerts', 'मेरे अलर्ट चुनें'),
-        onAction: () => Navigator.pushNamed(context, '/alerts'),
       );
     }
     return StateView(
       kind: StateKind.empty,
-      title: s.t(
-        'No matching open bids yet',
-        'अभी कोई मेल खाती खुली बोली नहीं',
-      ),
+      title: s.t('No matching open bids yet', 'अभी कोई मेल खाती खुली बोली नहीं'),
       message: s.t(
-        "New GeM bids are checked through the day. You'll be notified when one matches.",
-        'नई GeM बोलियाँ दिन भर देखी जाती हैं। मेल खाने पर आपको सूचना मिलेगी।',
+        'No live bids matched your category or industry in the latest 200 bids. Try again later.',
+        'नवीनतम 200 बोलियों में आपकी श्रेणी या उद्योग से कोई मेल नहीं मिला। बाद में पुनः प्रयास करें।',
       ),
+    );
+  }
+
+  // Renders a labeled section of bid cards for the "For you" tab.
+  Widget _bidSection(
+    AppStore s,
+    String label,
+    String labelHi,
+    List<Map<String, dynamic>> items,
+  ) {
+    if (items.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpace.sm, vertical: AppSpace.xs + 2),
+          decoration: BoxDecoration(
+            color: AppColors.brandTint,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
+          child: Text(
+            s.t(label, labelHi),
+            style: AppText.overline.copyWith(color: AppColors.brand),
+          ),
+        ),
+        const SizedBox(height: AppSpace.sm),
+        for (final (i, bid) in items.indexed)
+          StaggeredEntrance(
+            key: ValueKey('fy-${bid['source_id'] ?? i}'),
+            index: i.clamp(0, 8),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: AppSpace.lg),
+              child: _BidCard(store: s, bid: bid),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildForYouContent(AppStore s) {
+    final catBids = _categoryBids;
+    final indBids = _industryBids;
+    final cat = s.gemCategoryName ?? '';
+    final industry = s.gemIndustry ?? '';
+
+    if (catBids.isEmpty && indBids.isEmpty) {
+      return _empty(s);
+    }
+
+    return Column(
+      key: const ValueKey('for-you-inner'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (catBids.isNotEmpty)
+          _bidSection(
+            s,
+            cat.isNotEmpty ? '$cat Bids' : 'Category Bids',
+            cat.isNotEmpty ? '$cat बोलियाँ' : 'श्रेणी बोलियाँ',
+            catBids,
+          ),
+        if (catBids.isNotEmpty && indBids.isNotEmpty)
+          const SizedBox(height: AppSpace.lg),
+        if (indBids.isNotEmpty)
+          _bidSection(
+            s,
+            industry.isNotEmpty ? '$industry Bids' : 'Industry Bids',
+            industry.isNotEmpty ? '$industry बोलियाँ' : 'उद्योग बोलियाँ',
+            indBids,
+          ),
+      ],
     );
   }
 
@@ -192,6 +285,9 @@ class _BidFeedState extends State<BidFeed> {
     } else if (bids.isEmpty) {
       stateKey = 'empty';
       body = _empty(s);
+    } else if (view == _FeedView.matching) {
+      stateKey = 'for-you';
+      body = _buildForYouContent(s);
     } else {
       stateKey = 'content';
       body = Column(
@@ -691,6 +787,28 @@ class _BidCard extends StatelessWidget {
                   label: s.t('Experience', 'अनुभव'),
                   value: experience,
                   fullWidth: true,
+                ),
+                const SizedBox(height: AppSpace.sm),
+                AppCard(
+                  tone: AppCardTone.muted,
+                  padding: const EdgeInsets.all(AppSpace.sm),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.warning_amber_rounded,
+                          size: 15, color: AppColors.warning),
+                      const SizedBox(width: AppSpace.xs),
+                      Expanded(
+                        child: Text(
+                          s.t(
+                            'Experience Certificate Disclaimer: Experience certificates must meet the specific bid requirements. Where government/PSU experience is explicitly required, certificates from private companies or MNCs alone may not be accepted. Always verify the bid\'s Past Experience Criteria before applying.',
+                            'अनुभव प्रमाणपत्र अस्वीकरण: अनुभव प्रमाणपत्र बोली की विशिष्ट आवश्यकताओं को पूरा करना चाहिए। जहाँ सरकार/PSU अनुभव अनिवार्य हो, निजी कंपनी या MNC के प्रमाणपत्र अकेले मान्य नहीं हो सकते। आवेदन से पहले बोली की पिछले अनुभव की शर्तें सत्यापित करें।',
+                          ),
+                          style: AppText.caption,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
 

@@ -229,7 +229,7 @@ class SearchEngine {
     }
   }
 
-  // ── Ask-BizReady detection ────────────────────────────────────────────────
+  // ── Ask-Bid2Scale detection ────────────────────────────────────────────────
 
   /// True if the query looks like a question rather than a search.
   static bool isQuestion(String query) {

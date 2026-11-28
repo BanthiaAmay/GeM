@@ -14,6 +14,7 @@ import 'search/search_store.dart';
 import 'tools_hub/tool_card.dart';
 import 'glass.dart';
 import 'onboarding_flow_4.dart' show gemRegistrationUrl;
+import 'quadrant_popup.dart';
 import 'onboarding_widgets.dart' show StaggeredEntrance;
 import 'scroll_hint.dart';
 import 'widgets.dart';
@@ -116,6 +117,11 @@ class _HomePageState extends State<HomePage>
     );
     _initAlerts();
     unawaited(widget.store.loadGemVideos());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(showQuadrantPopupIfNeeded(context, widget.store));
+      }
+    });
   }
 
   @override
@@ -518,11 +524,313 @@ class _HomeDrawer extends StatelessWidget {
                 _confirmStartOver(context, s);
               },
             ),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.lg, vertical: AppSpace.sm),
+              child: Text(
+                s.t('Contact Us', 'संपर्क करें'),
+                style: AppText.overline.copyWith(color: AppColors.textSecondary),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.email_outlined, color: AppColors.brand),
+              title: const Text('bid2scale@gmail.com'),
+              onTap: () => openLink(
+                context,
+                s,
+                'mailto:bid2scale@gmail.com',
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.star_outline_rounded, color: AppColors.brand),
+              title: Text(s.t('Share a Testimonial', 'प्रशंसापत्र दें')),
+              onTap: () {
+                Navigator.of(context).pop();
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => _TestimonialSheet(store: s),
+                );
+              },
+            ),
           ],
         ),
       ),
     );
   }
+}
+
+// ── Testimonial bottom sheet ──────────────────────────────────────────────────
+
+class _TestimonialSheet extends StatefulWidget {
+  final AppStore store;
+  const _TestimonialSheet({required this.store});
+
+  @override
+  State<_TestimonialSheet> createState() => _TestimonialSheetState();
+}
+
+class _TestimonialSheetState extends State<_TestimonialSheet> {
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _msgCtrl = TextEditingController();
+  int _stars = 0;
+  bool _sending = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final s = widget.store;
+    _nameCtrl.text = (s.profile['fullName'] as String? ?? '').trim();
+    _emailCtrl.text = (s.profile['email'] as String? ?? '').trim();
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    _msgCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final s = widget.store;
+    final name = _nameCtrl.text.trim();
+    final email = _emailCtrl.text.trim();
+    final msg = _msgCtrl.text.trim();
+
+    if (name.isEmpty || email.isEmpty || msg.isEmpty || _stars == 0) {
+      setState(() => _error = s.t(
+            'Please fill in all fields and select a star rating.',
+            'कृपया सभी फ़ील्ड भरें और स्टार रेटिंग चुनें।',
+          ));
+      return;
+    }
+
+    setState(() {
+      _sending = true;
+      _error = null;
+    });
+
+    final stars = '${'★' * _stars}${'☆' * (5 - _stars)}';
+    final subject = Uri.encodeComponent(
+      'Bid2Scale Testimonial — $stars — $name',
+    );
+    final body = Uri.encodeComponent(
+      'Name: $name\nEmail: $email\nRating: $stars\n\nTestimonial:\n$msg',
+    );
+    final uri = Uri.parse(
+      'mailto:bid2scale@gmail.com?subject=$subject&body=$body',
+    );
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (mounted) Navigator.of(context).pop();
+      } else {
+        setState(() => _error = s.t(
+              'Could not open your mail app. Please email bid2scale@gmail.com directly.',
+              'मेल ऐप नहीं खुला। कृपया bid2scale@gmail.com पर सीधे ईमेल करें।',
+            ));
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.store;
+    final insets = MediaQuery.viewInsetsOf(context);
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+          AppSpace.xxl, AppSpace.lg, AppSpace.xxl, AppSpace.xxl + insets.bottom),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpace.lg),
+            Text(
+              s.t('Share a Testimonial', 'प्रशंसापत्र दें'),
+              style: AppText.h2,
+            ),
+            const SizedBox(height: AppSpace.xs),
+            Text(
+              s.t(
+                'Tell us how Bid2Scale helped your business.',
+                'बताएँ Bid2Scale ने आपके व्यवसाय में कैसे मदद की।',
+              ),
+              style: AppText.caption.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: AppSpace.xl),
+
+            // Star rating
+            Text(
+              s.t('Your rating', 'आपकी रेटिंग'),
+              style: AppText.bodySmall.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpace.sm),
+            Row(
+              children: List.generate(5, (i) {
+                final filled = i < _stars;
+                return GestureDetector(
+                  onTap: () => setState(() => _stars = i + 1),
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: AppSpace.sm),
+                    child: Icon(
+                      filled ? Icons.star_rounded : Icons.star_outline_rounded,
+                      size: 36,
+                      color: filled ? AppColors.warning : AppColors.textHint,
+                    ),
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: AppSpace.xl),
+
+            // Name field
+            Text(
+              s.t('Your name', 'आपका नाम'),
+              style: AppText.bodySmall.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpace.xs),
+            TextField(
+              controller: _nameCtrl,
+              textCapitalization: TextCapitalization.words,
+              style: AppText.body,
+              decoration: _inputDecoration(s.t('Full name', 'पूरा नाम')),
+            ),
+            const SizedBox(height: AppSpace.md),
+
+            // Email field
+            Text(
+              s.t('Your email', 'आपका ईमेल'),
+              style: AppText.bodySmall.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpace.xs),
+            TextField(
+              controller: _emailCtrl,
+              keyboardType: TextInputType.emailAddress,
+              style: AppText.body,
+              decoration:
+                  _inputDecoration(s.t('Email address', 'ईमेल पता')),
+            ),
+            const SizedBox(height: AppSpace.md),
+
+            // Testimonial box
+            Text(
+              s.t('Your testimonial', 'आपका प्रशंसापत्र'),
+              style: AppText.bodySmall.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpace.xs),
+            TextField(
+              controller: _msgCtrl,
+              maxLines: 5,
+              style: AppText.body,
+              decoration: _inputDecoration(
+                s.t(
+                  'Share your experience with Bid2Scale…',
+                  'Bid2Scale के साथ अपना अनुभव साझा करें…',
+                ),
+              ),
+            ),
+
+            if (_error != null) ...[
+              const SizedBox(height: AppSpace.sm),
+              Text(
+                _error!,
+                style: AppText.caption.copyWith(color: AppColors.danger),
+              ),
+            ],
+
+            const SizedBox(height: AppSpace.xl),
+
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.brand,
+                  foregroundColor: AppColors.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpace.md),
+                ),
+                onPressed: _sending ? null : _submit,
+                child: _sending
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.surface,
+                        ),
+                      )
+                    : Text(
+                        s.t('Send testimonial', 'प्रशंसापत्र भेजें'),
+                        style: AppText.button,
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint) => InputDecoration(
+        hintText: hint,
+        hintStyle: AppText.caption.copyWith(color: AppColors.textHint),
+        filled: true,
+        fillColor: AppColors.surfaceMuted,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.md,
+          vertical: AppSpace.sm + 4,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: AppRadius.input,
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppRadius.input,
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppRadius.input,
+          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+        ),
+      );
 }
 
 class _PageHeader extends StatelessWidget {
@@ -862,6 +1170,12 @@ class _ProfileTab extends StatelessWidget {
       ),
       (s.t('Sector', 'क्षेत्र'), field('sector')),
       (s.t('Role', 'भूमिका'), field('role')),
+      if ((s.gemIndustry ?? '').isNotEmpty)
+        (s.t('Industry', 'उद्योग'), s.gemIndustry!),
+      if ((s.gemCategoryName ?? '').isNotEmpty)
+        (s.t('GeM Category', 'GeM श्रेणी'), s.gemCategoryName!),
+      if ((s.gemCategoryQuadrant ?? '').isNotEmpty)
+        (s.t('Quadrant', 'क्वाड्रेंट'), s.gemCategoryQuadrant!),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1343,7 +1657,7 @@ class _BidAlertsSectionState extends State<_BidAlertsSection> {
                   child: Semantics(
                     header: true,
                     child: Text(
-                      s.t('Bid Alerts', 'बोली अलर्ट'),
+                      s.t('Bid Alerts for You', 'आपके लिए बोली अलर्ट'),
                       style: AppText.h3,
                     ),
                   ),
@@ -2154,60 +2468,65 @@ class _ActiveBidsCardState extends State<_ActiveBidsCard> {
 
   @override
   Widget build(BuildContext context) {
-    final count = widget.store.gemActiveBids;
     final dim = AppColors.surface.withValues(alpha: 0.72);
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.14),
-        borderRadius: AppRadius.card,
-        border: Border.all(color: AppColors.surface.withValues(alpha: 0.2)),
-      ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpace.md,
-        vertical: AppSpace.lg,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  count != null ? count.toString() : '—',
-                  style: AppText.h2.copyWith(color: AppColors.surface),
-                ),
-                const SizedBox(height: AppSpace.xs),
-                Text(
-                  widget.store.t(
-                    'Active bids on GeM',
-                    'GeM पर सक्रिय बोलियाँ',
-                  ),
-                  style: AppText.overline.copyWith(color: dim),
-                ),
-              ],
-            ),
+    return ListenableBuilder(
+      listenable: widget.store,
+      builder: (context, _) {
+        final count = widget.store.gemActiveBids;
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.14),
+            borderRadius: AppRadius.card,
+            border: Border.all(color: AppColors.surface.withValues(alpha: 0.2)),
           ),
-          GestureDetector(
-            onTap: _refresh,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.only(left: AppSpace.sm),
-              child: _refreshing
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 1.5,
-                        color: dim,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.md,
+            vertical: AppSpace.lg,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      count != null ? count.toString() : '—',
+                      style: AppText.h2.copyWith(color: AppColors.surface),
+                    ),
+                    const SizedBox(height: AppSpace.xs),
+                    Text(
+                      widget.store.t(
+                        'Active bids on GeM',
+                        'GeM पर सक्रिय बोलियाँ',
                       ),
-                    )
-                  : Icon(Icons.refresh_rounded, size: 16, color: dim),
-            ),
+                      style: AppText.overline.copyWith(color: dim),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: _refresh,
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: AppSpace.sm),
+                  child: _refreshing
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            color: dim,
+                          ),
+                        )
+                      : Icon(Icons.refresh_rounded, size: 16, color: dim),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

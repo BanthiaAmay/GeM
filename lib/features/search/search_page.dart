@@ -544,7 +544,7 @@ class _SearchPageState extends State<SearchPage> {
 
     if (_results.isEmpty && _controller.text.trim().length >= 2) {
       if (isQuestion) {
-        return _AskBizReady(query: _controller.text, isHindi: _isHi);
+        return _AskBid2Scale(query: _controller.text, isHindi: _isHi);
       }
       return _NoResultsBody(store: _store, onSuggestion: _fillField);
     }
@@ -629,7 +629,7 @@ class _GroupedResults extends StatelessWidget {
           ..._buildSection(grouped[type]!, type, context),
         ],
         if (askCardQuery != null)
-          _AskBizReadyCard(query: askCardQuery!, isHindi: isHindi),
+          _AskBid2ScaleCard(query: askCardQuery!, isHindi: isHindi),
         const SizedBox(height: AppSpace.huge),
       ],
     );
@@ -872,10 +872,10 @@ class _NoResultsBody extends StatelessWidget {
           kind: StateKind.empty,
           title: store.t('No results found', 'कोई परिणाम नहीं मिला'),
           message: store.t(
-            'Try different words or use Ask BizReady.',
-            'अलग शब्द आज़माएँ या Ask BizReady का उपयोग करें।',
+            'Try different words or use Ask Bid2Scale.',
+            'अलग शब्द आज़माएँ या Ask Bid2Scale का उपयोग करें।',
           ),
-          actionLabel: 'Ask BizReady',
+          actionLabel: 'Ask Bid2Scale',
           onAction: () {
             Navigator.pop(context);
             Navigator.pushNamed(context, '/saathi');
@@ -1081,13 +1081,13 @@ class _SuggestedBidCard extends StatelessWidget {
   );
 }
 
-// ── Ask BizReady fallback ─────────────────────────────────────────────────────
+// ── Ask Bid2Scale fallback ─────────────────────────────────────────────────────
 
-class _AskBizReady extends StatelessWidget {
+class _AskBid2Scale extends StatelessWidget {
   final String query;
   final bool isHindi;
 
-  const _AskBizReady({required this.query, required this.isHindi});
+  const _AskBid2Scale({required this.query, required this.isHindi});
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -1103,21 +1103,21 @@ class _AskBizReady extends StatelessWidget {
         ),
         const SizedBox(height: AppSpace.lg),
         Text(
-          isHindi ? 'Ask BizReady से पूछें' : 'Ask BizReady',
+          isHindi ? 'Ask Bid2Scale से पूछें' : 'Ask Bid2Scale',
           style: AppText.h3,
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpace.sm),
         Text(
           isHindi
-              ? 'यह प्रश्न की तरह लग रहा है। BizReady सहायक को खोलें।'
-              : 'This looks like a question. Open the BizReady assistant.',
+              ? 'यह प्रश्न की तरह लग रहा है। Bid2Scale सहायक को खोलें।'
+              : 'This looks like a question. Open the Bid2Scale assistant.',
           style: AppText.secondary(AppText.body),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpace.xl),
         AppButton(
-          label: isHindi ? 'Ask BizReady खोलें' : 'Open Ask BizReady',
+          label: isHindi ? 'Ask Bid2Scale खोलें' : 'Open Ask Bid2Scale',
           onPressed: () {
             Navigator.pop(context);
             Navigator.pushNamed(context, '/saathi', arguments: query);
@@ -1712,13 +1712,13 @@ class _SavedSearchesSheetState extends State<_SavedSearchesSheet> {
   }
 }
 
-// ── Ask BizReady inline card ──────────────────────────────────────────────────
+// ── Ask Bid2Scale inline card ──────────────────────────────────────────────────
 
-class _AskBizReadyCard extends StatelessWidget {
+class _AskBid2ScaleCard extends StatelessWidget {
   final String query;
   final bool isHindi;
 
-  const _AskBizReadyCard({required this.query, required this.isHindi});
+  const _AskBid2ScaleCard({required this.query, required this.isHindi});
 
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -1754,15 +1754,15 @@ class _AskBizReadyCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isHindi ? 'Ask BizReady से पूछें' : 'Ask BizReady',
+                      isHindi ? 'Ask Bid2Scale से पूछें' : 'Ask Bid2Scale',
                       style: AppText.label.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     Text(
                       isHindi
-                          ? 'इस सवाल के लिए BizReady सहायक खोलें'
-                          : 'Open the BizReady assistant for this question',
+                          ? 'इस सवाल के लिए Bid2Scale सहायक खोलें'
+                          : 'Open the Bid2Scale assistant for this question',
                       style: AppText.secondary(AppText.bodySmall),
                     ),
                   ],
