@@ -1526,17 +1526,9 @@ class AppStore extends ChangeNotifier {
       'gemCategoryLink': categoryLink,
       'gemCategoryQuadrant': ?quadrant,
     };
+    // Saved with the rest of the profile (profiles.state) by save(); the
+    // alert keyword is saved separately with saveBidInterests.
     save();
-    if (!signedIn || client == null) return;
-    try {
-      await client!.rpc('save_gem_category', params: {
-        'p_industry': industry,
-        'p_category_name': categoryName,
-        'p_category_link': categoryLink,
-      });
-    } catch (_) {
-      // Profile already saved locally; Supabase will sync on next session.
-    }
     notifyListeners();
   }
 

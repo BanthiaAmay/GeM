@@ -87,6 +87,8 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/prune_stale_alerts.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202611270002_alert_matching.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/alert_matching.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202611280001_alert_fixes.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/alert_fixes.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/keyword_stopwords.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bid_alerts.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/push_alerts.sql

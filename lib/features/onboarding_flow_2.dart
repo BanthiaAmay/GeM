@@ -507,8 +507,9 @@ class _FlowProductsPageState extends State<FlowProductsPage> {
         'आप क्या सप्लाई करते हैं — सही श्रेणी चुनें',
       ),
       subtitle: s.t(
-        'Showing categories for: $industry',
-        'श्रेणियाँ: $industry',
+        'Showing categories for: {industry}',
+        'श्रेणियाँ: {industry}',
+        vars: {'industry': industry},
       ),
       continueLabel: s.t('Continue', 'जारी रखें'),
       onContinue: (_canContinue && !_saving) ? _continue : null,

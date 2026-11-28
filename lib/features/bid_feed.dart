@@ -32,6 +32,11 @@ class _BidFeedState extends State<BidFeed> {
   static bool _hasPersonalProfile(AppStore s) =>
       (s.gemCategoryName ?? '').isNotEmpty || (s.gemIndustry ?? '').isNotEmpty;
 
+  /// "For you" category matches from the server: the same matching and
+  /// keywords as bid alerts, over every open bid (not only the newest 200).
+  List<Map<String, dynamic>> _serverMatches = [];
+  bool _serverMatched = false;
+
   // Splits a name into meaningful lowercase tokens (≥3 chars, no stop words).
   static List<String> _tokens(String s) {
     const stop = {
@@ -45,21 +50,27 @@ class _BidFeedState extends State<BidFeed> {
         .toList();
   }
 
-  // Bids whose title matches the user's GeM category.
+  // Whole word, plural or "-ing" allowed: "bin" never matches "cabinet".
+  static bool _hasWord(String text, String token) => RegExp(
+    '\\b${RegExp.escape(token)}(s|es|ing)?\\b',
+  ).hasMatch(text);
+
+  static String _bidText(Map<String, dynamic> bid) =>
+      '${bid['title'] ?? ''} ${bid['category'] ?? ''}'.toLowerCase();
+
+  // Bids matching the user's GeM category.
   List<Map<String, dynamic>> get _categoryBids {
+    if (_serverMatched) return _serverMatches;
     final cat = widget.store.gemCategoryName ?? '';
     if (cat.isEmpty) return [];
-    final catLower = cat.toLowerCase();
-    final tokens = _tokens(cat);
-    return bids.where((bid) {
-      final title = (bid['title'] as String? ?? '').toLowerCase();
-      if (title.contains(catLower)) return true;
-      final hits = tokens.where(title.contains).length;
-      return hits >= (tokens.length >= 3 ? 2 : 1);
-    }).toList();
+    final tokens = _tokens(cat.replaceAll(RegExp(r'\([^)]*\)'), ' '));
+    if (tokens.isEmpty) return [];
+    return bids
+        .where((bid) => tokens.every((t) => _hasWord(_bidText(bid), t)))
+        .toList();
   }
 
-  // Bids whose title matches the user's industry (excluding category matches).
+  // Bids matching the user's industry (excluding category matches).
   List<Map<String, dynamic>> get _industryBids {
     final industry = widget.store.gemIndustry ?? '';
     if (industry.isEmpty) return [];
@@ -67,8 +78,8 @@ class _BidFeedState extends State<BidFeed> {
     final catIds = _categoryBids.map((b) => b['source_id']).toSet();
     return bids.where((bid) {
       if (catIds.contains(bid['source_id'])) return false;
-      final title = (bid['title'] as String? ?? '').toLowerCase();
-      return tokens.any(title.contains);
+      final text = _bidText(bid);
+      return tokens.any((t) => _hasWord(text, t));
     }).toList();
   }
 
@@ -126,23 +137,47 @@ class _BidFeedState extends State<BidFeed> {
       error = null;
     });
     try {
-      List<dynamic> result;
-      // For "For you": fetch a larger pool so the client-side category/industry
-      // filter has enough bids to work with. For "Latest": standard 50.
-      final limit = view == _FeedView.matching ? 200 : 50;
-      result = await s.client!
+      // "For you": category bids come from the server matcher (all open
+      // bids, same rules as alerts); the newest 200 feed the industry list.
+      // "Latest": the newest 50.
+      final matching = view == _FeedView.matching;
+      final List<dynamic> result = await s.client!
           .from('gem_bids')
           .select()
           .eq('published', true)
           .gt('closes_at', DateTime.now().toUtc().toIso8601String())
           .order('starts_at', ascending: false, nullsFirst: false)
-          .limit(limit);
+          .limit(matching ? 200 : 50);
+      var server = <Map<String, dynamic>>[];
+      var serverOk = false;
+      if (matching && s.signedIn && s.bidKeywords.isNotEmpty) {
+        try {
+          final rows =
+              await s.client!.rpc(
+                    'my_matching_bids',
+                    params: {'p_limit': 100},
+                  )
+                  as List<dynamic>;
+          server = [for (final r in rows) Map<String, dynamic>.from(r as Map)];
+          serverOk = true;
+        } catch (_) {
+          // Falls back to matching the newest bids on the phone.
+        }
+      }
+      final latest = [
+        for (final row in result) Map<String, dynamic>.from(row as Map),
+      ];
+      final seen = {for (final b in server) b['source_id']};
       if (mounted) {
-        setState(
-          () => bids = [
-            for (final row in result) Map<String, dynamic>.from(row as Map),
-          ],
-        );
+        setState(() {
+          _serverMatches = server;
+          _serverMatched = serverOk;
+          bids = [
+            ...server,
+            for (final b in latest)
+              if (!seen.contains(b['source_id'])) b,
+          ];
+        });
       }
     } catch (_) {
       if (mounted) {
@@ -183,8 +218,8 @@ class _BidFeedState extends State<BidFeed> {
       kind: StateKind.empty,
       title: s.t('No matching open bids yet', 'अभी कोई मेल खाती खुली बोली नहीं'),
       message: s.t(
-        'No live bids matched your category or industry in the latest 200 bids. Try again later.',
-        'नवीनतम 200 बोलियों में आपकी श्रेणी या उद्योग से कोई मेल नहीं मिला। बाद में पुनः प्रयास करें।',
+        'No open bids match your category or industry right now. New GeM bids are checked through the day.',
+        'अभी कोई खुली बोली आपकी श्रेणी या उद्योग से मेल नहीं खाती। नई GeM बोलियाँ दिन भर देखी जाती हैं।',
       ),
     );
   }

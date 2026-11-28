@@ -32,7 +32,12 @@ class GemCategoryData {
       categories.where((c) => c.industry == industry).toList();
 
   static Future<GemCategoryData> load() async {
-    final raw = await rootBundle.loadString('assets/data/gem_categories.json');
+    // Read uncached: it is needed once per onboarding, and a cached load can
+    // never settle under widget tests' fake clock.
+    final raw = await rootBundle.loadString(
+      'assets/data/gem_categories.json',
+      cache: false,
+    );
     final map = json.decode(raw) as Map<String, dynamic>;
     final industries = List<String>.from(map['industries'] as List);
     final categories = (map['categories'] as List)

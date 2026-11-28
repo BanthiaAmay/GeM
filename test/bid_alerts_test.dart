@@ -106,42 +106,70 @@ void main() {
     expect(values, ['chairs', 'Furniture']);
   });
 
-  testWidgets('supply questions pre-tick from business details', (
+  Future<void> pick(WidgetTester tester, String text) async {
+    await tester.ensureVisible(find.text(text).last);
+    await tester.tap(find.text(text).last);
+    await tester.pumpAndSettle();
+  }
+
+  // The category list loads from a bundled file: let it finish.
+  Future<void> showPicker(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: saathiTheme(),
+        routes: {'/flow-role': (_) => const Scaffold(body: Text('Role'))},
+        home: FlowProductsPage(store: store),
+      ),
+    );
+    // A spinner shows until the file is read, so pump rather than settle.
+    for (var i = 0; i < 100 && find.byType(TextField).evaluate().isEmpty; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('industry then GeM category becomes the alert keyword', (
     tester,
   ) async {
     final push = FakePush();
     store.push = push;
-    store.setProfile('sector', 'services');
-    store.setProfile('businessName', 'Shakti Security Agency');
-    await show(tester, FlowProductsPage(store: store));
-    expect(find.textContaining('We ticked a few'), findsOneWidget);
-    expect(find.byType(TextField), findsNothing); // Nothing to type.
-    // Only the inferred words are on, not every word of their groups.
-    expect(find.text('Laptop'), findsOneWidget);
-    await tester.ensureVisible(find.text('Continue'));
-    await tester.tap(find.text('Continue'));
+    await showPicker(tester);
+    expect(find.text('What industry does your business operate in?'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, 'Agriculture');
     await tester.pumpAndSettle();
-    expect(store.bidKeywords, ['CCTV', 'Security services']);
+    await pick(tester, 'Agriculture, Food & Livestock');
+    expect(find.text('Which category best describes what you supply?'), findsOneWidget);
+    expect(find.text('Showing categories for: Agriculture, Food & Livestock'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, 'Grain Storage');
+    await tester.pumpAndSettle();
+    await pick(tester, 'Grain Storage Bin');
+    await pick(tester, 'Continue');
+    expect(store.gemIndustry, 'Agriculture, Food & Livestock');
+    expect(store.gemCategoryName, 'Grain Storage Bin');
+    expect(store.bidKeywords, ['Grain Storage Bin']);
     expect(push.enables, 1);
     expect(find.text('Role'), findsOneWidget);
   });
 
-  testWidgets('ticking a group adds its words; unticking a word drops it', (
+  testWidgets('a category not in the list can be typed under Others', (
     tester,
   ) async {
-    store.setProfile('sector', 'other');
-    await show(tester, FlowProductsPage(store: store));
-    expect(find.text('Skip for now'), findsOneWidget);
-    await tester.ensureVisible(find.text('Manpower & security'));
-    await tester.tap(find.text('Manpower & security'));
+    await showPicker(tester);
+    await tester.enterText(find.byType(TextField).first, 'Furniture');
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Security services'));
-    await tester.tap(find.text('Security services'));
+    await pick(tester, 'Furniture & Household Supplies');
+    await pick(tester, 'Others');
+    await tester.enterText(find.byType(TextField).last, 'Bamboo benches');
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Continue'));
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
-    expect(store.bidKeywords, ['Manpower']);
+    await pick(tester, 'Continue');
+    expect(store.gemCategoryName, 'Bamboo benches');
+    expect(store.bidKeywords, ['Bamboo benches']);
   });
 
   test('answers turn into balanced, capped keywords', () {
@@ -174,9 +202,9 @@ void main() {
 
   testWidgets('the step speaks the seller’s language', (tester) async {
     store.setLanguage('ta');
-    await show(tester, FlowProductsPage(store: store));
-    expect(find.text('உங்கள் தொழில் என்ன வழங்குகிறது?'), findsOneWidget);
-    expect(find.text('மரச்சாமான்கள்'), findsOneWidget); // Furniture.
+    await showPicker(tester);
+    expect(find.text('உங்கள் தொழில் எந்தத் துறையில் இயங்குகிறது?'), findsOneWidget);
+    expect(find.text('துறைகளைத் தேடுங்கள்…'), findsOneWidget);
   });
 
   testWidgets('bid feed opens on matches and explains empty states', (
@@ -185,7 +213,9 @@ void main() {
     await show(tester, Scaffold(body: BidFeed(store: store)));
     expect(find.text('No bids yet'), findsOneWidget);
 
-    store.setProfile('bidKeywords', ['Manpower']);
+    // A chosen GeM category opens the feed on "For you".
+    store.setProfile('gemIndustry', 'Agriculture, Food & Livestock');
+    store.setProfile('gemCategoryName', 'Grain Storage Bin');
     await show(
       tester,
       Scaffold(

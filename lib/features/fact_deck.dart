@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'package:audioplayers/audioplayers.dart';
+import '../core/sounds.dart';
 import 'package:flutter/material.dart';
 import '../core/motion.dart';
 import '../core/theme.dart';
@@ -732,7 +732,6 @@ class _FactToastState extends State<FactToast>
   late final Animation<Offset> _slide;
   late final Animation<double> _fade;
   Timer? _timer;
-  final _player = AudioPlayer();
   late final int _myMount;
 
   @override
@@ -758,7 +757,7 @@ class _FactToastState extends State<FactToast>
     if (!mounted) return;
     setState(() => _visible = true);
     _anim.forward();
-    unawaited(_player.play(AssetSource('sounds/section_complete.mp3')));
+    unawaited(Sounds.sectionComplete());
   }
 
   void _dismiss() {
@@ -771,7 +770,6 @@ class _FactToastState extends State<FactToast>
   void dispose() {
     _timer?.cancel();
     _anim.dispose();
-    _player.dispose();
     super.dispose();
   }
 
